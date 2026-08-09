@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,15 +25,15 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         <nav className="border-b p-4 flex gap-4">
-          <a href="/test-cases" className="font-medium hover:underline">
+          <Link href="/test-cases" className="font-medium hover:underline">
             Test Cases
-          </a>
-          <a href="/suites" className="font-medium hover:underline">
+          </Link>
+          <Link href="/suites" className="font-medium hover:underline">
             Suites
-          </a>
-          <a href="/runs" className="font-medium hover:underline">
+          </Link>
+          <Link href="/runs" className="font-medium hover:underline">
             Runs
-          </a>
+          </Link>
         </nav>
         {children}
       </body>
