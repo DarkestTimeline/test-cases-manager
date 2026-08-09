@@ -24,6 +24,16 @@ export default async function RunDetail({ params }) {
       <div className="mb-6">
         <h1 className="text-2xl font-bold">{run.suites.name}</h1>
         <p className="text-gray-600">Tester: {run.tester_name}</p>
+        {run.os && <p className="text-sm text-gray-500">OS: {run.os}</p>}
+        {run.build_version && (
+          <p className="text-sm text-gray-500">Build: {run.build_version}</p>
+        )}
+        <p className="text-sm text-gray-500 mt-1">
+          Started: {new Date(run.started_at).toLocaleString()}
+          {run.completed_at && (
+            <> · Completed: {new Date(run.completed_at).toLocaleString()}</>
+          )}
+        </p>
         <p className="text-sm text-gray-500 mt-1">
           {passedCount} / {totalCount} passed · Run status: {run.status}
         </p>
