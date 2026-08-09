@@ -2,6 +2,12 @@ import { supabase } from "@/lib/supabaseClient";
 import ResultsList from "./ResultsList";
 import { completeRun } from "../actions";
 
+const OUTCOME_STYLES = {
+  pass: "bg-green-100 text-green-700",
+  fail: "bg-red-100 text-red-700",
+  cancelled: "bg-gray-200 text-gray-600",
+};
+
 export default async function RunDetail({ params }) {
   const { id } = await params;
 
@@ -15,7 +21,7 @@ export default async function RunDetail({ params }) {
     .from("run_results")
     .select("*")
     .eq("test_run_id", id)
-    .order('title');
+    .order("title");
 
   const passedCount = results.filter((r) => r.status === "pass").length;
   const totalCount = results.length;
@@ -37,19 +43,38 @@ export default async function RunDetail({ params }) {
         </p>
         <p className="text-sm text-gray-500 mt-1">
           {passedCount} / {totalCount} passed · Run status: {run.status}
+          {run.outcome && (
+            <span
+              className={`ml-2 text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}
+            >
+              {run.outcome}
+            </span>
+          )}
         </p>
       </div>
 
       <ResultsList results={results} runId={id} />
 
       {run.status !== "completed" && (
-        <form action={completeRun} className="mt-6">
+        <form action={completeRun} className="mt-6 space-y-2 border-t pt-4">
           <input type="hidden" name="runId" value={run.id} />
+          <p className="text-sm font-medium">Mark this run as:</p>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-1 text-sm">
+              <input type="radio" name="outcome" value="pass" required /> Pass
+            </label>
+            <label className="flex items-center gap-1 text-sm">
+              <input type="radio" name="outcome" value="fail" /> Fail
+            </label>
+            <label className="flex items-center gap-1 text-sm">
+              <input type="radio" name="outcome" value="cancelled" /> Cancelled
+            </label>
+          </div>
           <button
             type="submit"
             className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 text-sm"
           >
-            Mark Run as Complete
+            Complete Run
           </button>
         </form>
       )}

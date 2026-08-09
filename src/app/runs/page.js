@@ -7,6 +7,12 @@ const RUN_STATUS_STYLES = {
   completed: "bg-gray-800 text-white",
 };
 
+const OUTCOME_STYLES = {
+  pass: "bg-green-100 text-green-700",
+  fail: "bg-red-100 text-red-700",
+  cancelled: "bg-gray-200 text-gray-600",
+};
+
 export default async function RunsDashboard({ searchParams }) {
   const { status } = await searchParams;
 
@@ -94,11 +100,21 @@ export default async function RunsDashboard({ searchParams }) {
                       Started: {new Date(run.started_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${RUN_STATUS_STYLES[run.status]}`}
-                  >
-                    {run.status}
-                  </span>
+
+                  <div className="flex gap-1 items-start">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-medium ${RUN_STATUS_STYLES[run.status]}`}
+                    >
+                      {run.status}
+                    </span>
+                    {run.outcome && (
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}
+                      >
+                        {run.outcome}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2 mt-3">
                   {counts.pass > 0 && (

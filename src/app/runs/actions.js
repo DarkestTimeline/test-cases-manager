@@ -63,10 +63,15 @@ export async function updateResult({ resultId, status, notes, runId }) {
 
 export async function completeRun(formData) {
   const runId = formData.get("runId");
+  const outcome = formData.get("outcome");
 
   const { error } = await supabase
     .from("test_runs")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .update({
+      status: "completed",
+      outcome,
+      completed_at: new Date().toISOString(),
+    })
     .eq("id", runId);
 
   if (error) throw new Error(error.message);
