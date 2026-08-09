@@ -37,6 +37,9 @@ export default function RootLayout({ children }) {
           <Link href="/runs" className="font-medium hover:underline">
             Runs
           </Link>
+          <Link href="/runs/new" className="font-medium hover:underline">
+            Start Run
+          </Link>
         </nav>
         {children}
       </body>
