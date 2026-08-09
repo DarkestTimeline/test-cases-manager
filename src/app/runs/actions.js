@@ -65,6 +65,16 @@ export async function completeRun(formData) {
   const runId = formData.get("runId");
   const outcome = formData.get("outcome");
 
+  const { count: pendingCount } = await supabase
+    .from("run_results")
+    .select("*", { count: "exact", head: true })
+    .eq("test_run_id", runId)
+    .eq("status", "pending");
+
+  if (pendingCount > 0) {
+    throw new Error("Cannot complete a run with pending test cases.");
+  }
+
   const { error } = await supabase
     .from("test_runs")
     .update({

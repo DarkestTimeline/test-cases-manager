@@ -24,6 +24,7 @@ export default async function RunDetail({ params }) {
     .order("title");
 
   const passedCount = results.filter((r) => r.status === "pass").length;
+  const pendingCount = results.filter((r) => r.status === "pending").length;
   const totalCount = results.length;
 
   return (
@@ -55,29 +56,36 @@ export default async function RunDetail({ params }) {
 
       <ResultsList results={results} runId={id} />
 
-      {run.status !== "completed" && (
-        <form action={completeRun} className="mt-6 space-y-2 border-t pt-4">
-          <input type="hidden" name="runId" value={run.id} />
-          <p className="text-sm font-medium">Mark this run as:</p>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-1 text-sm">
-              <input type="radio" name="outcome" value="pass" required /> Pass
-            </label>
-            <label className="flex items-center gap-1 text-sm">
-              <input type="radio" name="outcome" value="fail" /> Fail
-            </label>
-            <label className="flex items-center gap-1 text-sm">
-              <input type="radio" name="outcome" value="cancelled" /> Cancelled
-            </label>
-          </div>
-          <button
-            type="submit"
-            className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 text-sm"
-          >
-            Complete Run
-          </button>
-        </form>
-      )}
+      {run.status !== "completed" &&
+        (pendingCount > 0 ? (
+          <p className="mt-6 text-sm text-gray-500 border-t pt-4">
+            {pendingCount} test case{pendingCount !== 1 ? "s" : ""} still
+            pending — mark all results before completing this run.
+          </p>
+        ) : (
+          <form action={completeRun} className="mt-6 space-y-2 border-t pt-4">
+            <input type="hidden" name="runId" value={run.id} />
+            <p className="text-sm font-medium">Mark this run as:</p>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-1 text-sm">
+                <input type="radio" name="outcome" value="pass" required /> Pass
+              </label>
+              <label className="flex items-center gap-1 text-sm">
+                <input type="radio" name="outcome" value="fail" /> Fail
+              </label>
+              <label className="flex items-center gap-1 text-sm">
+                <input type="radio" name="outcome" value="cancelled" />{" "}
+                Cancelled
+              </label>
+            </div>
+            <button
+              type="submit"
+              className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 text-sm"
+            >
+              Complete Run
+            </button>
+          </form>
+        ))}
     </main>
   );
 }
