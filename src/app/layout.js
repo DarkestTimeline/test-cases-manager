@@ -25,6 +25,9 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         <nav className="border-b p-4 flex gap-4">
+          <Link href="/" className="font-medium hover:underline">
+            Home
+          </Link>
           <Link href="/test-cases" className="font-medium hover:underline">
             Test Cases
           </Link>
