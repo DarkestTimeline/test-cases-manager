@@ -14,7 +14,8 @@ export default async function RunDetail({ params }) {
   const { data: results } = await supabase
     .from("run_results")
     .select("*")
-    .eq("test_run_id", id);
+    .eq("test_run_id", id)
+    .order('title');
 
   const passedCount = results.filter((r) => r.status === "pass").length;
   const totalCount = results.length;
