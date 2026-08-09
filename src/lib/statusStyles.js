@@ -3,4 +3,5 @@ export const STATUS_STYLES = {
   pass: 'bg-green-100 text-green-700',
   fail: 'bg-red-100 text-red-700',
   blocked: 'bg-yellow-100 text-yellow-700',
+  skipped: 'bg-purple-100 text-purple-700',
 }
