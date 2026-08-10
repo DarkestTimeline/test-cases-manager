@@ -4,21 +4,27 @@ import { useState } from "react";
 import { updateResult } from "../actions";
 import { STATUS_STYLES } from "@/lib/statusStyles";
 
-export default function ResultsList({ results, runId }) {
+export default function ResultsList({ results, runId, isLocked }) {
   return (
     <ul className="space-y-4">
       {results.map((result) => (
-        <ResultItem key={result.id} result={result} runId={runId} />
+        <ResultItem
+          key={result.id}
+          result={result}
+          runId={runId}
+          isLocked={isLocked}
+        />
       ))}
     </ul>
   );
 }
 
-function ResultItem({ result, runId }) {
+function ResultItem({ result, runId, isLocked }) {
   const [status, setStatus] = useState(result.status);
   const [notes, setNotes] = useState(result.notes || "");
 
   async function handleStatusClick(newStatus) {
+    if (isLocked) return;
     setStatus(newStatus);
     await updateResult({
       resultId: result.id,
@@ -29,6 +35,7 @@ function ResultItem({ result, runId }) {
   }
 
   async function handleSaveNotes() {
+    if (isLocked) return;
     await updateResult({ resultId: result.id, status, notes, runId });
   }
 
@@ -57,25 +64,29 @@ function ResultItem({ result, runId }) {
       <div className="mt-3 flex gap-2">
         <button
           onClick={() => handleStatusClick("pass")}
-          className="px-3 py-1 rounded bg-green-600 text-white text-sm hover:bg-green-700"
+          disabled={isLocked}
+          className="px-3 py-1 rounded bg-green-600 text-white text-sm hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Pass
         </button>
         <button
           onClick={() => handleStatusClick("fail")}
-          className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700"
+          disabled={isLocked}
+          className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Fail
         </button>
         <button
           onClick={() => handleStatusClick("blocked")}
-          className="px-3 py-1 rounded bg-yellow-600 text-white text-sm hover:bg-yellow-700"
+          disabled={isLocked}
+          className="px-3 py-1 rounded bg-yellow-600 text-white text-sm hover:bg-yellow-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Blocked
         </button>
         <button
           onClick={() => handleStatusClick("skipped")}
-          className="px-3 py-1 rounded bg-purple-600 text-white text-sm hover:bg-purple-700"
+          disabled={isLocked}
+          className="px-3 py-1 rounded bg-purple-600 text-white text-sm hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Skipped
         </button>
@@ -88,11 +99,13 @@ function ResultItem({ result, runId }) {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add a note..."
             rows={2}
-            className="w-full border rounded p-2 text-sm"
+            disabled={isLocked}
+            className="w-full border rounded p-2 text-sm disabled:bg-gray-100 disabled:text-gray-400"
           />
           <button
             onClick={handleSaveNotes}
-            className="mt-1 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            disabled={isLocked}
+            className="mt-1 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Save Note
           </button>

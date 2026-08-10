@@ -18,7 +18,7 @@ export default async function RunsDashboard({ searchParams }) {
 
   let query = supabase
     .from("test_runs")
-    .select("*, suites(name)")
+    .select("*, suites(name), run_results(status)")
     .order("started_at", { ascending: false });
 
   if (status) {
@@ -31,19 +31,13 @@ export default async function RunsDashboard({ searchParams }) {
     return <p className="p-8 text-red-600">Error: {error.message}</p>;
   }
 
-  const runIds = runs.map((r) => r.id);
-
-  const { data: allResults } =
-    runIds.length > 0
-      ? await supabase.from("run_results").select("*").in("test_run_id", runIds)
-      : { data: [] };
-
-  function countsFor(runId) {
-    const results = allResults.filter((r) => r.test_run_id === runId);
+  function countsFor(run) {
+    const results = run.run_results;
     return {
       pass: results.filter((r) => r.status === "pass").length,
       fail: results.filter((r) => r.status === "fail").length,
       blocked: results.filter((r) => r.status === "blocked").length,
+      skipped: results.filter((r) => r.status === "skipped").length,
       pending: results.filter((r) => r.status === "pending").length,
     };
   }
@@ -82,7 +76,7 @@ export default async function RunsDashboard({ searchParams }) {
       ) : (
         <ul className="space-y-3">
           {runs.map((run) => {
-            const counts = countsFor(run.id);
+            const counts = countsFor(run);
             return (
               <li key={run.id} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start">
@@ -100,7 +94,6 @@ export default async function RunsDashboard({ searchParams }) {
                       Started: {new Date(run.started_at).toLocaleDateString()}
                     </p>
                   </div>
-
                   <div className="flex gap-1 items-start">
                     <span
                       className={`text-xs px-2 py-1 rounded-full font-medium ${RUN_STATUS_STYLES[run.status]}`}
@@ -136,6 +129,13 @@ export default async function RunsDashboard({ searchParams }) {
                       className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.blocked}`}
                     >
                       {counts.blocked} blocked
+                    </span>
+                  )}
+                  {counts.skipped > 0 && (
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.skipped}`}
+                    >
+                      {counts.skipped} skipped
                     </span>
                   )}
                   {counts.pending > 0 && (

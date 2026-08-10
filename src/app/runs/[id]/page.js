@@ -11,17 +11,14 @@ const OUTCOME_STYLES = {
 export default async function RunDetail({ params }) {
   const { id } = await params;
 
-  const { data: run } = await supabase
-    .from("test_runs")
-    .select("*, suites(name)")
-    .eq("id", id)
-    .single();
-
-  const { data: results } = await supabase
-    .from("run_results")
-    .select("*")
-    .eq("test_run_id", id)
-    .order("title");
+  const [{ data: run }, { data: results }] = await Promise.all([
+    supabase.from("test_runs").select("*, suites(name)").eq("id", id).single(),
+    supabase
+      .from("run_results")
+      .select("*")
+      .eq("test_run_id", id)
+      .order("title"),
+  ]);
 
   const passedCount = results.filter((r) => r.status === "pass").length;
   const pendingCount = results.filter((r) => r.status === "pending").length;
@@ -54,7 +51,11 @@ export default async function RunDetail({ params }) {
         </p>
       </div>
 
-      <ResultsList results={results} runId={id} />
+      <ResultsList
+        results={results}
+        runId={id}
+        isLocked={run.status === "completed"}
+      />
 
       {run.status !== "completed" &&
         (pendingCount > 0 ? (

@@ -51,14 +51,20 @@ export async function startRun(formData) {
 }
 
 export async function updateResult({ resultId, status, notes, runId }) {
+  const { data: run } = await supabase.from('test_runs').select('status').eq('id', runId).single()
+
+  if (run?.status === 'completed') {
+    throw new Error('This run is already completed and cannot be edited.')
+  }
+
   const { error } = await supabase
-    .from("run_results")
+    .from('run_results')
     .update({ status, notes })
-    .eq("id", resultId);
+    .eq('id', resultId)
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(error.message)
 
-  revalidatePath(`/runs/${runId}`);
+  revalidatePath(`/runs/${runId}`)
 }
 
 export async function completeRun(formData) {
