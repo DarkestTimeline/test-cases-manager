@@ -4,18 +4,86 @@ import { useState } from "react";
 import { updateResult } from "../actions";
 import { STATUS_STYLES } from "@/lib/statusStyles";
 
-export default function ResultsList({ results, runId, isLocked }) {
+function summarize(results) {
+  const counts = {
+    pass: results.filter((r) => r.status === "pass").length,
+    fail: results.filter((r) => r.status === "fail").length,
+    blocked: results.filter((r) => r.status === "blocked").length,
+    skipped: results.filter((r) => r.status === "skipped").length,
+    pending: results.filter((r) => r.status === "pending").length,
+  };
+
+  let label = "Passed";
+  let style = "bg-green-100 text-green-700";
+
+  if (counts.pending > 0) {
+    label = "In Progress";
+    style = "bg-blue-100 text-blue-700";
+  } else if (counts.fail > 0 || counts.blocked > 0) {
+    label = "Failed";
+    style = "bg-red-100 text-red-700";
+  }
+
+  return { counts, label, style };
+}
+
+export default function ResultsList({
+  moduleGroups,
+  ungroupedResults,
+  runId,
+  isLocked,
+}) {
   return (
-    <ul className="space-y-4">
-      {results.map((result) => (
-        <ResultItem
-          key={result.id}
-          result={result}
-          runId={runId}
-          isLocked={isLocked}
-        />
-      ))}
-    </ul>
+    <div className="space-y-6">
+      {moduleGroups.map((group) => {
+        const { counts, label, style } = summarize(group.results);
+        return (
+          <div key={group.module.id}>
+            <div className="flex justify-between items-center mb-2 border-b pb-1">
+              <h2 className="font-semibold">{group.module.name}</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">
+                  {counts.pass}/{group.results.length} passed
+                </span>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full font-medium ${style}`}
+                >
+                  {label}
+                </span>
+              </div>
+            </div>
+            <ul className="space-y-4">
+              {group.results.map((result) => (
+                <ResultItem
+                  key={result.id}
+                  result={result}
+                  runId={runId}
+                  isLocked={isLocked}
+                />
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+
+      {ungroupedResults.length > 0 && (
+        <div>
+          {moduleGroups.length > 0 && (
+            <h2 className="font-semibold mb-2 border-b pb-1">No Module</h2>
+          )}
+          <ul className="space-y-4">
+            {ungroupedResults.map((result) => (
+              <ResultItem
+                key={result.id}
+                result={result}
+                runId={runId}
+                isLocked={isLocked}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
