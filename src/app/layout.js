@@ -31,6 +31,9 @@ export default function RootLayout({ children }) {
           <Link href="/test-cases" className="font-medium hover:underline">
             Test Cases
           </Link>
+          <Link href="/modules" className="font-medium hover:underline">
+            Modules
+          </Link>
           <Link href="/suites" className="font-medium hover:underline">
             Suites
           </Link>
