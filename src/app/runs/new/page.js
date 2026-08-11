@@ -8,7 +8,7 @@ export default async function NewRun() {
     .order("name");
 
   return (
-    <main className="p-8 max-w-md">
+    <main className="p-8 max-w-md mx-auto">
       <h1 className="text-2xl font-bold mb-6">Start a Run</h1>
 
       {suites.length === 0 ? (

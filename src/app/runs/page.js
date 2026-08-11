@@ -49,7 +49,7 @@ export default async function RunsDashboard({ searchParams }) {
   ];
 
   return (
-    <main className="p-8 max-w-3xl">
+    <main className="p-8 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Runs Dashboard</h1>
 
       <div className="flex gap-2 mb-6">

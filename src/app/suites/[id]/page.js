@@ -49,7 +49,7 @@ export default async function SuiteDetail({ params }) {
   const moduleGroups = Object.values(grouped);
 
   return (
-    <main className="p-8 max-w-2xl">
+    <main className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold">{suite.name}</h1>
       <p className="text-gray-600 mt-1 mb-6">{suite.description}</p>
 

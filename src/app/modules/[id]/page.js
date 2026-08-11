@@ -17,7 +17,7 @@ export default async function ModuleDetail({ params }) {
   const availableTestCases = allTestCases.filter((tc) => !linkedIds.includes(tc.id))
 
   return (
-    <main className="p-8 max-w-2xl">
+    <main className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold">{mod.name}</h1>
       <p className="text-gray-600 mt-1 mb-6">{mod.description}</p>
 
