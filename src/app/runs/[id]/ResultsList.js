@@ -110,7 +110,14 @@ function ResultItem({ result, runId, isLocked }) {
   return (
     <li className="border rounded-lg p-4">
       <div className="flex justify-between items-start gap-3">
-        <h2 className="font-semibold">{result.title}</h2>
+        <h2 className="font-semibold">
+          {result.test_case_code && (
+            <span className="text-gray-400 font-normal mr-2">
+              {result.test_case_code}
+            </span>
+          )}
+          {result.title}
+        </h2>
         <span
           className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${STATUS_STYLES[status]}`}
         >

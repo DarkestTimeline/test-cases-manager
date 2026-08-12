@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import { addTestCasesToSuite } from "../actions";
+import { formatId } from "@/lib/displayId";
 
 export default async function SuiteDetail({ params }) {
   const { id } = await params;
@@ -50,7 +51,14 @@ export default async function SuiteDetail({ params }) {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold">{suite.name}</h1>
+      <h1 className="text-2xl font-bold">
+        {suite.seq_number && (
+          <span className="text-gray-400 font-normal mr-2">
+            {formatId("S", suite.seq_number)}
+          </span>
+        )}
+        {suite.name}
+      </h1>
       <p className="text-gray-600 mt-1 mb-6">{suite.description}</p>
 
       <h2 className="font-semibold mb-2">Test Cases in this Suite</h2>
@@ -60,6 +68,11 @@ export default async function SuiteDetail({ params }) {
         <ul className="space-y-2 mb-6">
           {linkedCases.map((lc) => (
             <li key={lc.test_case_id} className="border rounded p-2">
+              {lc.test_cases.seq_number && (
+                <span className="text-gray-400 mr-2">
+                  {formatId("TC", lc.test_cases.seq_number)}
+                </span>
+              )}
               {lc.test_cases.title}
             </li>
           ))}
@@ -123,6 +136,11 @@ export default async function SuiteDetail({ params }) {
                     className="flex items-center gap-2 border rounded p-2"
                   >
                     <input type="checkbox" name="testCaseIds" value={tc.id} />
+                    {tc.seq_number && (
+                      <span className="text-gray-400 mr-2">
+                        {formatId("TC", tc.seq_number)}
+                      </span>
+                    )}
                     {tc.title}
                   </label>
                 ))}
@@ -142,6 +160,11 @@ export default async function SuiteDetail({ params }) {
                     className="flex items-center gap-2 border rounded p-2"
                   >
                     <input type="checkbox" name="testCaseIds" value={tc.id} />
+                    {tc.seq_number && (
+                      <span className="text-gray-400 mr-2">
+                        {formatId("TC", tc.seq_number)}
+                      </span>
+                    )}
                     {tc.title}
                   </label>
                 ))}

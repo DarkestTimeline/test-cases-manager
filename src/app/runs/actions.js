@@ -3,6 +3,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import {formatId} from "@/lib/displayId";
 
 export async function startRun(formData) {
   const suiteId = formData.get("suiteId");
@@ -33,13 +34,14 @@ export async function startRun(formData) {
   if (linkedError) throw new Error(linkedError.message);
 
   // Step 3: snapshot each one into run_results, tied to this run
-  const resultsToInsert = linkedCases.map((lc) => ({
+const resultsToInsert = linkedCases.map((lc) => ({
     test_run_id: run.id,
     test_case_id: lc.test_cases.id,
     title: lc.test_cases.title,
     steps_to_reproduce: lc.test_cases.steps_to_reproduce,
     expected_result: lc.test_cases.expected_result,
-  }));
+    test_case_code: formatId('TC', lc.test_cases.seq_number),
+  }))
 
   const { error: resultsError } = await supabase
     .from("run_results")

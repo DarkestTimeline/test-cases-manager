@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { STATUS_STYLES } from "@/lib/statusStyles";
+import { formatId } from "@/lib/displayId";
 
 const RUN_STATUS_STYLES = {
   in_progress: "bg-blue-100 text-blue-700",
@@ -18,7 +19,7 @@ export default async function RunsDashboard({ searchParams }) {
 
   let query = supabase
     .from("test_runs")
-    .select("*, suites(name), run_results(status)")
+    .select("*, suites(name, seq_number), run_results(status)")
     .order("started_at", { ascending: false });
 
   if (status) {
@@ -85,6 +86,11 @@ export default async function RunsDashboard({ searchParams }) {
                       href={`/runs/${run.id}`}
                       className="font-semibold hover:underline"
                     >
+                      {run.suites.seq_number && (
+                        <span className="text-gray-400 font-normal mr-2">
+                          {formatId("S", run.suites.seq_number)}
+                        </span>
+                      )}
                       {run.suites.name}
                     </Link>
                     <p className="text-sm text-gray-600">

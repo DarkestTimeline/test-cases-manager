@@ -1,69 +1,94 @@
-import { supabase } from '@/lib/supabaseClient'
-import ResultsList from './ResultsList'
-import { completeRun } from '../actions'
+import { supabase } from "@/lib/supabaseClient";
+import ResultsList from "./ResultsList";
+import { completeRun } from "../actions";
+import { formatId } from "@/lib/displayId";
 
 const OUTCOME_STYLES = {
-  pass: 'bg-green-100 text-green-700',
-  fail: 'bg-red-100 text-red-700',
-  cancelled: 'bg-gray-200 text-gray-600',
-}
+  pass: "bg-green-100 text-green-700",
+  fail: "bg-red-100 text-red-700",
+  cancelled: "bg-gray-200 text-gray-600",
+};
 
 export default async function RunDetail({ params }) {
-  const { id } = await params
+  const { id } = await params;
 
   const [{ data: run }, { data: results }] = await Promise.all([
-    supabase.from('test_runs').select('*, suites(name)').eq('id', id).single(),
-    supabase.from('run_results').select('*').eq('test_run_id', id).order('title'),
-  ])
+    supabase
+      .from("test_runs")
+      .select("*, suites(name, seq_number)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("run_results")
+      .select("*")
+      .eq("test_run_id", id)
+      .order("title"),
+  ]);
 
-  const passedCount = results.filter((r) => r.status === 'pass').length
-  const pendingCount = results.filter((r) => r.status === 'pending').length
-  const totalCount = results.length
+  const passedCount = results.filter((r) => r.status === "pass").length;
+  const pendingCount = results.filter((r) => r.status === "pending").length;
+  const totalCount = results.length;
 
-  const testCaseIds = results.map((r) => r.test_case_id).filter(Boolean)
+  const testCaseIds = results.map((r) => r.test_case_id).filter(Boolean);
 
   const { data: moduleCases } =
     testCaseIds.length > 0
-      ? await supabase.from('module_cases').select('test_case_id, modules(id, name)').in('test_case_id', testCaseIds)
-      : { data: [] }
+      ? await supabase
+          .from("module_cases")
+          .select("test_case_id, modules(id, name)")
+          .in("test_case_id", testCaseIds)
+      : { data: [] };
 
-  const moduleByTestCaseId = {}
+  const moduleByTestCaseId = {};
   moduleCases.forEach((mc) => {
-    moduleByTestCaseId[mc.test_case_id] = mc.modules
-  })
+    moduleByTestCaseId[mc.test_case_id] = mc.modules;
+  });
 
-  const grouped = {}
-  const ungrouped = []
+  const grouped = {};
+  const ungrouped = [];
 
   results.forEach((r) => {
-    const mod = r.test_case_id ? moduleByTestCaseId[r.test_case_id] : null
+    const mod = r.test_case_id ? moduleByTestCaseId[r.test_case_id] : null;
     if (mod) {
       if (!grouped[mod.id]) {
-        grouped[mod.id] = { module: mod, results: [] }
+        grouped[mod.id] = { module: mod, results: [] };
       }
-      grouped[mod.id].results.push(r)
+      grouped[mod.id].results.push(r);
     } else {
-      ungrouped.push(r)
+      ungrouped.push(r);
     }
-  })
+  });
 
-  const moduleGroups = Object.values(grouped)
+  const moduleGroups = Object.values(grouped);
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">{run.suites.name}</h1>
+        <h1 className="text-2xl font-bold">
+          {run.suites.seq_number && (
+            <span className="text-gray-400 font-normal mr-2">
+              {formatId("S", run.suites.seq_number)}
+            </span>
+          )}
+          {run.suites.name}
+        </h1>
         <p className="text-gray-600">Tester: {run.tester_name}</p>
         {run.os && <p className="text-sm text-gray-500">OS: {run.os}</p>}
-        {run.build_version && <p className="text-sm text-gray-500">Build: {run.build_version}</p>}
+        {run.build_version && (
+          <p className="text-sm text-gray-500">Build: {run.build_version}</p>
+        )}
         <p className="text-sm text-gray-500 mt-1">
           Started: {new Date(run.started_at).toLocaleString()}
-          {run.completed_at && <> · Completed: {new Date(run.completed_at).toLocaleString()}</>}
+          {run.completed_at && (
+            <> · Completed: {new Date(run.completed_at).toLocaleString()}</>
+          )}
         </p>
         <p className="text-sm text-gray-500 mt-1">
           {passedCount} / {totalCount} passed · Run status: {run.status}
           {run.outcome && (
-            <span className={`ml-2 text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}>
+            <span
+              className={`ml-2 text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}
+            >
               {run.outcome}
             </span>
           )}
@@ -74,13 +99,14 @@ export default async function RunDetail({ params }) {
         moduleGroups={moduleGroups}
         ungroupedResults={ungrouped}
         runId={id}
-        isLocked={run.status === 'completed'}
+        isLocked={run.status === "completed"}
       />
 
-      {run.status !== 'completed' && (
-        pendingCount > 0 ? (
+      {run.status !== "completed" &&
+        (pendingCount > 0 ? (
           <p className="mt-6 text-sm text-gray-500 border-t pt-4">
-            {pendingCount} test case{pendingCount !== 1 ? 's' : ''} still pending — mark all results before completing this run.
+            {pendingCount} test case{pendingCount !== 1 ? "s" : ""} still
+            pending — mark all results before completing this run.
           </p>
         ) : (
           <form action={completeRun} className="mt-6 space-y-2 border-t pt-4">
@@ -94,15 +120,18 @@ export default async function RunDetail({ params }) {
                 <input type="radio" name="outcome" value="fail" /> Fail
               </label>
               <label className="flex items-center gap-1 text-sm">
-                <input type="radio" name="outcome" value="cancelled" /> Cancelled
+                <input type="radio" name="outcome" value="cancelled" />{" "}
+                Cancelled
               </label>
             </div>
-            <button type="submit" className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 text-sm">
+            <button
+              type="submit"
+              className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 text-sm"
+            >
               Complete Run
             </button>
           </form>
-        )
-      )}
+        ))}
     </main>
-  )
+  );
 }

@@ -1,21 +1,25 @@
-import { supabase } from '@/lib/supabaseClient'
-import Link from 'next/link'
+import { supabase } from "@/lib/supabaseClient";
+import Link from "next/link";
+import { formatId } from "@/lib/displayId";
 
 export default async function SuitesList() {
   const { data: suites, error } = await supabase
-    .from('suites')
-    .select('*')
-    .order('created_at', { ascending: false })
+    .from("suites")
+    .select("*")
+    .order("created_at", { ascending: false });
 
   if (error) {
-    return <p className="p-8 text-red-600">Error: {error.message}</p>
+    return <p className="p-8 text-red-600">Error: {error.message}</p>;
   }
 
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Suites</h1>
-        <Link href="/suites/new" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <Link
+          href="/suites/new"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
           + New Suite
         </Link>
       </div>
@@ -26,7 +30,15 @@ export default async function SuitesList() {
         <ul className="space-y-3">
           {suites.map((suite) => (
             <li key={suite.id} className="border rounded p-4">
-              <Link href={`/suites/${suite.id}`} className="font-semibold hover:underline">
+              <Link
+                href={`/suites/${suite.id}`}
+                className="font-semibold hover:underline"
+              >
+                {suite.seq_number && (
+                  <span className="text-gray-400 font-normal mr-2">
+                    {formatId("S", suite.seq_number)}
+                  </span>
+                )}
                 {suite.name}
               </Link>
               <p className="text-sm text-gray-600 mt-1">{suite.description}</p>
@@ -35,5 +47,5 @@ export default async function SuitesList() {
         </ul>
       )}
     </main>
-  )
+  );
 }
