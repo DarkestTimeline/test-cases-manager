@@ -50,7 +50,7 @@ export default async function RunDetail({ params }) {
   const moduleGroups = Object.values(grouped)
 
   return (
-    <main className="p-8 max-w-2xl mx-auto">
+    <main className="p-8 w-full max-w-2xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">{run.suites.name}</h1>
         <p className="text-gray-600">Tester: {run.tester_name}</p>

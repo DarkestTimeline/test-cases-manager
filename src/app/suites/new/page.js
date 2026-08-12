@@ -2,7 +2,7 @@ import { createSuite } from '../actions'
 
 export default function NewSuite() {
   return (
-    <main className="p-8 max-w-2xl">
+    <main className="p-8 w-fullmax-w-2xl">
       <h1 className="text-2xl font-bold mb-6">New Suite</h1>
       <form action={createSuite} className="space-y-4">
         <div>
