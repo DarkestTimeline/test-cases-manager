@@ -37,3 +37,14 @@ export async function addTestCasesToSuite(formData) {
 
   revalidatePath(`/suites/${suiteId}`)
 }
+
+export async function removeTestCaseFromSuite(formData) {
+  const suiteCaseId = formData.get('suiteCaseId')
+  const suiteId = formData.get('suiteId')
+
+  const { error } = await supabase.from('suite_cases').delete().eq('id', suiteCaseId)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath(`/suites/${suiteId}`)
+}

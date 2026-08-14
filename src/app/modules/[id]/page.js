@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
-import { addTestCasesToModule } from "../actions";
 import { formatId } from "@/lib/displayId";
+import { addTestCasesToModule, removeTestCaseFromModule } from "../actions";
 
 export default async function ModuleDetail({ params }) {
   const { id } = await params;
@@ -13,10 +13,13 @@ export default async function ModuleDetail({ params }) {
 
   const { data: linkedCases } = await supabase
     .from("module_cases")
-    .select("test_case_id, test_cases(*)")
+    .select("id, test_case_id, test_cases(*)")
     .eq("module_id", id);
 
-  const { data: allTestCases } = await supabase.from("test_cases").select("*");
+  const { data: allTestCases } = await supabase
+    .from("test_cases")
+    .select("*")
+    .is("archived_at", null);
 
   const linkedIds = linkedCases.map((lc) => lc.test_case_id);
   const availableTestCases = allTestCases.filter(
@@ -41,13 +44,28 @@ export default async function ModuleDetail({ params }) {
       ) : (
         <ul className="space-y-2 mb-6">
           {linkedCases.map((lc) => (
-            <li key={lc.test_case_id} className="border rounded p-2">
-              {lc.test_cases.seq_number && (
-                <span className="text-gray-400 mr-2">
-                  {formatId("TC", lc.test_cases.seq_number)}
-                </span>
-              )}
-              {lc.test_cases.title}
+            <li
+              key={lc.test_case_id}
+              className="border rounded p-2 flex justify-between items-center"
+            >
+              <span>
+                {lc.test_cases.seq_number && (
+                  <span className="text-gray-400 mr-2">
+                    {formatId("M", lc.test_cases.seq_number)}
+                  </span>
+                )}
+                {lc.test_cases.title}
+              </span>
+              <form action={removeTestCaseFromModule}>
+                <input type="hidden" name="moduleCaseId" value={lc.id} />
+                <input type="hidden" name="moduleId" value={mod.id} />
+                <button
+                  type="submit"
+                  className="text-xs text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
+              </form>
             </li>
           ))}
         </ul>

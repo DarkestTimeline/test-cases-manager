@@ -33,3 +33,14 @@ export async function addTestCasesToModule(formData) {
 
   revalidatePath(`/modules/${moduleId}`)
 }
+
+export async function removeTestCaseFromModule(formData) {
+  const moduleCaseId = formData.get('moduleCaseId')
+  const moduleId = formData.get('moduleId')
+
+  const { error } = await supabase.from('module_cases').delete().eq('id', moduleCaseId)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath(`/modules/${moduleId}`)
+}
