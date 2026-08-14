@@ -3,7 +3,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import {formatId} from "@/lib/displayId";
+import { formatId } from "@/lib/displayId";
 
 export async function startRun(formData) {
   const suiteId = formData.get("suiteId");
@@ -34,14 +34,14 @@ export async function startRun(formData) {
   if (linkedError) throw new Error(linkedError.message);
 
   // Step 3: snapshot each one into run_results, tied to this run
-const resultsToInsert = linkedCases.map((lc) => ({
+  const resultsToInsert = linkedCases.map((lc) => ({
     test_run_id: run.id,
     test_case_id: lc.test_cases.id,
     title: lc.test_cases.title,
     steps_to_reproduce: lc.test_cases.steps_to_reproduce,
     expected_result: lc.test_cases.expected_result,
-    test_case_code: formatId('TC', lc.test_cases.seq_number),
-  }))
+    test_case_code: formatId("TC", lc.test_cases.seq_number),
+  }));
 
   const { error: resultsError } = await supabase
     .from("run_results")
@@ -53,25 +53,39 @@ const resultsToInsert = linkedCases.map((lc) => ({
 }
 
 export async function updateResult({ resultId, status, notes, runId }) {
-  const { data: run } = await supabase.from('test_runs').select('status').eq('id', runId).single()
+  const { data: run } = await supabase
+    .from("test_runs")
+    .select("status")
+    .eq("id", runId)
+    .single();
 
-  if (run?.status === 'completed') {
-    throw new Error('This run is already completed and cannot be edited.')
+  if (run?.status !== "in_progress") {
+    throw new Error("This run is locked and cannot be edited.");
   }
 
   const { error } = await supabase
-    .from('run_results')
+    .from("run_results")
     .update({ status, notes })
-    .eq('id', resultId)
+    .eq("id", resultId);
 
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(error.message);
 
-  revalidatePath(`/runs/${runId}`)
+  revalidatePath(`/runs/${runId}`);
 }
 
 export async function completeRun(formData) {
   const runId = formData.get("runId");
   const outcome = formData.get("outcome");
+
+  const { data: run } = await supabase
+    .from("test_runs")
+    .select("status")
+    .eq("id", runId)
+    .single();
+
+  if (run?.status !== "in_progress") {
+    throw new Error("This run is not in progress and cannot be completed.");
+  }
 
   const { count: pendingCount } = await supabase
     .from("run_results")
@@ -90,6 +104,30 @@ export async function completeRun(formData) {
       outcome,
       completed_at: new Date().toISOString(),
     })
+    .eq("id", runId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/runs/${runId}`);
+  revalidatePath("/runs");
+}
+
+export async function cancelRun(formData) {
+  const runId = formData.get("runId");
+
+  const { data: run } = await supabase
+    .from("test_runs")
+    .select("status")
+    .eq("id", runId)
+    .single();
+
+  if (run?.status !== "in_progress") {
+    throw new Error("This run is not in progress and cannot be cancelled.");
+  }
+
+  const { error } = await supabase
+    .from("test_runs")
+    .update({ status: "cancelled", completed_at: new Date().toISOString() })
     .eq("id", runId);
 
   if (error) throw new Error(error.message);

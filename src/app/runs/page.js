@@ -2,11 +2,7 @@ import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { STATUS_STYLES } from "@/lib/statusStyles";
 import { formatId } from "@/lib/displayId";
-
-const RUN_STATUS_STYLES = {
-  in_progress: "bg-blue-100 text-blue-700",
-  completed: "bg-gray-800 text-white",
-};
+import { RUN_STATUS_STYLES } from "@/lib/runStatusStyles";
 
 const OUTCOME_STYLES = {
   pass: "bg-green-100 text-green-700",
@@ -47,6 +43,7 @@ export default async function RunsDashboard({ searchParams }) {
     { label: "All", value: null },
     { label: "In Progress", value: "in_progress" },
     { label: "Completed", value: "completed" },
+    { label: "Cancelled", value: "cancelled" },
   ];
 
   return (

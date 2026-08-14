@@ -1,7 +1,8 @@
 import { supabase } from "@/lib/supabaseClient";
 import ResultsList from "./ResultsList";
-import { completeRun } from "../actions";
+import { completeRun, cancelRun } from "../actions";
 import { formatId } from "@/lib/displayId";
+import { RUN_STATUS_STYLES } from "@/lib/runStatusStyles";
 
 const OUTCOME_STYLES = {
   pass: "bg-green-100 text-green-700",
@@ -60,6 +61,7 @@ export default async function RunDetail({ params }) {
   });
 
   const moduleGroups = Object.values(grouped);
+  const isActive = run.status === "in_progress";
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
@@ -83,11 +85,16 @@ export default async function RunDetail({ params }) {
             <> · Completed: {new Date(run.completed_at).toLocaleString()}</>
           )}
         </p>
-        <p className="text-sm text-gray-500 mt-1">
-          {passedCount} / {totalCount} passed · Run status: {run.status}
+        <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+          {passedCount} / {totalCount} passed
+          <span
+            className={`text-xs px-2 py-1 rounded-full font-medium ${RUN_STATUS_STYLES[run.status]}`}
+          >
+            {run.status}
+          </span>
           {run.outcome && (
             <span
-              className={`ml-2 text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}
+              className={`text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}
             >
               {run.outcome}
             </span>
@@ -99,39 +106,49 @@ export default async function RunDetail({ params }) {
         moduleGroups={moduleGroups}
         ungroupedResults={ungrouped}
         runId={id}
-        isLocked={run.status === "completed"}
+        isLocked={!isActive}
       />
 
-      {run.status !== "completed" &&
-        (pendingCount > 0 ? (
-          <p className="mt-6 text-sm text-gray-500 border-t pt-4">
-            {pendingCount} test case{pendingCount !== 1 ? "s" : ""} still
-            pending — mark all results before completing this run.
-          </p>
-        ) : (
-          <form action={completeRun} className="mt-6 space-y-2 border-t pt-4">
+      {isActive && (
+        <div className="mt-6 border-t pt-4 space-y-4">
+          {pendingCount > 0 ? (
+            <p className="text-sm text-gray-500">
+              {pendingCount} test case{pendingCount !== 1 ? "s" : ""} still
+              pending — mark all results before completing this run.
+            </p>
+          ) : (
+            <form action={completeRun} className="space-y-2">
+              <input type="hidden" name="runId" value={run.id} />
+              <p className="text-sm font-medium">Mark this run as:</p>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-1 text-sm">
+                  <input type="radio" name="outcome" value="pass" required />{" "}
+                  Pass
+                </label>
+                <label className="flex items-center gap-1 text-sm">
+                  <input type="radio" name="outcome" value="fail" /> Fail
+                </label>
+              </div>
+              <button
+                type="submit"
+                className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 text-sm"
+              >
+                Complete Run
+              </button>
+            </form>
+          )}
+
+          <form action={cancelRun}>
             <input type="hidden" name="runId" value={run.id} />
-            <p className="text-sm font-medium">Mark this run as:</p>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-1 text-sm">
-                <input type="radio" name="outcome" value="pass" required /> Pass
-              </label>
-              <label className="flex items-center gap-1 text-sm">
-                <input type="radio" name="outcome" value="fail" /> Fail
-              </label>
-              <label className="flex items-center gap-1 text-sm">
-                <input type="radio" name="outcome" value="cancelled" />{" "}
-                Cancelled
-              </label>
-            </div>
             <button
               type="submit"
-              className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 text-sm"
+              className="text-sm text-red-600 hover:underline"
             >
-              Complete Run
+              Cancel this run
             </button>
           </form>
-        ))}
+        </div>
+      )}
     </main>
   );
 }
