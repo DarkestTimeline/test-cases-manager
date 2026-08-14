@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { updateResult } from "../actions";
-import { STATUS_STYLES } from "@/lib/statusStyles";
+import { STATUS_STYLES } from "@/lib/badgeStyles";
 
 function summarize(results) {
   const counts = {

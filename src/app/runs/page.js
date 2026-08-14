@@ -2,13 +2,7 @@ import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { STATUS_STYLES } from "@/lib/statusStyles";
 import { formatId } from "@/lib/displayId";
-import { RUN_STATUS_STYLES } from "@/lib/runStatusStyles";
-
-const OUTCOME_STYLES = {
-  pass: "bg-green-100 text-green-700",
-  fail: "bg-red-100 text-red-700",
-  cancelled: "bg-gray-200 text-gray-600",
-};
+import { RUN_STATUS_STYLES } from "@/lib/badgeStyles";
 
 export default async function RunsDashboard({ searchParams }) {
   const { status } = await searchParams;
