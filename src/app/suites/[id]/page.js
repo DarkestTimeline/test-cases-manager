@@ -21,9 +21,13 @@ export default async function SuiteDetail({ params }) {
     .select("*")
     .is("archived_at", null);
 
-  const { data: moduleCases } = await supabase
+  const { data: moduleCasesRaw } = await supabase
     .from("module_cases")
-    .select("test_case_id, modules(id, name)");
+    .select("test_case_id, modules(id, name, archived_at)");
+
+  const moduleCases = moduleCasesRaw.filter(
+    (mc) => mc.modules && !mc.modules.archived_at,
+  );
 
   const linkedIds = linkedCases.map((lc) => lc.test_case_id);
   const availableTestCases = allTestCases.filter(
@@ -54,14 +58,21 @@ export default async function SuiteDetail({ params }) {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold">
-        {suite.seq_number && (
-          <span className="text-gray-400 font-normal mr-2">
-            {formatId("S", suite.seq_number)}
-          </span>
-        )}
-        {suite.name}
-      </h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold">
+          {suite.seq_number && (
+            <span className="text-gray-400 font-normal mr-2">
+              {formatId("S", suite.seq_number)}
+            </span>
+          )}
+          {suite.name}
+        </h1>
+        <span
+          className={`text-xs px-2 py-1 rounded-full font-medium ${suite.archived_at ? "bg-gray-200 text-gray-600" : "bg-green-100 text-green-700"}`}
+        >
+          {suite.archived_at ? "Archived" : "Active"}
+        </span>
+      </div>
       <p className="text-gray-600 mt-1 mb-6">{suite.description}</p>
 
       <h2 className="font-semibold mb-2">Test Cases in this Suite</h2>
@@ -70,15 +81,27 @@ export default async function SuiteDetail({ params }) {
       ) : (
         <ul className="space-y-2 mb-6">
           {linkedCases.map((lc) => (
-            <li key={lc.test_case_id} className="border rounded p-2 flex justify-between items-center">
+            <li
+              key={lc.test_case_id}
+              className="border rounded p-2 flex justify-between items-center"
+            >
               <span>
-                {lc.test_cases.seq_number && <span className="text-gray-400 mr-2">{formatId('TC', lc.test_cases.seq_number)}</span>}
+                {lc.test_cases.seq_number && (
+                  <span className="text-gray-400 mr-2">
+                    {formatId("TC", lc.test_cases.seq_number)}
+                  </span>
+                )}
                 {lc.test_cases.title}
               </span>
               <form action={removeTestCaseFromSuite}>
                 <input type="hidden" name="suiteCaseId" value={lc.id} />
                 <input type="hidden" name="suiteId" value={suite.id} />
-                <button type="submit" className="text-xs text-red-600 hover:underline">Remove</button>
+                <button
+                  type="submit"
+                  className="text-xs text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
               </form>
             </li>
           ))}

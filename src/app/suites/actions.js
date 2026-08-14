@@ -48,3 +48,29 @@ export async function removeTestCaseFromSuite(formData) {
 
   revalidatePath(`/suites/${suiteId}`)
 }
+
+export async function archiveSuite(formData) {
+  const suiteId = formData.get('suiteId')
+
+  const { error } = await supabase
+    .from('suites')
+    .update({ archived_at: new Date().toISOString() })
+    .eq('id', suiteId)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/suites')
+}
+
+export async function restoreSuite(formData) {
+  const suiteId = formData.get('suiteId')
+
+  const { error } = await supabase
+    .from('suites')
+    .update({ archived_at: null })
+    .eq('id', suiteId)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/suites')
+}

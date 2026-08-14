@@ -5,6 +5,7 @@ export default async function NewRun() {
   const { data: suites } = await supabase
     .from("suites")
     .select("*")
+    .is("archived_at", null)
     .order("name");
 
   return (

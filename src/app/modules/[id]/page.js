@@ -28,14 +28,21 @@ export default async function ModuleDetail({ params }) {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold">
-        {mod.seq_number && (
-          <span className="text-gray-400 font-normal mr-2">
-            {formatId("M", mod.seq_number)}
-          </span>
-        )}
-        {mod.name}
-      </h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold">
+          {mod.seq_number && (
+            <span className="text-gray-400 font-normal mr-2">
+              {formatId("M", mod.seq_number)}
+            </span>
+          )}
+          {mod.name}
+        </h1>
+        <span
+          className={`text-xs px-2 py-1 rounded-full font-medium ${mod.archived_at ? "bg-gray-200 text-gray-600" : "bg-green-100 text-green-700"}`}
+        >
+          {mod.archived_at ? "Archived" : "Active"}
+        </span>
+      </div>
       <p className="text-gray-600 mt-1 mb-6">{mod.description}</p>
 
       <h2 className="font-semibold mb-2">Test Cases in this Module</h2>
