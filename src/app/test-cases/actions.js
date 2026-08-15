@@ -65,3 +65,42 @@ export async function restoreTestCase(formData) {
 
   revalidatePath("/test-cases");
 }
+
+export async function updateTestCase(formData) {
+  const testCaseId = formData.get("testCaseId");
+  const title = formData.get("title");
+  const preconditions = formData.get("preconditions");
+  const steps_to_reproduce = formData.get("steps_to_reproduce");
+  const expected_result = formData.get("expected_result");
+  const moduleIds = formData.getAll("moduleIds");
+
+  const { error } = await supabase
+    .from("test_cases")
+    .update({ title, preconditions, steps_to_reproduce, expected_result })
+    .eq("id", testCaseId);
+
+  if (error) throw new Error(error.message);
+
+  const { error: deleteError } = await supabase
+    .from("module_cases")
+    .delete()
+    .eq("test_case_id", testCaseId);
+
+  if (deleteError) throw new Error(deleteError.message);
+
+  if (moduleIds.length > 0) {
+    const rowsToInsert = moduleIds.map((moduleId) => ({
+      module_id: moduleId,
+      test_case_id: testCaseId,
+    }));
+
+    const { error: insertError } = await supabase
+      .from("module_cases")
+      .insert(rowsToInsert);
+
+    if (insertError) throw new Error(insertError.message);
+  }
+
+  revalidatePath("/test-cases");
+  redirect("/test-cases");
+}
