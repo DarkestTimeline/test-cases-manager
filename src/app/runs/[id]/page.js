@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabaseClient";
 import ResultsList from "./ResultsList";
 import { completeRun, cancelRun } from "../actions";
 import { formatId } from "@/lib/displayId";
-import { RUN_STATUS_STYLES } from "@/lib/badgeStyles";
+import { RUN_STATUS_STYLES, OUTCOME_STYLES } from "@/lib/badgeStyles";
 
 export default async function RunDetail({ params }) {
   const { id } = await params;
