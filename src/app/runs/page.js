@@ -1,25 +1,34 @@
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
+import {
+  STATUS_STYLES,
+  RUN_STATUS_STYLES,
+  OUTCOME_STYLES,
+} from "@/lib/badgeStyles";
 import { formatId } from "@/lib/displayId";
-import { RUN_STATUS_STYLES, STATUS_STYLES, OUTCOME_STYLES } from "@/lib/badgeStyles";
 
 export default async function RunsDashboard({ searchParams }) {
-  const { status } = await searchParams;
+  const { status, suiteId, tester } = await searchParams;
 
   let query = supabase
     .from("test_runs")
     .select("*, suites(name, seq_number), run_results(status)")
     .order("started_at", { ascending: false });
 
-  if (status) {
-    query = query.eq("status", status);
-  }
+  if (status) query = query.eq("status", status);
+  if (suiteId) query = query.eq("suite_id", suiteId);
+  if (tester) query = query.ilike("tester_name", `%${tester}%`);
 
   const { data: runs, error } = await query;
 
   if (error) {
     return <p className="p-8 text-red-600">Error: {error.message}</p>;
   }
+
+  const { data: suites } = await supabase
+    .from("suites")
+    .select("id, name, seq_number")
+    .order("name");
 
   function countsFor(run) {
     const results = run.run_results;
@@ -39,17 +48,28 @@ export default async function RunsDashboard({ searchParams }) {
     { label: "Cancelled", value: "cancelled" },
   ];
 
+  function buildStatusHref(value) {
+    const params = new URLSearchParams();
+    if (value) params.set("status", value);
+    if (suiteId) params.set("suiteId", suiteId);
+    if (tester) params.set("tester", tester);
+    const qs = params.toString();
+    return qs ? `/runs?${qs}` : "/runs";
+  }
+
+  const hasActiveFilters = status || suiteId || tester;
+
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Runs Dashboard</h1>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-4">
         {filters.map((f) => {
           const isActive = f.value ? status === f.value : !status;
           return (
             <Link
               key={f.label}
-              href={f.value ? `/runs?status=${f.value}` : "/runs"}
+              href={buildStatusHref(f.value)}
               className={`px-3 py-1 rounded text-sm font-medium ${
                 isActive
                   ? "bg-blue-600 text-white"
@@ -62,8 +82,51 @@ export default async function RunsDashboard({ searchParams }) {
         })}
       </div>
 
+      <form
+        method="GET"
+        action="/runs"
+        className="flex flex-wrap gap-2 items-center mb-6"
+      >
+        {status && <input type="hidden" name="status" value={status} />}
+
+        <select
+          name="suiteId"
+          defaultValue={suiteId || ""}
+          className="border rounded p-2 text-sm"
+        >
+          <option value="">All Suites</option>
+          {suites.map((suite) => (
+            <option key={suite.id} value={suite.id}>
+              {suite.seq_number ? `${formatId("S", suite.seq_number)} ` : ""}
+              {suite.name}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="text"
+          name="tester"
+          defaultValue={tester || ""}
+          placeholder="Search tester..."
+          className="border rounded p-2 text-sm"
+        />
+
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
+        >
+          Filter
+        </button>
+
+        {hasActiveFilters && (
+          <Link href="/runs" className="text-sm text-gray-500 hover:underline">
+            Clear all
+          </Link>
+        )}
+      </form>
+
       {runs.length === 0 ? (
-        <p className="text-gray-500">No runs found.</p>
+        <p className="text-gray-500">No runs match these filters.</p>
       ) : (
         <ul className="space-y-3">
           {runs.map((run) => {
