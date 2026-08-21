@@ -8,7 +8,7 @@ import {
 import { formatId } from "@/lib/displayId";
 
 export default async function RunsDashboard({ searchParams }) {
-  const { status, suiteId, tester } = await searchParams;
+  const { status, suiteId, tester, startDate, endDate } = await searchParams;
 
   let query = supabase
     .from("test_runs")
@@ -18,6 +18,8 @@ export default async function RunsDashboard({ searchParams }) {
   if (status) query = query.eq("status", status);
   if (suiteId) query = query.eq("suite_id", suiteId);
   if (tester) query = query.ilike("tester_name", `%${tester}%`);
+  if (startDate) query = query.gte("started_at", startDate);
+  if (endDate) query = query.lte("started_at", `${endDate}T23:59:59`);
 
   const { data: runs, error } = await query;
 
@@ -53,11 +55,13 @@ export default async function RunsDashboard({ searchParams }) {
     if (value) params.set("status", value);
     if (suiteId) params.set("suiteId", suiteId);
     if (tester) params.set("tester", tester);
+    if (startDate) params.set("startDate", startDate);
+    if (endDate) params.set("endDate", endDate);
     const qs = params.toString();
     return qs ? `/runs?${qs}` : "/runs";
   }
 
-  const hasActiveFilters = status || suiteId || tester;
+  const hasActiveFilters = status || suiteId || tester || startDate || endDate;
 
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
@@ -110,6 +114,26 @@ export default async function RunsDashboard({ searchParams }) {
           placeholder="Search tester..."
           className="border rounded p-2 text-sm"
         />
+
+        <label className="flex items-center gap-1 text-sm text-gray-600">
+          From
+          <input
+            type="date"
+            name="startDate"
+            defaultValue={startDate || ""}
+            className="border rounded p-2 text-sm"
+          />
+        </label>
+
+        <label className="flex items-center gap-1 text-sm text-gray-600">
+          To
+          <input
+            type="date"
+            name="endDate"
+            defaultValue={endDate || ""}
+            className="border rounded p-2 text-sm"
+          />
+        </label>
 
         <button
           type="submit"
