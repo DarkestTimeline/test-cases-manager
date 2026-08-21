@@ -7,13 +7,22 @@ import {
 } from "@/lib/badgeStyles";
 import { formatId } from "@/lib/displayId";
 
+const PAGE_SIZE = 10;
+
 export default async function RunsDashboard({ searchParams }) {
-  const { status, suiteId, tester, startDate, endDate } = await searchParams;
+  const { status, suiteId, tester, startDate, endDate, page } =
+    await searchParams;
+  const currentPage = parseInt(page) || 1;
+  const from = (currentPage - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
 
   let query = supabase
     .from("test_runs")
-    .select("*, suites(name, seq_number), run_results(status)")
-    .order("started_at", { ascending: false });
+    .select("*, suites(name, seq_number), run_results(status)", {
+      count: "exact",
+    })
+    .order("started_at", { ascending: false })
+    .range(from, to);
 
   if (status) query = query.eq("status", status);
   if (suiteId) query = query.eq("suite_id", suiteId);
@@ -21,11 +30,13 @@ export default async function RunsDashboard({ searchParams }) {
   if (startDate) query = query.gte("started_at", startDate);
   if (endDate) query = query.lte("started_at", `${endDate}T23:59:59`);
 
-  const { data: runs, error } = await query;
+  const { data: runs, error, count } = await query;
 
   if (error) {
     return <p className="p-8 text-red-600">Error: {error.message}</p>;
   }
+
+  const totalPages = Math.ceil((count || 0) / PAGE_SIZE);
 
   const { data: suites } = await supabase
     .from("suites")
@@ -50,13 +61,25 @@ export default async function RunsDashboard({ searchParams }) {
     { label: "Cancelled", value: "cancelled" },
   ];
 
-  function buildStatusHref(value) {
+  function buildHref(overrides = {}) {
+    const current = {
+      status,
+      suiteId,
+      tester,
+      startDate,
+      endDate,
+      page: currentPage,
+    };
+    const merged = { ...current, ...overrides };
+
     const params = new URLSearchParams();
-    if (value) params.set("status", value);
-    if (suiteId) params.set("suiteId", suiteId);
-    if (tester) params.set("tester", tester);
-    if (startDate) params.set("startDate", startDate);
-    if (endDate) params.set("endDate", endDate);
+    if (merged.status) params.set("status", merged.status);
+    if (merged.suiteId) params.set("suiteId", merged.suiteId);
+    if (merged.tester) params.set("tester", merged.tester);
+    if (merged.startDate) params.set("startDate", merged.startDate);
+    if (merged.endDate) params.set("endDate", merged.endDate);
+    if (merged.page && merged.page > 1) params.set("page", merged.page);
+
     const qs = params.toString();
     return qs ? `/runs?${qs}` : "/runs";
   }
@@ -73,7 +96,7 @@ export default async function RunsDashboard({ searchParams }) {
           return (
             <Link
               key={f.label}
-              href={buildStatusHref(f.value)}
+              href={buildHref({ status: f.value, page: 1 })}
               className={`px-3 py-1 rounded text-sm font-medium ${
                 isActive
                   ? "bg-blue-600 text-white"
@@ -152,87 +175,119 @@ export default async function RunsDashboard({ searchParams }) {
       {runs.length === 0 ? (
         <p className="text-gray-500">No runs match these filters.</p>
       ) : (
-        <ul className="space-y-3">
-          {runs.map((run) => {
-            const counts = countsFor(run);
-            return (
-              <li key={run.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <Link
-                      href={`/runs/${run.id}`}
-                      className="font-semibold hover:underline"
-                    >
-                      {run.suites.seq_number && (
-                        <span className="text-gray-400 font-normal mr-2">
-                          {formatId("S", run.suites.seq_number)}
+        <>
+          <ul className="space-y-3">
+            {runs.map((run) => {
+              const counts = countsFor(run);
+              return (
+                <li key={run.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <Link
+                        href={`/runs/${run.id}`}
+                        className="font-semibold hover:underline"
+                      >
+                        {run.suites.seq_number && (
+                          <span className="text-gray-400 font-normal mr-2">
+                            {formatId("S", run.suites.seq_number)}
+                          </span>
+                        )}
+                        {run.suites.name}
+                      </Link>
+                      <p className="text-sm text-gray-600">
+                        Tester: {run.tester_name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Started: {new Date(run.started_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex gap-1 items-start">
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full font-medium ${RUN_STATUS_STYLES[run.status]}`}
+                      >
+                        {run.status}
+                      </span>
+                      {run.outcome && (
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}
+                        >
+                          {run.outcome}
                         </span>
                       )}
-                      {run.suites.name}
-                    </Link>
-                    <p className="text-sm text-gray-600">
-                      Tester: {run.tester_name}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Started: {new Date(run.started_at).toLocaleDateString()}
-                    </p>
+                    </div>
                   </div>
-                  <div className="flex gap-1 items-start">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full font-medium ${RUN_STATUS_STYLES[run.status]}`}
-                    >
-                      {run.status}
-                    </span>
-                    {run.outcome && (
+                  <div className="flex gap-2 mt-3">
+                    {counts.pass > 0 && (
                       <span
-                        className={`text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}
+                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.pass}`}
                       >
-                        {run.outcome}
+                        {counts.pass} pass
+                      </span>
+                    )}
+                    {counts.fail > 0 && (
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.fail}`}
+                      >
+                        {counts.fail} fail
+                      </span>
+                    )}
+                    {counts.blocked > 0 && (
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.blocked}`}
+                      >
+                        {counts.blocked} blocked
+                      </span>
+                    )}
+                    {counts.skipped > 0 && (
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.skipped}`}
+                      >
+                        {counts.skipped} skipped
+                      </span>
+                    )}
+                    {counts.pending > 0 && (
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.pending}`}
+                      >
+                        {counts.pending} pending
                       </span>
                     )}
                   </div>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  {counts.pass > 0 && (
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.pass}`}
-                    >
-                      {counts.pass} pass
-                    </span>
-                  )}
-                  {counts.fail > 0 && (
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.fail}`}
-                    >
-                      {counts.fail} fail
-                    </span>
-                  )}
-                  {counts.blocked > 0 && (
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.blocked}`}
-                    >
-                      {counts.blocked} blocked
-                    </span>
-                  )}
-                  {counts.skipped > 0 && (
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.skipped}`}
-                    >
-                      {counts.skipped} skipped
-                    </span>
-                  )}
-                  {counts.pending > 0 && (
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.pending}`}
-                    >
-                      {counts.pending} pending
-                    </span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-6">
+              {currentPage > 1 ? (
+                <Link
+                  href={buildHref({ page: currentPage - 1 })}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  ← Previous
+                </Link>
+              ) : (
+                <span className="text-sm text-gray-300">← Previous</span>
+              )}
+
+              <span className="text-sm text-gray-500">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              {currentPage < totalPages ? (
+                <Link
+                  href={buildHref({ page: currentPage + 1 })}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Next →
+                </Link>
+              ) : (
+                <span className="text-sm text-gray-300">Next →</span>
+              )}
+            </div>
+          )}
+        </>
       )}
     </main>
   );
