@@ -75,3 +75,20 @@ export async function restoreModule(formData) {
 
   revalidatePath("/modules");
 }
+
+export async function updateModule(formData) {
+  const moduleId = formData.get("moduleId");
+  const name = formData.get("name");
+  const description = formData.get("description");
+
+  const { error } = await supabase
+    .from("modules")
+    .update({ name, description })
+    .eq("id", moduleId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/modules");
+  revalidatePath(`/modules/${moduleId}`);
+  redirect("/modules");
+}
