@@ -1,7 +1,8 @@
 import { supabase } from "@/lib/supabaseClient";
-import Link from "next/link";
 import { formatId } from "@/lib/displayId";
 import { archiveTestCase, restoreTestCase } from "./actions";
+import Button from "@/components/Button";
+import Card from "@/components/Card";
 
 const PAGE_SIZE = 10;
 
@@ -35,12 +36,10 @@ export default async function TestCasesList({ searchParams }) {
   function buildHref(overrides = {}) {
     const current = { archived: archived || null, search, page: currentPage };
     const merged = { ...current, ...overrides };
-
     const params = new URLSearchParams();
     if (merged.archived) params.set("archived", merged.archived);
     if (merged.search) params.set("search", merged.search);
     if (merged.page && merged.page > 1) params.set("page", merged.page);
-
     const qs = params.toString();
     return qs ? `/test-cases?${qs}` : "/test-cases";
   }
@@ -50,21 +49,18 @@ export default async function TestCasesList({ searchParams }) {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Test Cases</h1>
         <div className="flex gap-2">
-          <Link
+          <Button
             href={buildHref({
               archived: showingArchived ? null : "true",
               page: 1,
             })}
-            className="text-sm px-3 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+            variant="secondary"
           >
             {showingArchived ? "View Active" : "View Archived"}
-          </Link>
-          <Link
-            href="/test-cases/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
+          </Button>
+          <Button href="/test-cases/new" variant="primary">
             + New Test Case
-          </Link>
+          </Button>
         </div>
       </div>
 
@@ -79,19 +75,17 @@ export default async function TestCasesList({ searchParams }) {
           placeholder="Search by title..."
           className="border rounded p-2 text-sm flex-1 max-w-xs"
         />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
-        >
+        <Button type="submit" variant="primary">
           Search
-        </button>
+        </Button>
         {search && (
-          <Link
+          <Button
             href={buildHref({ search: null, page: 1 })}
-            className="text-sm text-gray-500 hover:underline self-center"
+            variant="ghost"
+            className="self-center"
           >
             Clear search
-          </Link>
+          </Button>
         )}
       </form>
 
@@ -107,9 +101,9 @@ export default async function TestCasesList({ searchParams }) {
         <>
           <ul className="space-y-3">
             {testCases.map((tc) => (
-              <li
+              <Card
                 key={tc.id}
-                className="border rounded p-4 flex justify-between items-start gap-3"
+                className="flex justify-between items-start gap-3"
               >
                 <div>
                   <h2 className="font-semibold">
@@ -126,42 +120,36 @@ export default async function TestCasesList({ searchParams }) {
                 </div>
                 <div className="flex gap-2 items-center">
                   {!showingArchived && (
-                    <Link
-                      href={`/test-cases/${tc.id}/edit`}
-                      className="text-xs text-blue-600 hover:underline"
-                    >
+                    <Button href={`/test-cases/${tc.id}/edit`} variant="ghost">
                       Edit
-                    </Link>
+                    </Button>
                   )}
                   <form
                     action={showingArchived ? restoreTestCase : archiveTestCase}
                   >
                     <input type="hidden" name="testCaseId" value={tc.id} />
-                    <button
+                    <Button
                       type="submit"
-                      className={`text-xs px-3 py-1 rounded whitespace-nowrap ${
-                        showingArchived
-                          ? "bg-green-600 text-white hover:bg-green-700"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
+                      variant={showingArchived ? "success" : "secondary"}
+                      className="text-xs px-3 py-1"
                     >
                       {showingArchived ? "Restore" : "Archive"}
-                    </button>
+                    </Button>
                   </form>
                 </div>
-              </li>
+              </Card>
             ))}
           </ul>
 
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-6">
               {currentPage > 1 ? (
-                <Link
+                <Button
                   href={buildHref({ page: currentPage - 1 })}
-                  className="text-sm text-blue-600 hover:underline"
+                  variant="ghost"
                 >
                   ← Previous
-                </Link>
+                </Button>
               ) : (
                 <span className="text-sm text-gray-300">← Previous</span>
               )}
@@ -169,12 +157,12 @@ export default async function TestCasesList({ searchParams }) {
                 Page {currentPage} of {totalPages}
               </span>
               {currentPage < totalPages ? (
-                <Link
+                <Button
                   href={buildHref({ page: currentPage + 1 })}
-                  className="text-sm text-blue-600 hover:underline"
+                  variant="ghost"
                 >
                   Next →
-                </Link>
+                </Button>
               ) : (
                 <span className="text-sm text-gray-300">Next →</span>
               )}
