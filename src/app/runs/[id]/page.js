@@ -57,30 +57,30 @@ export default async function RunDetail({ params }) {
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">
+        <h1>
           {run.suites.seq_number && (
-            <span className="text-gray-400 font-normal mr-2">
+            <span className="text-slate-400 font-normal mr-2">
               {formatId("S", run.suites.seq_number)}
             </span>
           )}
           {run.suites.name}
         </h1>
-        <p className="text-gray-600">Tester: {run.tester_name}</p>
-        {run.os && <p className="text-sm text-gray-500">OS: {run.os}</p>}
+        <p className="text-slate-600">Tester: {run.tester_name}</p>
+        {run.os && <p className="text-sm text-slate-500">OS: {run.os}</p>}
         {run.build_version && (
-          <p className="text-sm text-gray-500">Build: {run.build_version}</p>
+          <p className="text-sm text-slate-500">Build: {run.build_version}</p>
         )}
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-slate-500 mt-1">
           Started: {new Date(run.started_at).toLocaleString()}
           {run.completed_at && (
             <> · Completed: {new Date(run.completed_at).toLocaleString()}</>
           )}
         </p>
-        <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+        <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
           {passedCount} / {totalCount} passed
-          <Badge className={RUN_STATUS_STYLES[run.status]}>{run.status}</Badge>
+          <Badge className={RUN_STATUS_STYLES[run.status]}>{formatStatusLabel(run.status)}</Badge>
           {run.outcome && (
-            <Badge className={OUTCOME_STYLES[run.outcome]}>{run.outcome}</Badge>
+            <Badge className={OUTCOME_STYLES[run.outcome]}>{formatStatusLabel(run.outcome)}</Badge>
           )}
         </p>
       </div>
@@ -95,7 +95,7 @@ export default async function RunDetail({ params }) {
       {isActive && (
         <div className="mt-6 border-t pt-4 space-y-4">
           {pendingCount > 0 ? (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               {pendingCount} test case{pendingCount !== 1 ? "s" : ""} still
               pending — mark all results before completing this run.
             </p>
@@ -119,8 +119,8 @@ export default async function RunDetail({ params }) {
           )}
           <form action={cancelRun}>
             <input type="hidden" name="runId" value={run.id} />
-            <Button type="submit" variant="ghostDanger">
-              Cancel this run
+            <Button type="submit" variant="dangerOutline">
+              Cancel This Run
             </Button>
           </form>
         </div>

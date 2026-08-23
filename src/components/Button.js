@@ -6,8 +6,12 @@ const VARIANT_STYLES = {
   success: "bg-success text-white hover:bg-success-hover",
   danger: "bg-danger text-white hover:bg-danger-hover",
   dark: "bg-dark text-white hover:bg-dark-hover",
+  warning: "bg-warning text-white hover:bg-warning-hover",
+  skip: "bg-skip text-white hover:bg-skip-hover",
   ghost: "text-primary hover:underline",
   ghostDanger: "text-danger hover:underline",
+  dangerOutline:
+    "border border-danger text-danger bg-white hover:bg-danger hover:text-white",
 };
 
 const SIZE_STYLES = {

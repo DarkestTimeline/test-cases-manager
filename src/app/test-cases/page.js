@@ -47,7 +47,7 @@ export default async function TestCasesList({ searchParams }) {
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Test Cases</h1>
+        <h1>Test Cases</h1>
         <div className="flex gap-2">
           <Button
             href={buildHref({
@@ -106,9 +106,9 @@ export default async function TestCasesList({ searchParams }) {
                 className="flex justify-between items-start gap-3"
               >
                 <div>
-                  <h2 className="font-semibold">
+                  <h2 className="text-base font-semibold text-slate-900">
                     {tc.seq_number && (
-                      <span className="text-gray-400 font-normal mr-2">
+                      <span className="text-slate-400 font-normal mr-2">
                         {formatId("TC", tc.seq_number)}
                       </span>
                     )}

@@ -11,7 +11,7 @@ export default async function NewTestCase() {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">New Test Case</h1>
+      <h1 className="mb-6">New Test Case</h1>
       <form action={createTestCase} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Title</label>

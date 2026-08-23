@@ -46,7 +46,7 @@ export default async function ModulesList({ searchParams }) {
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Modules</h1>
+        <h1>Modules</h1>
         <div className="flex gap-2">
           <Button
             href={buildHref({

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { updateResult } from "../actions";
-import { STATUS_STYLES } from "@/lib/badgeStyles";
+import { STATUS_STYLES, RUN_STATUS_STYLES } from "@/lib/badgeStyles";
+import Button from "@/components/Button";
+import Badge from "@/components/Badge";
 
 function summarize(results) {
   const counts = {
@@ -14,14 +16,14 @@ function summarize(results) {
   };
 
   let label = "Passed";
-  let style = "bg-green-100 text-green-700";
+  let style = STATUS_STYLES.pass;
 
   if (counts.pending > 0) {
     label = "In Progress";
-    style = "bg-blue-100 text-blue-700";
+    style = RUN_STATUS_STYLES.in_progress;
   } else if (counts.fail > 0 || counts.blocked > 0) {
     label = "Failed";
-    style = "bg-red-100 text-red-700";
+    style = STATUS_STYLES.fail;
   }
 
   return { counts, label, style };
@@ -40,16 +42,12 @@ export default function ResultsList({
         return (
           <div key={group.module.id}>
             <div className="flex justify-between items-center mb-2 border-b pb-1">
-              <h2 className="font-semibold">{group.module.name}</h2>
+              <h2>{group.module.name}</h2>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-slate-500">
                   {counts.pass}/{group.results.length} passed
                 </span>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full font-medium ${style}`}
-                >
-                  {label}
-                </span>
+                <Badge className={style}>{label}</Badge>
               </div>
             </div>
             <ul className="space-y-4">
@@ -69,7 +67,7 @@ export default function ResultsList({
       {ungroupedResults.length > 0 && (
         <div>
           {moduleGroups.length > 0 && (
-            <h2 className="font-semibold mb-2 border-b pb-1">No Module</h2>
+            <h2 className="mb-2 border-b pb-1">No Module</h2>
           )}
           <ul className="space-y-4">
             {ungroupedResults.map((result) => (
@@ -110,61 +108,61 @@ function ResultItem({ result, runId, isLocked }) {
   return (
     <li className="border rounded-lg p-4">
       <div className="flex justify-between items-start gap-3">
-        <h2 className="font-semibold">
+        <h2 className="text-base font-semibold text-slate-900">
           {result.test_case_code && (
-            <span className="text-gray-400 font-normal mr-2">
+            <span className="text-slate-400 font-normal mr-2">
               {result.test_case_code}
             </span>
           )}
           {result.title}
         </h2>
-        <span
-          className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${STATUS_STYLES[status]}`}
-        >
-          {status}
-        </span>
+        <Badge className={STATUS_STYLES[status]}>{formatStatusLabel(status)}</Badge>
       </div>
 
-      <div className="mt-3 text-sm text-gray-600 space-y-2">
+      <div className="mt-3 text-sm text-slate-600 space-y-2">
         <p>
-          <span className="font-medium text-gray-800">Steps: </span>
+          <span className="font-medium text-slate-800">Steps: </span>
           {result.steps_to_reproduce}
         </p>
         <p>
-          <span className="font-medium text-gray-800">Expected: </span>
+          <span className="font-medium text-slate-800">Expected: </span>
           {result.expected_result}
         </p>
       </div>
 
       <div className="mt-3 flex gap-2">
-        <button
+        <Button
           onClick={() => handleStatusClick("pass")}
           disabled={isLocked}
-          className="px-3 py-1 rounded bg-green-600 text-white text-sm hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          variant="success"
+          size="sm"
         >
           Pass
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleStatusClick("fail")}
           disabled={isLocked}
-          className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          variant="danger"
+          size="sm"
         >
           Fail
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleStatusClick("blocked")}
           disabled={isLocked}
-          className="px-3 py-1 rounded bg-yellow-600 text-white text-sm hover:bg-yellow-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          variant="warning"
+          size="sm"
         >
           Blocked
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleStatusClick("skipped")}
           disabled={isLocked}
-          className="px-3 py-1 rounded bg-purple-600 text-white text-sm hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          variant="skip"
+          size="sm"
         >
           Skipped
-        </button>
+        </Button>
       </div>
 
       {(status === "fail" || status === "blocked" || status === "skipped") && (
@@ -175,15 +173,17 @@ function ResultItem({ result, runId, isLocked }) {
             placeholder="Add a note..."
             rows={2}
             disabled={isLocked}
-            className="w-full border rounded p-2 text-sm disabled:bg-gray-100 disabled:text-gray-400"
+            className="w-full border rounded p-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           />
-          <button
+          <Button
             onClick={handleSaveNotes}
             disabled={isLocked}
-            className="mt-1 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            variant="primary"
+            size="sm"
+            className="mt-1"
           >
             Save Note
-          </button>
+          </Button>
         </div>
       )}
     </li>

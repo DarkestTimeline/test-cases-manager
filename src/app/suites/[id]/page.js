@@ -59,7 +59,7 @@ export default async function SuiteDetail({ params }) {
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
       <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-bold">
+        <h1 className="">
           {suite.seq_number && (
             <span className="text-gray-400 font-normal mr-2">
               {formatId("S", suite.seq_number)}
@@ -75,7 +75,7 @@ export default async function SuiteDetail({ params }) {
       </div>
       <p className="text-gray-600 mt-1 mb-6">{suite.description}</p>
 
-      <h2 className="font-semibold mb-2">Test Cases in this Suite</h2>
+      <h2 className=" mb-2">Test Cases in this Suite</h2>
       {linkedCases.length === 0 ? (
         <p className="text-gray-500 mb-6">None yet.</p>
       ) : (
@@ -110,7 +110,7 @@ export default async function SuiteDetail({ params }) {
 
       {moduleGroups.length > 0 && (
         <>
-          <h2 className="font-semibold mb-2">Quick Add by Module</h2>
+          <h2 className="mb-2">Quick Add by Module</h2>
           <div className="space-y-2 mb-6">
             {moduleGroups.map((group) => (
               <div
@@ -144,7 +144,7 @@ export default async function SuiteDetail({ params }) {
         </>
       )}
 
-      <h2 className="font-semibold mb-2">Add Individual Test Cases</h2>
+      <h2 className="mb-2">Add Individual Test Cases</h2>
       {availableTestCases.length === 0 ? (
         <p className="text-gray-500">
           All test cases are already in this suite.

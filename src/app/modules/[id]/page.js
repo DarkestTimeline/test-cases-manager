@@ -31,7 +31,7 @@ export default async function ModuleDetail({ params }) {
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
       <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-bold">
+        <h1 className="">
           {mod.seq_number && (
             <span className="text-gray-400 font-normal mr-2">
               {formatId("M", mod.seq_number)}
@@ -51,7 +51,7 @@ export default async function ModuleDetail({ params }) {
       </div>
       <p className="text-gray-600 mt-1 mb-6">{mod.description}</p>
 
-      <h2 className="font-semibold mb-2">Test Cases in this Module</h2>
+      <h2 className="mb-2">Test Cases in this Module</h2>
       {linkedCases.length === 0 ? (
         <p className="text-gray-500 mb-6">None yet.</p>
       ) : (
@@ -81,7 +81,7 @@ export default async function ModuleDetail({ params }) {
         </ul>
       )}
 
-      <h2 className="font-semibold mb-2">Add More Test Cases</h2>
+      <h2 className="mb-2">Add More Test Cases</h2>
       {availableTestCases.length === 0 ? (
         <p className="text-gray-500">
           All test cases are already in this module.

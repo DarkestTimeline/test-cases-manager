@@ -9,6 +9,7 @@ import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
+import { formatStatusLabel } from "@/lib/formatLabel";
 
 const PAGE_SIZE = 10;
 
@@ -34,7 +35,7 @@ export default async function RunsDashboard({ searchParams }) {
   if (endDate) query = query.lte("started_at", `${endDate}T23:59:59`);
 
   const { data: runs, error, count } = await query;
-  if (error) return <p className="p-8 text-red-600">Error: {error.message}</p>;
+  if (error) return <p className="p-8 text-danger">Error: {error.message}</p>;
 
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE);
   const { data: suites } = await supabase
@@ -85,7 +86,7 @@ export default async function RunsDashboard({ searchParams }) {
 
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Runs Dashboard</h1>
+      <h1 className="mb-4">Runs Dashboard</h1>
 
       <div className="flex gap-2 mb-4">
         {filters.map((f) => {
@@ -129,7 +130,7 @@ export default async function RunsDashboard({ searchParams }) {
           placeholder="Search tester..."
           className="border rounded p-2 text-sm"
         />
-        <label className="flex items-center gap-1 text-sm text-gray-600">
+        <label className="flex items-center gap-1 text-sm text-slate-600">
           From{" "}
           <input
             type="date"
@@ -138,7 +139,7 @@ export default async function RunsDashboard({ searchParams }) {
             className="border rounded p-2 text-sm"
           />
         </label>
-        <label className="flex items-center gap-1 text-sm text-gray-600">
+        <label className="flex items-center gap-1 text-sm text-slate-600">
           To{" "}
           <input
             type="date"
@@ -147,9 +148,7 @@ export default async function RunsDashboard({ searchParams }) {
             className="border rounded p-2 text-sm"
           />
         </label>
-        <Button type="submit">
-          Filter
-        </Button>
+        <Button type="submit">Filter</Button>
         {hasActiveFilters && (
           <Button href="/runs" variant="ghost">
             Clear all
@@ -158,7 +157,7 @@ export default async function RunsDashboard({ searchParams }) {
       </form>
 
       {runs.length === 0 ? (
-        <p className="text-gray-500">No runs match these filters.</p>
+        <p className="text-slate-500">No runs match these filters.</p>
       ) : (
         <>
           <ul className="space-y-3">
@@ -173,26 +172,26 @@ export default async function RunsDashboard({ searchParams }) {
                         className="font-semibold hover:underline"
                       >
                         {run.suites.seq_number && (
-                          <span className="text-gray-400 font-normal mr-2">
+                          <span className="text-slate-400 font-normal mr-2">
                             {formatId("S", run.suites.seq_number)}
                           </span>
                         )}
                         {run.suites.name}
                       </Link>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-slate-600">
                         Tester: {run.tester_name}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-slate-400">
                         Started: {new Date(run.started_at).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex gap-1 items-start">
                       <Badge className={RUN_STATUS_STYLES[run.status]}>
-                        {run.status}
+                        {formatStatusLabel(run.status)}
                       </Badge>
                       {run.outcome && (
                         <Badge className={OUTCOME_STYLES[run.outcome]}>
-                          {run.outcome}
+                          {formatStatusLabel(run.outcome)}
                         </Badge>
                       )}
                     </div>
@@ -239,9 +238,9 @@ export default async function RunsDashboard({ searchParams }) {
                   ← Previous
                 </Button>
               ) : (
-                <span className="text-sm text-gray-300">← Previous</span>
+                <span className="text-sm text-slate-300">← Previous</span>
               )}
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-slate-500">
                 Page {currentPage} of {totalPages}
               </span>
               {currentPage < totalPages ? (
@@ -252,7 +251,7 @@ export default async function RunsDashboard({ searchParams }) {
                   Next →
                 </Button>
               ) : (
-                <span className="text-sm text-gray-300">Next →</span>
+                <span className="text-sm text-slate-300">Next →</span>
               )}
             </div>
           )}

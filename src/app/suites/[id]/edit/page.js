@@ -13,7 +13,7 @@ export default async function EditSuite({ params }) {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Edit Suite</h1>
+      <h1 className="mb-6">Edit Suite</h1>
       <form action={updateSuite} className="space-y-4">
         <input type="hidden" name="suiteId" value={suite.id} />
         <div>
