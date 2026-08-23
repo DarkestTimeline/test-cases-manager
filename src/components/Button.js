@@ -1,13 +1,13 @@
 import Link from "next/link";
 
 const VARIANT_STYLES = {
-  primary: "bg-blue-600 text-white hover:bg-blue-700",
-  secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200",
-  success: "bg-green-600 text-white hover:bg-green-700",
-  danger: "bg-red-600 text-white hover:bg-red-700",
-  dark: "bg-gray-800 text-white hover:bg-gray-900",
-  ghost: "text-blue-600 hover:underline",
-  ghostDanger: "text-red-600 hover:underline",
+  primary: "bg-primary text-white hover:bg-primary-hover",
+  secondary: "bg-neutral text-neutral-text hover:bg-neutral-hover",
+  success: "bg-success text-white hover:bg-success-hover",
+  danger: "bg-danger text-white hover:bg-danger-hover",
+  dark: "bg-dark text-white hover:bg-dark-hover",
+  ghost: "text-primary hover:underline",
+  ghostDanger: "text-danger hover:underline",
 };
 
 const SIZE_STYLES = {

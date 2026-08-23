@@ -1,3 +1,9 @@
 export default function Card({ className = "", children }) {
-  return <div className={`border rounded-lg p-4 ${className}`}>{children}</div>;
+  return (
+    <div
+      className={`bg-white border border-slate-200 rounded-lg p-4 shadow-sm ${className}`}
+    >
+      {children}
+    </div>
+  );
 }
