@@ -24,16 +24,25 @@ export async function addTestCasesToSuite(formData) {
 
   if (testCaseIds.length === 0) return;
 
-  const rowsToInsert = testCaseIds.map((testCaseId) => ({
+  const { data: existing } = await supabase
+    .from("suite_cases")
+    .select("position")
+    .eq("suite_id", suiteId)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  const startPosition =
+    existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+  const rowsToInsert = testCaseIds.map((testCaseId, index) => ({
     suite_id: suiteId,
     test_case_id: testCaseId,
+    position: startPosition + index,
   }));
 
   const { error } = await supabase.from("suite_cases").insert(rowsToInsert);
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
 
   revalidatePath(`/suites/${suiteId}`);
 }
@@ -93,4 +102,14 @@ export async function updateSuite(formData) {
   revalidatePath("/suites");
   revalidatePath(`/suites/${suiteId}`);
   redirect("/suites");
+}
+
+export async function reorderSuiteCases(suiteId, orderedIds) {
+  const updates = orderedIds.map((id, index) =>
+    supabase.from("suite_cases").update({ position: index }).eq("id", id),
+  );
+
+  await Promise.all(updates);
+
+  revalidatePath(`/suites/${suiteId}`);
 }

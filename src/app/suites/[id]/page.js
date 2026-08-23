@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { formatId } from "@/lib/displayId";
-import { addTestCasesToSuite, removeTestCaseFromSuite } from "../actions";
+import { addTestCasesToSuite } from "../actions";
+import SortableSuiteCases from "./SortableSuiteCases";
 
 export default async function SuiteDetail({ params }) {
   const { id } = await params;
@@ -13,8 +14,9 @@ export default async function SuiteDetail({ params }) {
 
   const { data: linkedCases } = await supabase
     .from("suite_cases")
-    .select("id, test_case_id, test_cases(*)")
-    .eq("suite_id", id);
+    .select("id, test_case_id, position, test_cases(*)")
+    .eq("suite_id", id)
+    .order("position");
 
   const { data: allTestCases } = await supabase
     .from("test_cases")
@@ -76,37 +78,7 @@ export default async function SuiteDetail({ params }) {
       <p className="text-gray-600 mt-1 mb-6">{suite.description}</p>
 
       <h2 className=" mb-2">Test Cases in this Suite</h2>
-      {linkedCases.length === 0 ? (
-        <p className="text-gray-500 mb-6">None yet.</p>
-      ) : (
-        <ul className="space-y-2 mb-6">
-          {linkedCases.map((lc) => (
-            <li
-              key={lc.test_case_id}
-              className="border rounded p-2 flex justify-between items-center"
-            >
-              <span>
-                {lc.test_cases.seq_number && (
-                  <span className="text-gray-400 mr-2">
-                    {formatId("TC", lc.test_cases.seq_number)}
-                  </span>
-                )}
-                {lc.test_cases.title}
-              </span>
-              <form action={removeTestCaseFromSuite}>
-                <input type="hidden" name="suiteCaseId" value={lc.id} />
-                <input type="hidden" name="suiteId" value={suite.id} />
-                <button
-                  type="submit"
-                  className="text-xs text-red-600 hover:underline"
-                >
-                  Remove
-                </button>
-              </form>
-            </li>
-          ))}
-        </ul>
-      )}
+      <SortableSuiteCases linkedCases={linkedCases} suiteId={suite.id} />
 
       {moduleGroups.length > 0 && (
         <>
