@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabaseClient";
-import { formatId } from "@/lib/displayId";
 import { addTestCasesToModule, removeTestCaseFromModule } from "../actions";
+import { formatId } from "@/lib/displayId";
+import Button from "@/components/Button";
+import Badge from "@/components/Badge";
 
 export default async function ModuleDetail({ params }) {
   const { id } = await params;
@@ -37,11 +39,15 @@ export default async function ModuleDetail({ params }) {
           )}
           {mod.name}
         </h1>
-        <span
-          className={`text-xs px-2 py-1 rounded-full font-medium ${mod.archived_at ? "bg-gray-200 text-gray-600" : "bg-green-100 text-green-700"}`}
+        <Badge
+          className={
+            mod.archived_at
+              ? "bg-gray-200 text-gray-600"
+              : "bg-green-100 text-green-700"
+          }
         >
           {mod.archived_at ? "Archived" : "Active"}
-        </span>
+        </Badge>
       </div>
       <p className="text-gray-600 mt-1 mb-6">{mod.description}</p>
 
@@ -58,7 +64,7 @@ export default async function ModuleDetail({ params }) {
               <span>
                 {lc.test_cases.seq_number && (
                   <span className="text-gray-400 mr-2">
-                    {formatId("M", lc.test_cases.seq_number)}
+                    {formatId("TC", lc.test_cases.seq_number)}
                   </span>
                 )}
                 {lc.test_cases.title}
@@ -66,12 +72,9 @@ export default async function ModuleDetail({ params }) {
               <form action={removeTestCaseFromModule}>
                 <input type="hidden" name="moduleCaseId" value={lc.id} />
                 <input type="hidden" name="moduleId" value={mod.id} />
-                <button
-                  type="submit"
-                  className="text-xs text-red-600 hover:underline"
-                >
+                <Button type="submit" variant="ghostDanger">
                   Remove
-                </button>
+                </Button>
               </form>
             </li>
           ))}
@@ -92,20 +95,12 @@ export default async function ModuleDetail({ params }) {
               className="flex items-center gap-2 border rounded p-2"
             >
               <input type="checkbox" name="testCaseIds" value={tc.id} />
-              {tc.seq_number && (
-                <span className="text-gray-400 mr-2">
-                  {formatId("TC", tc.seq_number)}
-                </span>
-              )}
               {tc.title}
             </label>
           ))}
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mt-2"
-          >
+          <Button type="submit" className="mt-2">
             Add Selected
-          </button>
+          </Button>
         </form>
       )}
     </main>

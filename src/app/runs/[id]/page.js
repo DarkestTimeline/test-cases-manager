@@ -3,6 +3,8 @@ import ResultsList from "./ResultsList";
 import { completeRun, cancelRun } from "../actions";
 import { formatId } from "@/lib/displayId";
 import { RUN_STATUS_STYLES, OUTCOME_STYLES } from "@/lib/badgeStyles";
+import Button from "@/components/Button";
+import Badge from "@/components/Badge";
 
 export default async function RunDetail({ params }) {
   const { id } = await params;
@@ -25,7 +27,6 @@ export default async function RunDetail({ params }) {
   const totalCount = results.length;
 
   const testCaseIds = results.map((r) => r.test_case_id).filter(Boolean);
-
   const { data: moduleCases } =
     testCaseIds.length > 0
       ? await supabase
@@ -41,19 +42,15 @@ export default async function RunDetail({ params }) {
 
   const grouped = {};
   const ungrouped = [];
-
   results.forEach((r) => {
     const mod = r.test_case_id ? moduleByTestCaseId[r.test_case_id] : null;
     if (mod) {
-      if (!grouped[mod.id]) {
-        grouped[mod.id] = { module: mod, results: [] };
-      }
+      if (!grouped[mod.id]) grouped[mod.id] = { module: mod, results: [] };
       grouped[mod.id].results.push(r);
     } else {
       ungrouped.push(r);
     }
   });
-
   const moduleGroups = Object.values(grouped);
   const isActive = run.status === "in_progress";
 
@@ -81,17 +78,9 @@ export default async function RunDetail({ params }) {
         </p>
         <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
           {passedCount} / {totalCount} passed
-          <span
-            className={`text-xs px-2 py-1 rounded-full font-medium ${RUN_STATUS_STYLES[run.status]}`}
-          >
-            {run.status}
-          </span>
+          <Badge className={RUN_STATUS_STYLES[run.status]}>{run.status}</Badge>
           {run.outcome && (
-            <span
-              className={`text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}
-            >
-              {run.outcome}
-            </span>
+            <Badge className={OUTCOME_STYLES[run.outcome]}>{run.outcome}</Badge>
           )}
         </p>
       </div>
@@ -123,23 +112,16 @@ export default async function RunDetail({ params }) {
                   <input type="radio" name="outcome" value="fail" /> Fail
                 </label>
               </div>
-              <button
-                type="submit"
-                className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 text-sm"
-              >
+              <Button type="submit" variant="dark">
                 Complete Run
-              </button>
+              </Button>
             </form>
           )}
-
           <form action={cancelRun}>
             <input type="hidden" name="runId" value={run.id} />
-            <button
-              type="submit"
-              className="text-sm text-red-600 hover:underline"
-            >
+            <Button type="submit" variant="ghostDanger">
               Cancel this run
-            </button>
+            </Button>
           </form>
         </div>
       )}

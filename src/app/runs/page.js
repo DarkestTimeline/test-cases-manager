@@ -6,6 +6,9 @@ import {
   OUTCOME_STYLES,
 } from "@/lib/badgeStyles";
 import { formatId } from "@/lib/displayId";
+import Button from "@/components/Button";
+import Badge from "@/components/Badge";
+import Card from "@/components/Card";
 
 const PAGE_SIZE = 10;
 
@@ -31,13 +34,9 @@ export default async function RunsDashboard({ searchParams }) {
   if (endDate) query = query.lte("started_at", `${endDate}T23:59:59`);
 
   const { data: runs, error, count } = await query;
-
-  if (error) {
-    return <p className="p-8 text-red-600">Error: {error.message}</p>;
-  }
+  if (error) return <p className="p-8 text-red-600">Error: {error.message}</p>;
 
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE);
-
   const { data: suites } = await supabase
     .from("suites")
     .select("id, name, seq_number")
@@ -71,7 +70,6 @@ export default async function RunsDashboard({ searchParams }) {
       page: currentPage,
     };
     const merged = { ...current, ...overrides };
-
     const params = new URLSearchParams();
     if (merged.status) params.set("status", merged.status);
     if (merged.suiteId) params.set("suiteId", merged.suiteId);
@@ -79,7 +77,6 @@ export default async function RunsDashboard({ searchParams }) {
     if (merged.startDate) params.set("startDate", merged.startDate);
     if (merged.endDate) params.set("endDate", merged.endDate);
     if (merged.page && merged.page > 1) params.set("page", merged.page);
-
     const qs = params.toString();
     return qs ? `/runs?${qs}` : "/runs";
   }
@@ -94,17 +91,14 @@ export default async function RunsDashboard({ searchParams }) {
         {filters.map((f) => {
           const isActive = f.value ? status === f.value : !status;
           return (
-            <Link
+            <Button
               key={f.label}
               href={buildHref({ status: f.value, page: 1 })}
-              className={`px-3 py-1 rounded text-sm font-medium ${
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700"
-              }`}
+              variant={isActive ? "primary" : "secondary"}
+              size="sm"
             >
               {f.label}
-            </Link>
+            </Button>
           );
         })}
       </div>
@@ -115,7 +109,6 @@ export default async function RunsDashboard({ searchParams }) {
         className="flex flex-wrap gap-2 items-center mb-6"
       >
         {status && <input type="hidden" name="status" value={status} />}
-
         <select
           name="suiteId"
           defaultValue={suiteId || ""}
@@ -129,7 +122,6 @@ export default async function RunsDashboard({ searchParams }) {
             </option>
           ))}
         </select>
-
         <input
           type="text"
           name="tester"
@@ -137,9 +129,8 @@ export default async function RunsDashboard({ searchParams }) {
           placeholder="Search tester..."
           className="border rounded p-2 text-sm"
         />
-
         <label className="flex items-center gap-1 text-sm text-gray-600">
-          From
+          From{" "}
           <input
             type="date"
             name="startDate"
@@ -147,9 +138,8 @@ export default async function RunsDashboard({ searchParams }) {
             className="border rounded p-2 text-sm"
           />
         </label>
-
         <label className="flex items-center gap-1 text-sm text-gray-600">
-          To
+          To{" "}
           <input
             type="date"
             name="endDate"
@@ -157,18 +147,13 @@ export default async function RunsDashboard({ searchParams }) {
             className="border rounded p-2 text-sm"
           />
         </label>
-
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
-        >
+        <Button type="submit">
           Filter
-        </button>
-
+        </Button>
         {hasActiveFilters && (
-          <Link href="/runs" className="text-sm text-gray-500 hover:underline">
+          <Button href="/runs" variant="ghost">
             Clear all
-          </Link>
+          </Button>
         )}
       </form>
 
@@ -180,7 +165,7 @@ export default async function RunsDashboard({ searchParams }) {
             {runs.map((run) => {
               const counts = countsFor(run);
               return (
-                <li key={run.id} className="border rounded-lg p-4">
+                <Card key={run.id}>
                   <div className="flex justify-between items-start">
                     <div>
                       <Link
@@ -202,58 +187,44 @@ export default async function RunsDashboard({ searchParams }) {
                       </p>
                     </div>
                     <div className="flex gap-1 items-start">
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full font-medium ${RUN_STATUS_STYLES[run.status]}`}
-                      >
+                      <Badge className={RUN_STATUS_STYLES[run.status]}>
                         {run.status}
-                      </span>
+                      </Badge>
                       {run.outcome && (
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full font-medium ${OUTCOME_STYLES[run.outcome]}`}
-                        >
+                        <Badge className={OUTCOME_STYLES[run.outcome]}>
                           {run.outcome}
-                        </span>
+                        </Badge>
                       )}
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
                     {counts.pass > 0 && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.pass}`}
-                      >
+                      <Badge className={STATUS_STYLES.pass}>
                         {counts.pass} pass
-                      </span>
+                      </Badge>
                     )}
                     {counts.fail > 0 && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.fail}`}
-                      >
+                      <Badge className={STATUS_STYLES.fail}>
                         {counts.fail} fail
-                      </span>
+                      </Badge>
                     )}
                     {counts.blocked > 0 && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.blocked}`}
-                      >
+                      <Badge className={STATUS_STYLES.blocked}>
                         {counts.blocked} blocked
-                      </span>
+                      </Badge>
                     )}
                     {counts.skipped > 0 && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.skipped}`}
-                      >
+                      <Badge className={STATUS_STYLES.skipped}>
                         {counts.skipped} skipped
-                      </span>
+                      </Badge>
                     )}
                     {counts.pending > 0 && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES.pending}`}
-                      >
+                      <Badge className={STATUS_STYLES.pending}>
                         {counts.pending} pending
-                      </span>
+                      </Badge>
                     )}
                   </div>
-                </li>
+                </Card>
               );
             })}
           </ul>
@@ -261,27 +232,25 @@ export default async function RunsDashboard({ searchParams }) {
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-6">
               {currentPage > 1 ? (
-                <Link
+                <Button
                   href={buildHref({ page: currentPage - 1 })}
-                  className="text-sm text-blue-600 hover:underline"
+                  variant="ghost"
                 >
                   ← Previous
-                </Link>
+                </Button>
               ) : (
                 <span className="text-sm text-gray-300">← Previous</span>
               )}
-
               <span className="text-sm text-gray-500">
                 Page {currentPage} of {totalPages}
               </span>
-
               {currentPage < totalPages ? (
-                <Link
+                <Button
                   href={buildHref({ page: currentPage + 1 })}
-                  className="text-sm text-blue-600 hover:underline"
+                  variant="ghost"
                 >
                   Next →
-                </Link>
+                </Button>
               ) : (
                 <span className="text-sm text-gray-300">Next →</span>
               )}

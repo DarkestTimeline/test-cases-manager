@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import { createTestCase } from "../actions";
+import Button from "@/components/Button";
 
 export default async function NewTestCase() {
   const { data: modules } = await supabase
@@ -71,12 +72,7 @@ export default async function NewTestCase() {
           </div>
         )}
 
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Create Test Case
-        </button>
+        <Button type="submit">Create Test Case</Button>
       </form>
     </main>
   );

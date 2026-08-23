@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import { startRun } from "../actions";
+import Button from "@/components/Button";
 
 export default async function NewRun() {
   const { data: suites } = await supabase
@@ -61,12 +62,9 @@ export default async function NewRun() {
               className="w-full border rounded p-2"
             />
           </div>
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
+          <Button type="submit" variant="success">
             Start Run
-          </button>
+          </Button>
         </form>
       )}
     </main>

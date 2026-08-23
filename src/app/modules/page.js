@@ -2,6 +2,8 @@ import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { formatId } from "@/lib/displayId";
 import { archiveModule, restoreModule } from "./actions";
+import Button from "@/components/Button";
+import Card from "@/components/Card";
 
 const PAGE_SIZE = 10;
 
@@ -26,21 +28,17 @@ export default async function ModulesList({ searchParams }) {
 
   const { data: modules, error, count } = await query;
 
-  if (error) {
-    return <p className="p-8 text-red-600">Error: {error.message}</p>;
-  }
+  if (error) return <p className="p-8 text-red-600">Error: {error.message}</p>;
 
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE);
 
   function buildHref(overrides = {}) {
     const current = { archived: archived || null, search, page: currentPage };
     const merged = { ...current, ...overrides };
-
     const params = new URLSearchParams();
     if (merged.archived) params.set("archived", merged.archived);
     if (merged.search) params.set("search", merged.search);
     if (merged.page && merged.page > 1) params.set("page", merged.page);
-
     const qs = params.toString();
     return qs ? `/modules?${qs}` : "/modules";
   }
@@ -50,21 +48,17 @@ export default async function ModulesList({ searchParams }) {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Modules</h1>
         <div className="flex gap-2">
-          <Link
+          <Button
             href={buildHref({
               archived: showingArchived ? null : "true",
               page: 1,
             })}
-            className="text-sm px-3 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+            variant="secondary"
+            size="sm"
           >
             {showingArchived ? "View Active" : "View Archived"}
-          </Link>
-          <Link
-            href="/modules/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            + New Module
-          </Link>
+          </Button>
+          <Button href="/modules/new">+ New Module</Button>
         </div>
       </div>
 
@@ -79,19 +73,15 @@ export default async function ModulesList({ searchParams }) {
           placeholder="Search by name..."
           className="border rounded p-2 text-sm flex-1 max-w-xs"
         />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
-        >
-          Search
-        </button>
+        <Button type="submit">Search</Button>
         {search && (
-          <Link
+          <Button
             href={buildHref({ search: null, page: 1 })}
-            className="text-sm text-gray-500 hover:underline self-center"
+            variant="ghost"
+            className="self-center"
           >
             Clear search
-          </Link>
+          </Button>
         )}
       </form>
 
@@ -107,9 +97,9 @@ export default async function ModulesList({ searchParams }) {
         <>
           <ul className="space-y-3">
             {modules.map((mod) => (
-              <li
+              <Card
                 key={mod.id}
-                className="border rounded p-4 flex justify-between items-start gap-3"
+                className="flex justify-between items-start gap-3"
               >
                 <div>
                   <Link
@@ -129,42 +119,36 @@ export default async function ModulesList({ searchParams }) {
                 </div>
                 <div className="flex gap-2 items-center">
                   {!showingArchived && (
-                    <Link
-                      href={`/modules/${mod.id}/edit`}
-                      className="text-xs text-blue-600 hover:underline"
-                    >
+                    <Button href={`/modules/${mod.id}/edit`} variant="ghost">
                       Edit
-                    </Link>
+                    </Button>
                   )}
                   <form
                     action={showingArchived ? restoreModule : archiveModule}
                   >
                     <input type="hidden" name="moduleId" value={mod.id} />
-                    <button
+                    <Button
                       type="submit"
-                      className={`text-xs px-3 py-1 rounded whitespace-nowrap ${
-                        showingArchived
-                          ? "bg-green-600 text-white hover:bg-green-700"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
+                      variant={showingArchived ? "success" : "secondary"}
+                      size="sm"
                     >
                       {showingArchived ? "Restore" : "Archive"}
-                    </button>
+                    </Button>
                   </form>
                 </div>
-              </li>
+              </Card>
             ))}
           </ul>
 
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-6">
               {currentPage > 1 ? (
-                <Link
+                <Button
                   href={buildHref({ page: currentPage - 1 })}
-                  className="text-sm text-blue-600 hover:underline"
+                  variant="ghost"
                 >
                   ← Previous
-                </Link>
+                </Button>
               ) : (
                 <span className="text-sm text-gray-300">← Previous</span>
               )}
@@ -172,12 +156,12 @@ export default async function ModulesList({ searchParams }) {
                 Page {currentPage} of {totalPages}
               </span>
               {currentPage < totalPages ? (
-                <Link
+                <Button
                   href={buildHref({ page: currentPage + 1 })}
-                  className="text-sm text-blue-600 hover:underline"
+                  variant="ghost"
                 >
                   Next →
-                </Link>
+                </Button>
               ) : (
                 <span className="text-sm text-gray-300">Next →</span>
               )}

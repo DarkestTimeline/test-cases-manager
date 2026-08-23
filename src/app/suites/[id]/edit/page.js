@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import { updateSuite } from "../../actions";
+import Button from "@/components/Button";
 
 export default async function EditSuite({ params }) {
   const { id } = await params;
@@ -34,12 +35,7 @@ export default async function EditSuite({ params }) {
             className="w-full border rounded p-2"
           />
         </div>
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Save Changes
-        </button>
+        <Button type="submit">Save Changes</Button>
       </form>
     </main>
   );
