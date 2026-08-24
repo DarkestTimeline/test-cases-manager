@@ -1,9 +1,9 @@
 import { supabase } from "@/lib/supabaseClient";
-import { addTestCasesToModule } from "../actions";
-import SortableModuleCases from "./SortableModuleCases";
+import { addTestCasesToModule, updateModule } from "../actions";
 import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
+import SortableModuleCases from "./SortableModuleCases";
 
 export default async function ModuleDetail({ params }) {
   const { id } = await params;
@@ -32,33 +32,55 @@ export default async function ModuleDetail({ params }) {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
-      <div className="flex items-center gap-2">
-        <h1 className="">
-          {mod.seq_number && (
-            <span className="text-gray-400 font-normal mr-2">
-              {formatId("M", mod.seq_number)}
-            </span>
-          )}
-          {mod.name}
-        </h1>
+      <div className="flex items-center gap-2 mb-4">
         <Badge
           className={
             mod.archived_at
-              ? "bg-gray-200 text-gray-600"
-              : "bg-green-100 text-green-700"
+              ? "bg-slate-200 text-slate-600"
+              : "bg-emerald-100 text-emerald-700"
           }
         >
           {mod.archived_at ? "Archived" : "Active"}
         </Badge>
+        {mod.seq_number && (
+          <span className="text-slate-400 text-sm">
+            {formatId("M", mod.seq_number)}
+          </span>
+        )}
       </div>
-      <p className="text-gray-600 mt-1 mb-6">{mod.description}</p>
+
+      <form action={updateModule} className="space-y-3 mb-8 border-b pb-6">
+        <input type="hidden" name="moduleId" value={mod.id} />
+        <div>
+          <label className="block text-sm font-medium mb-1">Name</label>
+          <input
+            type="text"
+            name="name"
+            defaultValue={mod.name}
+            required
+            className="w-full border rounded p-2 text-2xl font-bold text-slate-900"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Description</label>
+          <textarea
+            name="description"
+            defaultValue={mod.description}
+            rows={2}
+            className="w-full border rounded p-2"
+          />
+        </div>
+        <Button type="submit" size="md">
+          Save Changes
+        </Button>
+      </form>
 
       <h2 className="mb-2">Test Cases in this Module</h2>
       <SortableModuleCases linkedCases={linkedCases} moduleId={mod.id} />
 
       <h2 className="mb-2">Add More Test Cases</h2>
       {availableTestCases.length === 0 ? (
-        <p className="text-gray-500">
+        <p className="text-slate-500">
           All test cases are already in this module.
         </p>
       ) : (

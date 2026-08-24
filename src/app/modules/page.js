@@ -118,11 +118,6 @@ export default async function ModulesList({ searchParams }) {
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
-                  {!showingArchived && (
-                    <Button href={`/modules/${mod.id}/edit`} variant="ghost">
-                      Edit
-                    </Button>
-                  )}
                   <form
                     action={showingArchived ? restoreModule : archiveModule}
                   >

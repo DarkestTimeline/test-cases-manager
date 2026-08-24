@@ -5,17 +5,21 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createModule(formData) {
-  const name = formData.get("name");
-  const description = formData.get("description");
+  const name = formData.get('name')
+  const description = formData.get('description')
 
-  const { error } = await supabase
-    .from("modules")
-    .insert({ name, description });
+  const { data: suite, error } = await supabase
+    .from('modules')
+    .insert({ name, description })
+    .select()
+    .single()
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(error.message)
+  }
 
-  revalidatePath("/modules");
-  redirect("/modules");
+  revalidatePath('/modules')
+  redirect(`/modules/${suite.id}`)
 }
 
 export async function addTestCasesToModule(formData) {
@@ -88,20 +92,19 @@ export async function restoreModule(formData) {
 }
 
 export async function updateModule(formData) {
-  const moduleId = formData.get("moduleId");
-  const name = formData.get("name");
-  const description = formData.get("description");
+  const moduleId = formData.get('moduleId')
+  const name = formData.get('name')
+  const description = formData.get('description')
 
   const { error } = await supabase
-    .from("modules")
+    .from('modules')
     .update({ name, description })
-    .eq("id", moduleId);
+    .eq('id', moduleId)
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(error.message)
 
-  revalidatePath("/modules");
-  revalidatePath(`/modules/${moduleId}`);
-  redirect("/modules");
+  revalidatePath('/modules')
+  revalidatePath(`/modules/${moduleId}`)
 }
 
 export async function reorderModuleCases(moduleId, orderedIds) {

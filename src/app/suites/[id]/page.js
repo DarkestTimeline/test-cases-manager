@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabaseClient";
+import { addTestCasesToSuite, updateSuite } from "../actions";
 import { formatId } from "@/lib/displayId";
-import { addTestCasesToSuite } from "../actions";
+import Button from "@/components/Button";
+import Badge from "@/components/Badge";
 import SortableSuiteCases from "./SortableSuiteCases";
 
 export default async function SuiteDetail({ params }) {
@@ -43,41 +45,63 @@ export default async function SuiteDetail({ params }) {
 
   const grouped = {};
   const ungrouped = [];
-
   availableTestCases.forEach((tc) => {
     const mod = moduleByTestCaseId[tc.id];
     if (mod) {
-      if (!grouped[mod.id]) {
-        grouped[mod.id] = { module: mod, cases: [] };
-      }
+      if (!grouped[mod.id]) grouped[mod.id] = { module: mod, cases: [] };
       grouped[mod.id].cases.push(tc);
     } else {
       ungrouped.push(tc);
     }
   });
-
   const moduleGroups = Object.values(grouped);
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
-      <div className="flex items-center gap-2">
-        <h1 className="">
-          {suite.seq_number && (
-            <span className="text-gray-400 font-normal mr-2">
-              {formatId("S", suite.seq_number)}
-            </span>
-          )}
-          {suite.name}
-        </h1>
-        <span
-          className={`text-xs px-2 py-1 rounded-full font-medium ${suite.archived_at ? "bg-gray-200 text-gray-600" : "bg-green-100 text-green-700"}`}
+      <div className="flex items-center gap-2 mb-4">
+        <Badge
+          className={
+            suite.archived_at
+              ? "bg-slate-200 text-slate-600"
+              : "bg-emerald-100 text-emerald-700"
+          }
         >
           {suite.archived_at ? "Archived" : "Active"}
-        </span>
+        </Badge>
+        {suite.seq_number && (
+          <span className="text-slate-400 text-sm">
+            {formatId("S", suite.seq_number)}
+          </span>
+        )}
       </div>
-      <p className="text-gray-600 mt-1 mb-6">{suite.description}</p>
 
-      <h2 className=" mb-2">Test Cases in this Suite</h2>
+      <form action={updateSuite} className="space-y-3 mb-8 border-b pb-6">
+        <input type="hidden" name="suiteId" value={suite.id} />
+        <div>
+          <label className="block text-sm font-medium mb-1">Name</label>
+          <input
+            type="text"
+            name="name"
+            defaultValue={suite.name}
+            required
+            className="w-full border rounded p-2 text-2xl font-bold text-slate-900"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Description</label>
+          <textarea
+            name="description"
+            defaultValue={suite.description}
+            rows={2}
+            className="w-full border rounded p-2"
+          />
+        </div>
+        <Button type="submit" size="md">
+          Save Changes
+        </Button>
+      </form>
+
+      <h2 className="mb-2">Test Cases in this Suite</h2>
       <SortableSuiteCases linkedCases={linkedCases} suiteId={suite.id} />
 
       {moduleGroups.length > 0 && (
@@ -103,12 +127,9 @@ export default async function SuiteDetail({ params }) {
                       value={tc.id}
                     />
                   ))}
-                  <button
-                    type="submit"
-                    className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                  >
+                  <Button type="submit" variant="success" size="sm">
                     Add All
-                  </button>
+                  </Button>
                 </form>
               </div>
             ))}
@@ -118,16 +139,15 @@ export default async function SuiteDetail({ params }) {
 
       <h2 className="mb-2">Add Individual Test Cases</h2>
       {availableTestCases.length === 0 ? (
-        <p className="text-gray-500">
+        <p className="text-slate-500">
           All test cases are already in this suite.
         </p>
       ) : (
         <form action={addTestCasesToSuite} className="space-y-4">
           <input type="hidden" name="suiteId" value={suite.id} />
-
           {moduleGroups.map((group) => (
             <div key={group.module.id}>
-              <p className="text-sm font-medium text-gray-700 mb-1">
+              <p className="text-sm font-medium text-slate-700 mb-1">
                 {group.module.name}
               </p>
               <div className="space-y-1">
@@ -137,21 +157,15 @@ export default async function SuiteDetail({ params }) {
                     className="flex items-center gap-2 border rounded p-2"
                   >
                     <input type="checkbox" name="testCaseIds" value={tc.id} />
-                    {tc.seq_number && (
-                      <span className="text-gray-400 mr-2">
-                        {formatId("TC", tc.seq_number)}
-                      </span>
-                    )}
                     {tc.title}
                   </label>
                 ))}
               </div>
             </div>
           ))}
-
           {ungrouped.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">
+              <p className="text-sm font-medium text-slate-700 mb-1">
                 No Module
               </p>
               <div className="space-y-1">
@@ -161,24 +175,13 @@ export default async function SuiteDetail({ params }) {
                     className="flex items-center gap-2 border rounded p-2"
                   >
                     <input type="checkbox" name="testCaseIds" value={tc.id} />
-                    {tc.seq_number && (
-                      <span className="text-gray-400 mr-2">
-                        {formatId("TC", tc.seq_number)}
-                      </span>
-                    )}
                     {tc.title}
                   </label>
                 ))}
               </div>
             </div>
           )}
-
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Add Selected
-          </button>
+          <Button type="submit">Add Selected</Button>
         </form>
       )}
     </main>

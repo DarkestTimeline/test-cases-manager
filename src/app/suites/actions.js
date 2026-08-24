@@ -8,14 +8,18 @@ export async function createSuite(formData) {
   const name = formData.get("name");
   const description = formData.get("description");
 
-  const { error } = await supabase.from("suites").insert({ name, description });
+  const { data: suite, error } = await supabase
+    .from("suites")
+    .insert({ name, description })
+    .select()
+    .single();
 
   if (error) {
     throw new Error(error.message);
   }
 
   revalidatePath("/suites");
-  redirect("/suites");
+  redirect(`/suites/${suite.id}`);
 }
 
 export async function addTestCasesToSuite(formData) {
@@ -101,7 +105,6 @@ export async function updateSuite(formData) {
 
   revalidatePath("/suites");
   revalidatePath(`/suites/${suiteId}`);
-  redirect("/suites");
 }
 
 export async function reorderSuiteCases(suiteId, orderedIds) {

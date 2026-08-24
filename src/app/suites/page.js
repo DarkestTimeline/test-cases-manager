@@ -118,11 +118,6 @@ export default async function SuitesList({ searchParams }) {
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
-                  {!showingArchived && (
-                    <Button href={`/suites/${suite.id}/edit`} variant="ghost">
-                      Edit
-                    </Button>
-                  )}
                   <form action={showingArchived ? restoreSuite : archiveSuite}>
                     <input type="hidden" name="suiteId" value={suite.id} />
                     <Button
