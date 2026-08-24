@@ -19,7 +19,7 @@ export default async function RunDetail({ params }) {
       .from("run_results")
       .select("*")
       .eq("test_run_id", id)
-      .order("title"),
+      .order("position"),
   ]);
 
   const passedCount = results.filter((r) => r.status === "pass").length;
@@ -78,9 +78,13 @@ export default async function RunDetail({ params }) {
         </p>
         <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
           {passedCount} / {totalCount} passed
-          <Badge className={RUN_STATUS_STYLES[run.status]}>{formatStatusLabel(run.status)}</Badge>
+          <Badge className={RUN_STATUS_STYLES[run.status]}>
+            {formatStatusLabel(run.status)}
+          </Badge>
           {run.outcome && (
-            <Badge className={OUTCOME_STYLES[run.outcome]}>{formatStatusLabel(run.outcome)}</Badge>
+            <Badge className={OUTCOME_STYLES[run.outcome]}>
+              {formatStatusLabel(run.outcome)}
+            </Badge>
           )}
         </p>
       </div>

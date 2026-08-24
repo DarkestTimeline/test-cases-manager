@@ -29,18 +29,20 @@ export async function startRun(formData) {
   const { data: linkedCases, error: linkedError } = await supabase
     .from("suite_cases")
     .select("test_cases(*)")
-    .eq("suite_id", suiteId);
+    .eq("suite_id", suiteId)
+    .order("position");
 
   if (linkedError) throw new Error(linkedError.message);
 
   // Step 3: snapshot each one into run_results, tied to this run
-  const resultsToInsert = linkedCases.map((lc) => ({
+  const resultsToInsert = linkedCases.map((lc, index) => ({
     test_run_id: run.id,
     test_case_id: lc.test_cases.id,
     title: lc.test_cases.title,
     steps_to_reproduce: lc.test_cases.steps_to_reproduce,
     expected_result: lc.test_cases.expected_result,
     test_case_code: formatId("TC", lc.test_cases.seq_number),
+    position: index,
   }));
 
   const { error: resultsError } = await supabase
