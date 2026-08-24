@@ -24,9 +24,20 @@ export async function addTestCasesToModule(formData) {
 
   if (testCaseIds.length === 0) return;
 
-  const rowsToInsert = testCaseIds.map((testCaseId) => ({
+  const { data: existing } = await supabase
+    .from("module_cases")
+    .select("position")
+    .eq("module_id", moduleId)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  const startPosition =
+    existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+  const rowsToInsert = testCaseIds.map((testCaseId, index) => ({
     module_id: moduleId,
     test_case_id: testCaseId,
+    position: startPosition + index,
   }));
 
   const { error } = await supabase.from("module_cases").insert(rowsToInsert);
@@ -91,4 +102,14 @@ export async function updateModule(formData) {
   revalidatePath("/modules");
   revalidatePath(`/modules/${moduleId}`);
   redirect("/modules");
+}
+
+export async function reorderModuleCases(moduleId, orderedIds) {
+  const updates = orderedIds.map((id, index) =>
+    supabase.from("module_cases").update({ position: index }).eq("id", id),
+  );
+
+  await Promise.all(updates);
+
+  revalidatePath(`/modules/${moduleId}`);
 }
