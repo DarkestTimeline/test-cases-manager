@@ -5,6 +5,7 @@ import { updateResult } from "../actions";
 import { STATUS_STYLES, RUN_STATUS_STYLES } from "@/lib/badgeStyles";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
+import { formatStatusLabel } from '@/lib/formatLabel'
 
 function summarize(results) {
   const counts = {

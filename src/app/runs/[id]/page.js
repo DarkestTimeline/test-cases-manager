@@ -5,6 +5,7 @@ import { formatId } from "@/lib/displayId";
 import { RUN_STATUS_STYLES, OUTCOME_STYLES } from "@/lib/badgeStyles";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
+import { formatStatusLabel } from '@/lib/formatLabel'
 
 export default async function RunDetail({ params }) {
   const { id } = await params;
