@@ -70,9 +70,7 @@ export default async function ModuleDetail({ params }) {
             className="w-full border rounded p-2"
           />
         </div>
-        <Button type="submit" size="md">
-          Save Changes
-        </Button>
+        <Button type="submit">Save Changes</Button>
       </form>
 
       <h2 className="mb-2">Test Cases in this Module</h2>
