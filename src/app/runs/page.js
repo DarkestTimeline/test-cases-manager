@@ -183,6 +183,13 @@ export default async function RunsDashboard({ searchParams }) {
                       </p>
                       <p className="text-xs text-slate-400">
                         Started: {new Date(run.started_at).toLocaleDateString()}
+                        {run.completed_at && (
+                          <>
+                            {" "}
+                            · Completed:{" "}
+                            {new Date(run.completed_at).toLocaleDateString()}
+                          </>
+                        )}
                       </p>
                     </div>
                     <div className="flex gap-1 items-start">

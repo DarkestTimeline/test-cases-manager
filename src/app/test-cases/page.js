@@ -3,6 +3,7 @@ import { formatId } from "@/lib/displayId";
 import { archiveTestCase, restoreTestCase } from "./actions";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
+import Link from "next/link";
 
 const PAGE_SIZE = 10;
 
@@ -106,24 +107,22 @@ export default async function TestCasesList({ searchParams }) {
                 className="flex justify-between items-start gap-3"
               >
                 <div>
-                  <h2 className="text-base font-semibold text-slate-900">
+                  <Link
+                    href={`/test-cases/${tc.id}/edit`}
+                    className="font-semibold text-slate-900 hover:underline"
+                  >
                     {tc.seq_number && (
                       <span className="text-slate-400 font-normal mr-2">
                         {formatId("TC", tc.seq_number)}
                       </span>
                     )}
                     {tc.title}
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">
+                  </Link>
+                  <p className="text-sm text-slate-600 mt-1">
                     {tc.expected_result}
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
-                  {!showingArchived && (
-                    <Button href={`/test-cases/${tc.id}/edit`} variant="ghost">
-                      Edit
-                    </Button>
-                  )}
                   <form
                     action={showingArchived ? restoreTestCase : archiveTestCase}
                   >
