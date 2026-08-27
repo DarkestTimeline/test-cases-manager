@@ -1,18 +1,26 @@
-import Link from 'next/link'
+import { supabase } from "@/lib/supabaseClient";
+import StartRunButton from "@/components/StartRunButton";
+import Button from "@/components/Button";
 
-export default function Home() {
+export default async function Home() {
+  const { data: suites } = await supabase
+    .from("suites")
+    .select("*")
+    .is("archived_at", null)
+    .order("name");
+
   return (
     <main className="p-8">
-      <h1 className="text-2xl font-bold mb-2">QA Test Manager</h1>
-      <p className="text-gray-600 mb-6">Manage test cases, build suites, and run them.</p>
+      <h1 className="mb-2">QA Test Manager</h1>
+      <p className="text-slate-600 mb-6">
+        Manage test cases, build suites, and run them.
+      </p>
       <div className="flex gap-3">
-        <Link href="/runs/new" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-          Start a Run
-        </Link>
-        <Link href="/runs" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <StartRunButton suites={suites || []} />
+        <Button href="/runs" variant="primary">
           Go to Dashboard
-        </Link>
+        </Button>
       </div>
     </main>
-  )
+  );
 }
