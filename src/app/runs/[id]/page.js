@@ -5,7 +5,8 @@ import { formatId } from "@/lib/displayId";
 import { RUN_STATUS_STYLES, OUTCOME_STYLES } from "@/lib/badgeStyles";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
-import { formatStatusLabel } from '@/lib/formatLabel'
+import { formatStatusLabel } from "@/lib/formatLabel";
+import ConfirmButton from "@/components/ConfirmButton";
 
 export default async function RunDetail({ params }) {
   const { id } = await params;
@@ -124,9 +125,12 @@ export default async function RunDetail({ params }) {
           )}
           <form action={cancelRun}>
             <input type="hidden" name="runId" value={run.id} />
-            <Button type="submit" variant="dangerOutline">
+            <ConfirmButton
+              message="Cancel this run? This cannot be undone."
+              variant="dangerOutline"
+            >
               Cancel This Run
-            </Button>
+            </ConfirmButton>
           </form>
         </div>
       )}

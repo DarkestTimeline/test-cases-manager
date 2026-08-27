@@ -19,7 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { reorderModuleCases, removeTestCaseFromModule } from "../actions";
 import { formatId } from "@/lib/displayId";
-import Button from "@/components/Button";
+import ConfirmButton from "@/components/ConfirmButton";
 
 function SortableRow({ linkedCase, moduleId }) {
   const {
@@ -63,9 +63,12 @@ function SortableRow({ linkedCase, moduleId }) {
       <form action={removeTestCaseFromModule}>
         <input type="hidden" name="moduleCaseId" value={linkedCase.id} />
         <input type="hidden" name="moduleId" value={moduleId} />
-        <Button type="submit" variant="ghostDanger">
+        <ConfirmButton
+          message="Remove this test case from the suite?"
+          variant="ghostDanger"
+        >
           Remove
-        </Button>
+        </ConfirmButton>
       </form>
     </li>
   );
