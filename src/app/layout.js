@@ -48,6 +48,9 @@ export default async function RootLayout({ children }) {
           <Link href="/runs" className="font-medium hover:underline">
             Runs
           </Link>
+          <Link href="/settings" className="font-medium hover:underline">
+            Settings
+          </Link>
           <StartRunButton suites={suites || []} />
         </nav>
         {children}
