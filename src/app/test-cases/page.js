@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import { formatId } from "@/lib/displayId";
-import { archiveTestCase, restoreTestCase } from "./actions";
+import { archiveTestCase, restoreTestCase, cloneTestCase } from "./actions";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
 import Link from "next/link";
@@ -123,6 +123,12 @@ export default async function TestCasesList({ searchParams }) {
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
+                  <form action={cloneTestCase}>
+                    <input type="hidden" name="testCaseId" value={tc.id} />
+                    <Button type="submit" variant="ghost">
+                      Clone
+                    </Button>
+                  </form>
                   <form
                     action={showingArchived ? restoreTestCase : archiveTestCase}
                   >

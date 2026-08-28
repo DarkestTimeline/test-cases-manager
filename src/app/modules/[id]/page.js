@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
-import { addTestCasesToModule, updateModule } from "../actions";
+import { addTestCasesToModule, updateModule, cloneModule } from "../actions";
 import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
@@ -47,6 +47,12 @@ export default async function ModuleDetail({ params }) {
             {formatId("M", mod.seq_number)}
           </span>
         )}
+        <form action={cloneModule}>
+          <input type="hidden" name="moduleId" value={mod.id} />
+          <Button type="submit" variant="secondary" size="sm">
+            Clone
+          </Button>
+        </form>
       </div>
 
       <form action={updateModule} className="space-y-3 mb-8 border-b pb-6">

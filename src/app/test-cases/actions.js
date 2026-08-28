@@ -104,3 +104,52 @@ export async function updateTestCase(formData) {
   revalidatePath("/test-cases");
   redirect("/test-cases");
 }
+
+export async function cloneTestCase(formData) {
+  const testCaseId = formData.get("testCaseId");
+
+  const { data: source } = await supabase
+    .from("test_cases")
+    .select("*")
+    .eq("id", testCaseId)
+    .single();
+
+  const { data: clone, error } = await supabase
+    .from("test_cases")
+    .insert({
+      title: `${source.title} (Copy)`,
+      preconditions: source.preconditions,
+      steps_to_reproduce: source.steps_to_reproduce,
+      expected_result: source.expected_result,
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const { data: moduleLinks } = await supabase
+    .from("module_cases")
+    .select("module_id")
+    .eq("test_case_id", testCaseId);
+
+  for (const link of moduleLinks) {
+    const { data: existing } = await supabase
+      .from("module_cases")
+      .select("position")
+      .eq("module_id", link.module_id)
+      .order("position", { ascending: false })
+      .limit(1);
+
+    const nextPosition =
+      existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+    await supabase.from("module_cases").insert({
+      module_id: link.module_id,
+      test_case_id: clone.id,
+      position: nextPosition,
+    });
+  }
+
+  revalidatePath("/test-cases");
+  redirect(`/test-cases/${clone.id}/edit`);
+}

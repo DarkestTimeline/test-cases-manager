@@ -5,21 +5,21 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createModule(formData) {
-  const name = formData.get('name')
-  const description = formData.get('description')
+  const name = formData.get("name");
+  const description = formData.get("description");
 
   const { data: suite, error } = await supabase
-    .from('modules')
+    .from("modules")
     .insert({ name, description })
     .select()
-    .single()
+    .single();
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 
-  revalidatePath('/modules')
-  redirect(`/modules/${suite.id}`)
+  revalidatePath("/modules");
+  redirect(`/modules/${suite.id}`);
 }
 
 export async function addTestCasesToModule(formData) {
@@ -92,19 +92,19 @@ export async function restoreModule(formData) {
 }
 
 export async function updateModule(formData) {
-  const moduleId = formData.get('moduleId')
-  const name = formData.get('name')
-  const description = formData.get('description')
+  const moduleId = formData.get("moduleId");
+  const name = formData.get("name");
+  const description = formData.get("description");
 
   const { error } = await supabase
-    .from('modules')
+    .from("modules")
     .update({ name, description })
-    .eq('id', moduleId)
+    .eq("id", moduleId);
 
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(error.message);
 
-  revalidatePath('/modules')
-  revalidatePath(`/modules/${moduleId}`)
+  revalidatePath("/modules");
+  revalidatePath(`/modules/${moduleId}`);
 }
 
 export async function reorderModuleCases(moduleId, orderedIds) {
@@ -115,4 +115,44 @@ export async function reorderModuleCases(moduleId, orderedIds) {
   await Promise.all(updates);
 
   revalidatePath(`/modules/${moduleId}`);
+}
+
+export async function cloneModule(formData) {
+  const moduleId = formData.get("moduleId");
+
+  const { data: source } = await supabase
+    .from("modules")
+    .select("*")
+    .eq("id", moduleId)
+    .single();
+
+  const { data: clone, error } = await supabase
+    .from("modules")
+    .insert({ name: `${source.name} (Copy)`, description: source.description })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const { data: sourceCases } = await supabase
+    .from("module_cases")
+    .select("test_case_id")
+    .eq("module_id", moduleId)
+    .order("position");
+
+  if (sourceCases.length > 0) {
+    const rowsToInsert = sourceCases.map((sc, index) => ({
+      module_id: clone.id,
+      test_case_id: sc.test_case_id,
+      position: index,
+    }));
+
+    const { error: insertError } = await supabase
+      .from("module_cases")
+      .insert(rowsToInsert);
+    if (insertError) throw new Error(insertError.message);
+  }
+
+  revalidatePath("/modules");
+  redirect(`/modules/${clone.id}`);
 }

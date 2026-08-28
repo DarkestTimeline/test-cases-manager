@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
-import { addTestCasesToSuite, updateSuite } from "../actions";
+import { addTestCasesToSuite, updateSuite, cloneSuite } from "../actions";
 import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
@@ -73,6 +73,12 @@ export default async function SuiteDetail({ params }) {
             {formatId("S", suite.seq_number)}
           </span>
         )}
+        <form action={cloneSuite}>
+          <input type="hidden" name="suiteId" value={suite.id} />
+          <Button type="submit" variant="secondary" size="sm">
+            Clone
+          </Button>
+        </form>
       </div>
 
       <form action={updateSuite} className="space-y-3 mb-8 border-b pb-6">
@@ -107,28 +113,39 @@ export default async function SuiteDetail({ params }) {
           <h2 className="mb-2">Quick Add by Module</h2>
           <div className="space-y-2 mb-6">
             {moduleGroups.map((group) => (
-              <div
-                key={group.module.id}
-                className="flex justify-between items-center border rounded p-2"
-              >
-                <span className="text-sm">
-                  {group.module.name} ({group.cases.length} test case
-                  {group.cases.length !== 1 ? "s" : ""})
-                </span>
-                <form action={addTestCasesToSuite}>
-                  <input type="hidden" name="suiteId" value={suite.id} />
+              <div key={group.module.id} className="border rounded p-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">
+                    {group.module.name} ({group.cases.length} test case
+                    {group.cases.length !== 1 ? "s" : ""})
+                  </span>
+                  <form action={addTestCasesToSuite}>
+                    <input type="hidden" name="suiteId" value={suite.id} />
+                    {group.cases.map((tc) => (
+                      <input
+                        key={tc.id}
+                        type="hidden"
+                        name="testCaseIds"
+                        value={tc.id}
+                      />
+                    ))}
+                    <Button type="submit" variant="success" size="sm">
+                      Add All
+                    </Button>
+                  </form>
+                </div>
+                <ul className="mt-2 text-xs text-slate-500 list-disc list-inside space-y-0.5">
                   {group.cases.map((tc) => (
-                    <input
-                      key={tc.id}
-                      type="hidden"
-                      name="testCaseIds"
-                      value={tc.id}
-                    />
+                    <li key={tc.id}>
+                      {tc.seq_number && (
+                        <span className="text-slate-400">
+                          {formatId("TC", tc.seq_number)}{" "}
+                        </span>
+                      )}
+                      {tc.title}
+                    </li>
                   ))}
-                  <Button type="submit" variant="success" size="sm">
-                    Add All
-                  </Button>
-                </form>
+                </ul>
               </div>
             ))}
           </div>

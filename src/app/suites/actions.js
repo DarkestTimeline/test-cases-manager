@@ -116,3 +116,43 @@ export async function reorderSuiteCases(suiteId, orderedIds) {
 
   revalidatePath(`/suites/${suiteId}`);
 }
+
+export async function cloneSuite(formData) {
+  const suiteId = formData.get("suiteId");
+
+  const { data: source } = await supabase
+    .from("suites")
+    .select("*")
+    .eq("id", suiteId)
+    .single();
+
+  const { data: clone, error } = await supabase
+    .from("suites")
+    .insert({ name: `${source.name} (Copy)`, description: source.description })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const { data: sourceCases } = await supabase
+    .from("suite_cases")
+    .select("test_case_id")
+    .eq("suite_id", suiteId)
+    .order("position");
+
+  if (sourceCases.length > 0) {
+    const rowsToInsert = sourceCases.map((sc, index) => ({
+      suite_id: clone.id,
+      test_case_id: sc.test_case_id,
+      position: index,
+    }));
+
+    const { error: insertError } = await supabase
+      .from("suite_cases")
+      .insert(rowsToInsert);
+    if (insertError) throw new Error(insertError.message);
+  }
+
+  revalidatePath("/suites");
+  redirect(`/suites/${clone.id}`);
+}
