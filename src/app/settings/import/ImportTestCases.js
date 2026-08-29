@@ -6,6 +6,7 @@ import Button from "@/components/Button";
 import { downloadFile } from "@/lib/downloadFile";
 import { validateRow } from "@/lib/testCaseValidation";
 import { importTestCases } from "@/app/test-cases/actions";
+import Badge from "@/components/Badge";
 
 const EXPECTED_COLUMNS = [
   "title",
@@ -76,6 +77,7 @@ export default function ImportTestCases() {
 
   return (
     <div>
+      <h2 className="mb-4">Import Test Cases</h2>
       <p className="text-slate-600 mb-2">
         Upload a CSV with columns:{" "}
         <code className="bg-slate-100 px-1 rounded">title</code>,{" "}
@@ -84,12 +86,11 @@ export default function ImportTestCases() {
         <code className="bg-slate-100 px-1 rounded">expected_result</code>
       </p>
 
-      <button
-        onClick={handleDownloadTemplate}
-        className="text-sm text-primary hover:underline mb-4"
-      >
-        Download a blank template
-      </button>
+      <div className="mb-4">
+        <Button onClick={handleDownloadTemplate} variant="secondary" size="sm">
+          Download a blank template
+        </Button>
+      </div>
 
       <div className="mb-6">
         <input
@@ -97,7 +98,10 @@ export default function ImportTestCases() {
           type="file"
           accept=".csv"
           onChange={handleFileChange}
-          className="text-sm"
+          className="block text-sm text-slate-600 cursor-pointer
+      file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
+      file:text-sm file:font-medium file:bg-primary file:text-white
+      hover:file:bg-primary-hover file:cursor-pointer"
         />
       </div>
 
@@ -112,13 +116,12 @@ export default function ImportTestCases() {
 
       {rows.length > 0 && (
         <>
-          <p className="text-sm mb-2">
+          <p className="text-sm mb-2 flex items-center gap-2">
             Found {rows.length} row{rows.length !== 1 ? "s" : ""} in {fileName}
             {hasErrors && (
-              <span className="text-danger font-medium">
-                {" "}
-                — {errorCount} row{errorCount !== 1 ? "s" : ""} need attention
-              </span>
+              <Badge className="bg-red-100 text-red-700">
+                {errorCount} row{errorCount !== 1 ? "s" : ""} need attention
+              </Badge>
             )}
           </p>
           <div className="overflow-x-auto border rounded mb-4">
@@ -141,17 +144,38 @@ export default function ImportTestCases() {
                         : "border-t"
                     }
                   >
-                    <td className="p-2">
-                      {row.title}
+                    <td className="p-2 align-top">
+                      {row.title || (
+                        <span className="text-slate-400 italic">—</span>
+                      )}
                       {rowErrors[i].length > 0 && (
-                        <p className="text-xs text-danger mt-1">
-                          {rowErrors[i].join(", ")}
-                        </p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {rowErrors[i].map((err) => (
+                            <Badge
+                              key={err}
+                              className="bg-red-100 text-red-700"
+                            >
+                              {err}
+                            </Badge>
+                          ))}
+                        </div>
                       )}
                     </td>
-                    <td className="p-2">{row.preconditions}</td>
-                    <td className="p-2">{row.steps_to_reproduce}</td>
-                    <td className="p-2">{row.expected_result}</td>
+                    <td className="p-2 align-top">
+                      {row.preconditions || (
+                        <span className="text-slate-400 italic">—</span>
+                      )}
+                    </td>
+                    <td className="p-2 align-top">
+                      {row.steps_to_reproduce || (
+                        <span className="text-slate-400 italic">—</span>
+                      )}
+                    </td>
+                    <td className="p-2 align-top">
+                      {row.expected_result || (
+                        <span className="text-slate-400 italic">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
