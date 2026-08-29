@@ -179,3 +179,51 @@ export async function importTestCases(rows) {
 
   return { importedCount: rowsToInsert.length };
 }
+
+export async function exportTestCases(scope) {
+  let testCaseIds = null;
+
+  if (scope && scope !== "all") {
+    const [type, id] = scope.split(":");
+    if (type === "suite") {
+      const { data } = await supabase
+        .from("suite_cases")
+        .select("test_case_id")
+        .eq("suite_id", id);
+      testCaseIds = data.map((d) => d.test_case_id);
+    } else if (type === "module") {
+      const { data } = await supabase
+        .from("module_cases")
+        .select("test_case_id")
+        .eq("module_id", id);
+      testCaseIds = data.map((d) => d.test_case_id);
+    }
+  }
+
+  if (testCaseIds && testCaseIds.length === 0) {
+    return [];
+  }
+
+  let query = supabase
+    .from("test_cases")
+    .select(
+      "id, title, preconditions, steps_to_reproduce, expected_result, module_cases(modules(name))",
+    )
+    .is("archived_at", null)
+    .order("seq_number");
+
+  if (testCaseIds) {
+    query = query.in("id", testCaseIds);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  return data.map((tc) => ({
+    title: tc.title,
+    preconditions: tc.preconditions,
+    steps_to_reproduce: tc.steps_to_reproduce,
+    expected_result: tc.expected_result,
+    modules: tc.module_cases.map((mc) => mc.modules.name).join(", "),
+  }));
+}
