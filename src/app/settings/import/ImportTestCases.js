@@ -3,25 +3,28 @@
 import { useState } from "react";
 import Papa from "papaparse";
 import Button from "@/components/Button";
+import Badge from "@/components/Badge";
 import { downloadFile } from "@/lib/downloadFile";
 import { validateRow } from "@/lib/testCaseValidation";
 import { importTestCases } from "@/app/test-cases/actions";
-import Badge from "@/components/Badge";
 
-const EXPECTED_COLUMNS = [
+const REQUIRED_COLUMNS = [
   "title",
   "preconditions",
   "steps_to_reproduce",
   "expected_result",
 ];
+const TEMPLATE_COLUMNS = [...REQUIRED_COLUMNS, "modules"];
 
-export default function ImportTestCases() {
+export default function ImportTestCases({ modules }) {
   const [rows, setRows] = useState([]);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
   const [importResult, setImportResult] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(0);
+
+  const moduleNameSet = new Set(modules.map((m) => m.name.toLowerCase()));
 
   function handleFileChange(e) {
     const file = e.target.files[0];
@@ -36,7 +39,7 @@ export default function ImportTestCases() {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        const missingColumns = EXPECTED_COLUMNS.filter(
+        const missingColumns = REQUIRED_COLUMNS.filter(
           (col) => !results.meta.fields.includes(col),
         );
         if (missingColumns.length > 0) {
@@ -52,7 +55,7 @@ export default function ImportTestCases() {
   }
 
   function handleDownloadTemplate() {
-    downloadFile("test-cases-template.csv", `${EXPECTED_COLUMNS.join(",")}\n`);
+    downloadFile("test-cases-template.csv", `${TEMPLATE_COLUMNS.join(",")}\n`);
   }
 
   async function handleImport() {
@@ -75,6 +78,15 @@ export default function ImportTestCases() {
   const errorCount = rowErrors.filter((errs) => errs.length > 0).length;
   const hasErrors = errorCount > 0;
 
+  const rowWarnings = rows.map((row) => {
+    const names = (row.modules || "")
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    return names.filter((name) => !moduleNameSet.has(name.toLowerCase()));
+  });
+  const warningCount = rowWarnings.filter((w) => w.length > 0).length;
+
   return (
     <div>
       <h2 className="mb-4">Import Test Cases</h2>
@@ -83,7 +95,9 @@ export default function ImportTestCases() {
         <code className="bg-slate-100 px-1 rounded">title</code>,{" "}
         <code className="bg-slate-100 px-1 rounded">preconditions</code>,{" "}
         <code className="bg-slate-100 px-1 rounded">steps_to_reproduce</code>,{" "}
-        <code className="bg-slate-100 px-1 rounded">expected_result</code>
+        <code className="bg-slate-100 px-1 rounded">expected_result</code>. An
+        optional <code className="bg-slate-100 px-1 rounded">modules</code>{" "}
+        column can list one or more existing module names, comma-separated.
       </p>
 
       <div className="mb-4">
@@ -99,28 +113,42 @@ export default function ImportTestCases() {
           accept=".csv"
           onChange={handleFileChange}
           className="block text-sm text-slate-600 cursor-pointer
-      file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
-      file:text-sm file:font-medium file:bg-primary file:text-white
-      hover:file:bg-primary-hover file:cursor-pointer"
+            file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
+            file:text-sm file:font-medium file:bg-primary file:text-white
+            hover:file:bg-primary-hover file:cursor-pointer"
         />
       </div>
 
       {error && <p className="text-danger text-sm mb-4">{error}</p>}
 
       {importResult && (
-        <p className="text-success text-sm mb-4 font-medium">
-          Imported {importResult.importedCount} test case
-          {importResult.importedCount !== 1 ? "s" : ""} successfully!
-        </p>
+        <div className="mb-4">
+          <p className="text-success text-sm font-medium">
+            Imported {importResult.importedCount} test case
+            {importResult.importedCount !== 1 ? "s" : ""} successfully!
+          </p>
+          {importResult.unmatchedModuleNames.length > 0 && (
+            <p className="text-sm text-amber-700 mt-1">
+              These module names did not match anything and were skipped:{" "}
+              {importResult.unmatchedModuleNames.join(", ")}
+            </p>
+          )}
+        </div>
       )}
 
       {rows.length > 0 && (
         <>
-          <p className="text-sm mb-2 flex items-center gap-2">
+          <p className="text-sm mb-2 flex items-center gap-2 flex-wrap">
             Found {rows.length} row{rows.length !== 1 ? "s" : ""} in {fileName}
             {hasErrors && (
               <Badge className="bg-red-100 text-red-700">
                 {errorCount} row{errorCount !== 1 ? "s" : ""} need attention
+              </Badge>
+            )}
+            {warningCount > 0 && (
+              <Badge className="bg-amber-100 text-amber-700">
+                {warningCount} row{warningCount !== 1 ? "s" : ""} with unmatched
+                module{warningCount !== 1 ? "s" : ""}
               </Badge>
             )}
           </p>
@@ -132,6 +160,7 @@ export default function ImportTestCases() {
                   <th className="text-left p-2">Preconditions</th>
                   <th className="text-left p-2">Steps</th>
                   <th className="text-left p-2">Expected Result</th>
+                  <th className="text-left p-2">Modules</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,7 +170,9 @@ export default function ImportTestCases() {
                     className={
                       rowErrors[i].length > 0
                         ? "bg-red-50 border-t border-red-200"
-                        : "border-t"
+                        : rowWarnings[i].length > 0
+                          ? "bg-amber-50 border-t border-amber-200"
+                          : "border-t"
                     }
                   >
                     <td className="p-2 align-top">
@@ -174,6 +205,23 @@ export default function ImportTestCases() {
                     <td className="p-2 align-top">
                       {row.expected_result || (
                         <span className="text-slate-400 italic">—</span>
+                      )}
+                    </td>
+                    <td className="p-2 align-top">
+                      {row.modules || (
+                        <span className="text-slate-400 italic">—</span>
+                      )}
+                      {rowWarnings[i].length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {rowWarnings[i].map((name) => (
+                            <Badge
+                              key={name}
+                              className="bg-amber-100 text-amber-700"
+                            >
+                              {name} not found
+                            </Badge>
+                          ))}
+                        </div>
                       )}
                     </td>
                   </tr>

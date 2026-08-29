@@ -171,13 +171,74 @@ export async function importTestCases(rows) {
     expected_result: row.expected_result,
   }));
 
-  const { error } = await supabase.from("test_cases").insert(rowsToInsert);
+  const { data: inserted, error } = await supabase
+    .from("test_cases")
+    .insert(rowsToInsert)
+    .select();
 
   if (error) throw new Error(error.message);
 
+  const { data: allModules } = await supabase
+    .from("modules")
+    .select("id, name")
+    .is("archived_at", null);
+  const moduleByName = {};
+  allModules.forEach((m) => {
+    moduleByName[m.name.toLowerCase()] = m;
+  });
+
+  const nextPositionByModule = {};
+  const unmatchedNames = new Set();
+  const moduleLinksToInsert = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const moduleNames = (rows[i].modules || "")
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean);
+
+    for (const name of moduleNames) {
+      const mod = moduleByName[name.toLowerCase()];
+
+      if (!mod) {
+        unmatchedNames.add(name);
+        continue;
+      }
+
+      if (!(mod.id in nextPositionByModule)) {
+        const { data: existing } = await supabase
+          .from("module_cases")
+          .select("position")
+          .eq("module_id", mod.id)
+          .order("position", { ascending: false })
+          .limit(1);
+
+        nextPositionByModule[mod.id] =
+          existing && existing.length > 0 ? existing[0].position + 1 : 0;
+      }
+
+      moduleLinksToInsert.push({
+        module_id: mod.id,
+        test_case_id: inserted[i].id,
+        position: nextPositionByModule[mod.id],
+      });
+      nextPositionByModule[mod.id]++;
+    }
+  }
+
+  if (moduleLinksToInsert.length > 0) {
+    const { error: linkError } = await supabase
+      .from("module_cases")
+      .insert(moduleLinksToInsert);
+    if (linkError) throw new Error(linkError.message);
+  }
+
   revalidatePath("/test-cases");
 
-  return { importedCount: rowsToInsert.length };
+  return {
+    importedCount: inserted.length,
+    unmatchedModuleNames: Array.from(unmatchedNames),
+  };
 }
 
 export async function exportTestCases(scope) {
