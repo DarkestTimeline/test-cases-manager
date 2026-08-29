@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const SETTINGS_NAV = [
   // Future sessions add entries here, e.g.:
-  // { label: 'Import', href: '/settings/import' },
+  { label: "Import", href: "/settings/import" },
   // { label: 'Export', href: '/settings/export' },
 ];
 

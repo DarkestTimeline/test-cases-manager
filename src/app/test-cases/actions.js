@@ -3,6 +3,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { validateRow } from "@/lib/testCaseValidation";
 
 export async function createTestCase(formData) {
   const title = formData.get("title");
@@ -152,4 +153,29 @@ export async function cloneTestCase(formData) {
 
   revalidatePath("/test-cases");
   redirect(`/test-cases/${clone.id}/edit`);
+}
+
+export async function importTestCases(rows) {
+  const invalidRows = rows.filter((row) => validateRow(row).length > 0);
+
+  if (invalidRows.length > 0) {
+    throw new Error(
+      `Cannot import: ${invalidRows.length} row(s) still have missing required fields.`,
+    );
+  }
+
+  const rowsToInsert = rows.map((row) => ({
+    title: row.title,
+    preconditions: row.preconditions || null,
+    steps_to_reproduce: row.steps_to_reproduce,
+    expected_result: row.expected_result,
+  }));
+
+  const { error } = await supabase.from("test_cases").insert(rowsToInsert);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/test-cases");
+
+  return { importedCount: rowsToInsert.length };
 }
