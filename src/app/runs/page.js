@@ -113,7 +113,7 @@ export default async function RunsDashboard({ searchParams }) {
         <select
           name="suiteId"
           defaultValue={suiteId || ""}
-          className="border rounded p-2 text-sm"
+          className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">All Suites</option>
           {suites.map((suite) => (
@@ -128,24 +128,24 @@ export default async function RunsDashboard({ searchParams }) {
           name="tester"
           defaultValue={tester || ""}
           placeholder="Search tester..."
-          className="border rounded p-2 text-sm"
+          className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <label className="flex items-center gap-1 text-sm text-slate-600">
-          From{" "}
+          From
           <input
             type="date"
             name="startDate"
             defaultValue={startDate || ""}
-            className="border rounded p-2 text-sm"
+            className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
           />
         </label>
         <label className="flex items-center gap-1 text-sm text-slate-600">
-          To{" "}
+          To
           <input
             type="date"
             name="endDate"
             defaultValue={endDate || ""}
-            className="border rounded p-2 text-sm"
+            className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
           />
         </label>
         <Button type="submit">Filter</Button>
