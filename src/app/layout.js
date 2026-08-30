@@ -48,6 +48,9 @@ export default async function RootLayout({ children }) {
           <Link href="/runs" className="font-medium hover:underline">
             Runs
           </Link>
+          <Link href="/reports" className="font-medium hover:underline">
+            Reports
+          </Link>
           <Link href="/settings" className="font-medium hover:underline">
             Settings
           </Link>
