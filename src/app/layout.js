@@ -1,8 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
 import "./globals.css";
 import { supabase } from "@/lib/supabaseClient";
-import StartRunButton from "@/components/StartRunButton";
+import NavBar from "@/components/NavBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,30 +31,7 @@ export default async function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <nav className="border-b p-4 flex gap-4 items-center">
-          <Link href="/" className="font-medium hover:underline">
-            Home
-          </Link>
-          <Link href="/test-cases" className="font-medium hover:underline">
-            Test Cases
-          </Link>
-          <Link href="/modules" className="font-medium hover:underline">
-            Modules
-          </Link>
-          <Link href="/suites" className="font-medium hover:underline">
-            Suites
-          </Link>
-          <Link href="/runs" className="font-medium hover:underline">
-            Runs
-          </Link>
-          <Link href="/reports" className="font-medium hover:underline">
-            Reports
-          </Link>
-          <Link href="/settings" className="font-medium hover:underline">
-            Settings
-          </Link>
-          <StartRunButton suites={suites || []} />
-        </nav>
+        <NavBar suites={suites || []} />
         {children}
       </body>
     </html>
