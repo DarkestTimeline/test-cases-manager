@@ -4,6 +4,7 @@ import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import SortableModuleCases from "./SortableModuleCases";
+import BackLink from "@/components/BackLink";
 
 export default async function ModuleDetail({ params }) {
   const { id } = await params;
@@ -32,6 +33,7 @@ export default async function ModuleDetail({ params }) {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
+      <BackLink href="/modules" label="Modules" />
       <div className="flex items-center gap-2 mb-4">
         <Badge
           className={
@@ -39,9 +41,7 @@ export default async function ModuleDetail({ params }) {
               ? "bg-slate-200 text-slate-600"
               : "bg-emerald-100 text-emerald-700"
           }
-        >
-          {mod.archived_at ? "Archived" : "Active"}
-        </Badge>
+        ></Badge>
         {mod.seq_number && (
           <span className="text-slate-400 text-sm">
             {formatId("M", mod.seq_number)}

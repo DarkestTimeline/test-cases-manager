@@ -7,6 +7,7 @@ import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import ConfirmButton from "@/components/ConfirmButton";
+import BackLink from "@/components/BackLink";
 
 export default async function RunDetail({ params }) {
   const { id } = await params;
@@ -58,6 +59,7 @@ export default async function RunDetail({ params }) {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
+      <BackLink href="/runs" label="Runs Dashboard" />
       <div className="mb-6">
         <h1>
           {run.suites.seq_number && (

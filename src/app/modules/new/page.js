@@ -1,9 +1,11 @@
 import { createModule } from "../actions";
 import Button from "@/components/Button";
+import BackLink from "@/components/BackLink";
 
 export default function NewModule() {
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
+      <BackLink href="/modules" label="Modules" />
       <h1 className="mb-6">New Module</h1>
       <form action={createModule} className="space-y-4">
         <div>

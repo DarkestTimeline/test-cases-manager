@@ -4,6 +4,7 @@ import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import SortableSuiteCases from "./SortableSuiteCases";
+import BackLink from "@/components/BackLink";
 
 export default async function SuiteDetail({ params }) {
   const { id } = await params;
@@ -58,6 +59,7 @@ export default async function SuiteDetail({ params }) {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
+      <BackLink href="/suites" label="Suites" />
       <div className="flex items-center gap-2 mb-4">
         <Badge
           className={
@@ -65,9 +67,7 @@ export default async function SuiteDetail({ params }) {
               ? "bg-slate-200 text-slate-600"
               : "bg-emerald-100 text-emerald-700"
           }
-        >
-          {suite.archived_at ? "Archived" : "Active"}
-        </Badge>
+        ></Badge>
         {suite.seq_number && (
           <span className="text-slate-400 text-sm">
             {formatId("S", suite.seq_number)}

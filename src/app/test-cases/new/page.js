@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { createTestCase } from "../actions";
 import Button from "@/components/Button";
+import BackLink from "@/components/BackLink";
 
 export default async function NewTestCase() {
   const { data: modules } = await supabase
@@ -11,6 +12,7 @@ export default async function NewTestCase() {
 
   return (
     <main className="p-8 w-full max-w-2xl mx-auto">
+      <BackLink href="/test-cases" label="Test Cases" />
       <h1 className="mb-6">New Test Case</h1>
       <form action={createTestCase} className="space-y-4">
         <div>
