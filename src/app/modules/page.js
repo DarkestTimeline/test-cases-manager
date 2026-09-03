@@ -99,7 +99,7 @@ export default async function ModulesList({ searchParams }) {
             {modules.map((mod) => (
               <Card
                 key={mod.id}
-                className="flex justify-between items-start gap-3"
+                className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3"
               >
                 <div>
                   <Link

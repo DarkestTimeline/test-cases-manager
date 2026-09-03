@@ -104,7 +104,7 @@ export default async function TestCasesList({ searchParams }) {
             {testCases.map((tc) => (
               <Card
                 key={tc.id}
-                className="flex justify-between items-start gap-3"
+                className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3"
               >
                 <div>
                   <Link

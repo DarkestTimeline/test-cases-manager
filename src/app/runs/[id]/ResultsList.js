@@ -5,7 +5,7 @@ import { updateResult } from "../actions";
 import { STATUS_STYLES, RUN_STATUS_STYLES } from "@/lib/badgeStyles";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
-import { formatStatusLabel } from '@/lib/formatLabel'
+import { formatStatusLabel } from "@/lib/formatLabel";
 
 function summarize(results) {
   const counts = {
@@ -117,7 +117,9 @@ function ResultItem({ result, runId, isLocked }) {
           )}
           {result.title}
         </h2>
-        <Badge className={STATUS_STYLES[status]}>{formatStatusLabel(status)}</Badge>
+        <Badge className={STATUS_STYLES[status]}>
+          {formatStatusLabel(status)}
+        </Badge>
       </div>
 
       <div className="mt-3 text-sm text-slate-600 space-y-2">
@@ -131,7 +133,7 @@ function ResultItem({ result, runId, isLocked }) {
         </p>
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         <Button
           onClick={() => handleStatusClick("pass")}
           disabled={isLocked}

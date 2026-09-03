@@ -6,6 +6,8 @@ import { formatId } from "@/lib/displayId";
 import { RUN_STATUS_STYLES, OUTCOME_STYLES } from "@/lib/badgeStyles";
 import { formatStatusLabel } from "@/lib/formatLabel";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const [
     { count: testCaseCount },
