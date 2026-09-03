@@ -107,13 +107,13 @@ export default async function RunsDashboard({ searchParams }) {
       <form
         method="GET"
         action="/runs"
-        className="flex flex-wrap gap-2 items-center mb-6"
+        className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center mb-6"
       >
         {status && <input type="hidden" name="status" value={status} />}
         <select
           name="suiteId"
           defaultValue={suiteId || ""}
-          className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary"
+          className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">All Suites</option>
           {suites.map((suite) => (
@@ -128,27 +128,29 @@ export default async function RunsDashboard({ searchParams }) {
           name="tester"
           defaultValue={tester || ""}
           placeholder="Search tester..."
-          className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary"
+          className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
         />
-        <label className="flex items-center gap-1 text-sm text-slate-600">
-          From
+        <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
+          <span className="shrink-0">From</span>
           <input
             type="date"
             name="startDate"
             defaultValue={startDate || ""}
-            className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
+            className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
           />
         </label>
-        <label className="flex items-center gap-1 text-sm text-slate-600">
-          To
+        <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
+          <span className="shrink-0">To</span>
           <input
             type="date"
             name="endDate"
             defaultValue={endDate || ""}
-            className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
+            className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
           />
         </label>
-        <Button type="submit">Filter</Button>
+        <Button type="submit" className="w-full sm:w-auto">
+          Filter
+        </Button>
         {hasActiveFilters && (
           <Button href="/runs" variant="ghost">
             Clear all

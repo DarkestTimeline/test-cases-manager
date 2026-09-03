@@ -47,21 +47,20 @@ export default async function TestCasesList({ searchParams }) {
 
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h1>Test Cases</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             href={buildHref({
               archived: showingArchived ? null : "true",
               page: 1,
             })}
             variant="secondary"
+            size="sm"
           >
             {showingArchived ? "View Active" : "View Archived"}
           </Button>
-          <Button href="/test-cases/new" variant="primary">
-            + New Test Case
-          </Button>
+          <Button href="/test-cases/new">+ New Test Case</Button>
         </div>
       </div>
 
