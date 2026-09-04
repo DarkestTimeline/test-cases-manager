@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import NavBar from "@/components/NavBar";
 
 const geistSans = Geist({
@@ -25,13 +26,28 @@ export default async function RootLayout({ children }) {
     .is("archived_at", null)
     .order("name");
 
+  const supabaseAuth = await createClient();
+  const {
+    data: { user },
+  } = await supabaseAuth.auth.getUser();
+
+  let profile = null;
+  if (user) {
+    const { data } = await supabaseAuth
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+    profile = data;
+  }
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <NavBar suites={suites || []} />
+        <NavBar suites={suites || []} profile={profile} />
         {children}
       </body>
     </html>

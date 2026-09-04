@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import StartRunButton from "./StartRunButton";
+import { logout } from "@/app/login/actions";
 
 const NAV_ITEMS = [
   { href: "/test-cases", label: "Test Cases" },
@@ -14,9 +15,21 @@ const NAV_ITEMS = [
   { href: "/settings", label: "Settings" },
 ];
 
-export default function NavBar({ suites }) {
+export default function NavBar({ suites, profile }) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  if (!profile) {
+    return (
+      <nav className="bg-white px-6 py-3 shadow-sm">
+        <div className="max-w-6xl mx-auto">
+          <span className="font-bold text-primary text-lg">
+            QA Test Manager
+          </span>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="bg-white px-6 py-3 shadow-sm">
@@ -44,7 +57,16 @@ export default function NavBar({ suites }) {
               );
             })}
           </div>
+          <span className="text-sm text-slate-500">{profile.display_name}</span>
           <StartRunButton suites={suites} />
+          <form action={logout}>
+            <button
+              type="submit"
+              className="text-sm text-slate-500 hover:text-danger"
+            >
+              Log out
+            </button>
+          </form>
         </div>
 
         <button
@@ -75,6 +97,19 @@ export default function NavBar({ suites }) {
               </Link>
             );
           })}
+          <div className="pt-2 flex items-center justify-between">
+            <span className="text-sm text-slate-500">
+              {profile.display_name}
+            </span>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="text-sm text-slate-500 hover:text-danger"
+              >
+                Log out
+              </button>
+            </form>
+          </div>
           <div className="pt-2">
             <StartRunButton suites={suites} />
           </div>
