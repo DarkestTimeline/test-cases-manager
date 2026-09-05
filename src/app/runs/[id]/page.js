@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from '@/lib/supabase/server'
 import ResultsList from "./ResultsList";
 import { completeRun, cancelRun } from "../actions";
 import { formatId } from "@/lib/displayId";
@@ -10,6 +10,7 @@ import ConfirmButton from "@/components/ConfirmButton";
 import BackLink from "@/components/BackLink";
 
 export default async function RunDetail({ params }) {
+  const supabase = await createClient();
   const { id } = await params;
 
   const [{ data: run }, { data: results }] = await Promise.all([

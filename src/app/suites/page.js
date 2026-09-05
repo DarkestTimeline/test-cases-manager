@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatId } from "@/lib/displayId";
 import { archiveSuite, restoreSuite } from "./actions";
@@ -14,6 +14,7 @@ export default async function SuitesList({ searchParams }) {
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
+  const supabase = await createClient();
   let query = supabase
     .from("suites")
     .select("*", { count: "exact" })

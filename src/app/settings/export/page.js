@@ -1,7 +1,8 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from '@/lib/supabase/server'
 import ExportTestCases from "./ExportTestCases";
 
 export default async function ExportPage() {
+  const supabase = await createClient();
   const { data: suites } = await supabase
     .from("suites")
     .select("id, name")

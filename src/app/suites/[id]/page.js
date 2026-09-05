@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import { addTestCasesToSuite, updateSuite, cloneSuite } from "../actions";
 import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
@@ -7,6 +7,7 @@ import SortableSuiteCases from "./SortableSuiteCases";
 import BackLink from "@/components/BackLink";
 
 export default async function SuiteDetail({ params }) {
+  const supabase = await createClient();
   const { id } = await params;
 
   const { data: suite } = await supabase

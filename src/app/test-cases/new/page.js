@@ -1,9 +1,11 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import { createTestCase } from "../actions";
 import Button from "@/components/Button";
 import BackLink from "@/components/BackLink";
 
 export default async function NewTestCase() {
+  const supabase = await createClient();
+
   const { data: modules } = await supabase
     .from("modules")
     .select("*")

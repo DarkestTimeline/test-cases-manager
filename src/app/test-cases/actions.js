@@ -1,11 +1,12 @@
 "use server";
 
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { validateRow } from "@/lib/testCaseValidation";
 
 export async function createTestCase(formData) {
+  const supabase = await createClient();
   const title = formData.get("title");
   const preconditions = formData.get("preconditions");
   const steps_to_reproduce = formData.get("steps_to_reproduce");
@@ -18,56 +19,25 @@ export async function createTestCase(formData) {
     .select()
     .single();
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
 
   if (moduleIds.length > 0) {
     const rowsToInsert = moduleIds.map((moduleId) => ({
       module_id: moduleId,
       test_case_id: testCase.id,
     }));
-
     const { error: moduleError } = await supabase
       .from("module_cases")
       .insert(rowsToInsert);
-
-    if (moduleError) {
-      throw new Error(moduleError.message);
-    }
+    if (moduleError) throw new Error(moduleError.message);
   }
 
   revalidatePath("/test-cases");
   redirect("/test-cases");
 }
 
-export async function archiveTestCase(formData) {
-  const testCaseId = formData.get("testCaseId");
-
-  const { error } = await supabase
-    .from("test_cases")
-    .update({ archived_at: new Date().toISOString() })
-    .eq("id", testCaseId);
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/test-cases");
-}
-
-export async function restoreTestCase(formData) {
-  const testCaseId = formData.get("testCaseId");
-
-  const { error } = await supabase
-    .from("test_cases")
-    .update({ archived_at: null })
-    .eq("id", testCaseId);
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/test-cases");
-}
-
 export async function updateTestCase(formData) {
+  const supabase = await createClient();
   const testCaseId = formData.get("testCaseId");
   const title = formData.get("title");
   const preconditions = formData.get("preconditions");
@@ -86,7 +56,6 @@ export async function updateTestCase(formData) {
     .from("module_cases")
     .delete()
     .eq("test_case_id", testCaseId);
-
   if (deleteError) throw new Error(deleteError.message);
 
   if (moduleIds.length > 0) {
@@ -94,11 +63,9 @@ export async function updateTestCase(formData) {
       module_id: moduleId,
       test_case_id: testCaseId,
     }));
-
     const { error: insertError } = await supabase
       .from("module_cases")
       .insert(rowsToInsert);
-
     if (insertError) throw new Error(insertError.message);
   }
 
@@ -106,7 +73,34 @@ export async function updateTestCase(formData) {
   redirect("/test-cases");
 }
 
+export async function archiveTestCase(formData) {
+  const supabase = await createClient();
+  const testCaseId = formData.get("testCaseId");
+
+  const { error } = await supabase
+    .from("test_cases")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", testCaseId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/test-cases");
+}
+
+export async function restoreTestCase(formData) {
+  const supabase = await createClient();
+  const testCaseId = formData.get("testCaseId");
+
+  const { error } = await supabase
+    .from("test_cases")
+    .update({ archived_at: null })
+    .eq("id", testCaseId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/test-cases");
+}
+
 export async function cloneTestCase(formData) {
+  const supabase = await createClient();
   const testCaseId = formData.get("testCaseId");
 
   const { data: source } = await supabase
@@ -144,11 +138,13 @@ export async function cloneTestCase(formData) {
     const nextPosition =
       existing && existing.length > 0 ? existing[0].position + 1 : 0;
 
-    await supabase.from("module_cases").insert({
-      module_id: link.module_id,
-      test_case_id: clone.id,
-      position: nextPosition,
-    });
+    await supabase
+      .from("module_cases")
+      .insert({
+        module_id: link.module_id,
+        test_case_id: clone.id,
+        position: nextPosition,
+      });
   }
 
   revalidatePath("/test-cases");
@@ -156,6 +152,7 @@ export async function cloneTestCase(formData) {
 }
 
 export async function importTestCases(rows) {
+  const supabase = await createClient();
   const invalidRows = rows.filter((row) => validateRow(row).length > 0);
 
   if (invalidRows.length > 0) {
@@ -175,7 +172,6 @@ export async function importTestCases(rows) {
     .from("test_cases")
     .insert(rowsToInsert)
     .select();
-
   if (error) throw new Error(error.message);
 
   const { data: allModules } = await supabase
@@ -199,7 +195,6 @@ export async function importTestCases(rows) {
 
     for (const name of moduleNames) {
       const mod = moduleByName[name.toLowerCase()];
-
       if (!mod) {
         unmatchedNames.add(name);
         continue;
@@ -212,7 +207,6 @@ export async function importTestCases(rows) {
           .eq("module_id", mod.id)
           .order("position", { ascending: false })
           .limit(1);
-
         nextPositionByModule[mod.id] =
           existing && existing.length > 0 ? existing[0].position + 1 : 0;
       }
@@ -242,6 +236,7 @@ export async function importTestCases(rows) {
 }
 
 export async function exportTestCases(scope) {
+  const supabase = await createClient();
   let testCaseIds = null;
 
   if (scope && scope !== "all") {
@@ -261,9 +256,7 @@ export async function exportTestCases(scope) {
     }
   }
 
-  if (testCaseIds && testCaseIds.length === 0) {
-    return [];
-  }
+  if (testCaseIds && testCaseIds.length === 0) return [];
 
   let query = supabase
     .from("test_cases")
@@ -273,9 +266,7 @@ export async function exportTestCases(scope) {
     .is("archived_at", null)
     .order("seq_number");
 
-  if (testCaseIds) {
-    query = query.in("id", testCaseIds);
-  }
+  if (testCaseIds) query = query.in("id", testCaseIds);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);

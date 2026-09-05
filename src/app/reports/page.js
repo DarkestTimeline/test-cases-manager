@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from '@/lib/supabase/server'
 import ReportsCharts from "./ReportsCharts";
 import SuiteBreakdownChart from "./SuiteBreakdownChart";
 import Button from "@/components/Button";
@@ -15,6 +15,7 @@ function getWeekStart(dateStr) {
 }
 
 export default async function ReportsPage({ searchParams }) {
+  const supabase = await createClient();
   const { weeks } = await searchParams;
   const weeksToShow = parseInt(weeks) || 12;
 

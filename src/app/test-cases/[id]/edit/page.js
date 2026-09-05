@@ -1,9 +1,10 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import { updateTestCase } from "../../actions";
 import Button from "@/components/Button";
 import BackLink from "@/components/BackLink";
 
 export default async function EditTestCase({ params }) {
+  const supabase = await createClient();
   const { id } = await params;
 
   const { data: testCase } = await supabase

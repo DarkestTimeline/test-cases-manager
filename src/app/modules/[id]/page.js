@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import { addTestCasesToModule, updateModule, cloneModule } from "../actions";
 import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
@@ -7,6 +7,7 @@ import SortableModuleCases from "./SortableModuleCases";
 import BackLink from "@/components/BackLink";
 
 export default async function ModuleDetail({ params }) {
+  const supabase = await createClient();
   const { id } = await params;
 
   const { data: mod } = await supabase

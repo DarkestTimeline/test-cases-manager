@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import { formatId } from "@/lib/displayId";
 import { archiveTestCase, restoreTestCase, cloneTestCase } from "./actions";
 import Button from "@/components/Button";
@@ -13,6 +13,7 @@ export default async function TestCasesList({ searchParams }) {
   const currentPage = parseInt(page) || 1;
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+  const supabase = await createClient();
 
   let query = supabase
     .from("test_cases")

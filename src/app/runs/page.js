@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from '@/lib/supabase/server'
 import Link from "next/link";
 import {
   STATUS_STYLES,
@@ -14,6 +14,7 @@ import { formatStatusLabel } from "@/lib/formatLabel";
 const PAGE_SIZE = 10;
 
 export default async function RunsDashboard({ searchParams }) {
+  const supabase = await createClient();
   const { status, suiteId, tester, startDate, endDate, page } =
     await searchParams;
   const currentPage = parseInt(page) || 1;

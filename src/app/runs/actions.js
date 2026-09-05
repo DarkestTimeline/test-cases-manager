@@ -1,17 +1,17 @@
 "use server";
 
-import { supabase } from "@/lib/supabaseClient";
-import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { formatId } from "@/lib/displayId";
 
 export async function startRun(formData) {
+  const supabase = await createClient();
   const suiteId = formData.get("suiteId");
   const testerName = formData.get("testerName");
   const os = formData.get("os");
   const buildVersion = formData.get("build_version");
 
-  // Step 1: create the run itself
   const { data: run, error: runError } = await supabase
     .from("test_runs")
     .insert({
@@ -25,7 +25,6 @@ export async function startRun(formData) {
 
   if (runError) throw new Error(runError.message);
 
-  // Step 2: find every test case linked to this suite
   const { data: linkedCases, error: linkedError } = await supabase
     .from("suite_cases")
     .select("test_cases(*)")
@@ -34,7 +33,6 @@ export async function startRun(formData) {
 
   if (linkedError) throw new Error(linkedError.message);
 
-  // Step 3: snapshot each one into run_results, tied to this run
   const resultsToInsert = linkedCases.map((lc, index) => ({
     test_run_id: run.id,
     test_case_id: lc.test_cases.id,
@@ -48,34 +46,13 @@ export async function startRun(formData) {
   const { error: resultsError } = await supabase
     .from("run_results")
     .insert(resultsToInsert);
-
   if (resultsError) throw new Error(resultsError.message);
 
   redirect(`/runs/${run.id}`);
 }
 
-export async function updateResult({ resultId, status, notes, runId }) {
-  const { data: run } = await supabase
-    .from("test_runs")
-    .select("status")
-    .eq("id", runId)
-    .single();
-
-  if (run?.status !== "in_progress") {
-    throw new Error("This run is locked and cannot be edited.");
-  }
-
-  const { error } = await supabase
-    .from("run_results")
-    .update({ status, notes })
-    .eq("id", resultId);
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath(`/runs/${runId}`);
-}
-
 export async function completeRun(formData) {
+  const supabase = await createClient();
   const runId = formData.get("runId");
   const outcome = formData.get("outcome");
 
@@ -84,10 +61,8 @@ export async function completeRun(formData) {
     .select("status")
     .eq("id", runId)
     .single();
-
-  if (run?.status !== "in_progress") {
+  if (run?.status !== "in_progress")
     throw new Error("This run is not in progress and cannot be completed.");
-  }
 
   const { count: pendingCount } = await supabase
     .from("run_results")
@@ -95,9 +70,8 @@ export async function completeRun(formData) {
     .eq("test_run_id", runId)
     .eq("status", "pending");
 
-  if (pendingCount > 0) {
+  if (pendingCount > 0)
     throw new Error("Cannot complete a run with pending test cases.");
-  }
 
   const { error } = await supabase
     .from("test_runs")
@@ -115,6 +89,7 @@ export async function completeRun(formData) {
 }
 
 export async function cancelRun(formData) {
+  const supabase = await createClient();
   const runId = formData.get("runId");
 
   const { data: run } = await supabase
@@ -122,10 +97,8 @@ export async function cancelRun(formData) {
     .select("status")
     .eq("id", runId)
     .single();
-
-  if (run?.status !== "in_progress") {
+  if (run?.status !== "in_progress")
     throw new Error("This run is not in progress and cannot be cancelled.");
-  }
 
   const { error } = await supabase
     .from("test_runs")
@@ -136,4 +109,23 @@ export async function cancelRun(formData) {
 
   revalidatePath(`/runs/${runId}`);
   revalidatePath("/runs");
+}
+
+export async function updateResult({ resultId, status, notes, runId }) {
+  const supabase = await createClient();
+  const { data: run } = await supabase
+    .from("test_runs")
+    .select("status")
+    .eq("id", runId)
+    .single();
+  if (run?.status !== "in_progress")
+    throw new Error("This run is locked and cannot be edited.");
+
+  const { error } = await supabase
+    .from("run_results")
+    .update({ status, notes })
+    .eq("id", resultId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/runs/${runId}`);
 }

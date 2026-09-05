@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from '@/lib/supabase/server'
 import Link from "next/link";
 import { formatId } from "@/lib/displayId";
 import { archiveModule, restoreModule } from "./actions";
@@ -8,6 +8,7 @@ import Card from "@/components/Card";
 const PAGE_SIZE = 10;
 
 export default async function ModulesList({ searchParams }) {
+  const supabase = await createClient();
   const { archived, search, page } = await searchParams;
   const showingArchived = archived === "true";
   const currentPage = parseInt(page) || 1;
