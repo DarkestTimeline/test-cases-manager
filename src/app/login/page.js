@@ -1,5 +1,6 @@
 import { login, loginAsDemo } from "./actions";
 import Button from "@/components/Button";
+import Link from "next/link";
 
 export default async function LoginPage({ searchParams }) {
   const { error } = await searchParams;
@@ -50,6 +51,12 @@ export default async function LoginPage({ searchParams }) {
           <Button type="submit" variant="secondary" className="w-full">
             Try the Demo
           </Button>
+          <p className="text-sm text-slate-500 text-center mt-4">
+            Need an account?{" "}
+            <Link href="/signup" className="text-primary hover:underline">
+              Sign up
+            </Link>
+          </p>
         </form>
       </div>
     </main>

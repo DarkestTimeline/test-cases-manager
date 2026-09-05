@@ -31,4 +31,11 @@
   h2 {
     @apply text-lg font-semibold text-slate-800;
   }
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-slate-200, currentColor);
+  }
 }
