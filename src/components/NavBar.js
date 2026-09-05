@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import StartRunButton from "./StartRunButton";
@@ -12,12 +12,23 @@ const NAV_ITEMS = [
   { href: "/suites", label: "Suites" },
   { href: "/runs", label: "Runs" },
   { href: "/reports", label: "Reports" },
-  { href: "/settings", label: "Settings" },
 ];
 
 export default function NavBar({ suites, profile }) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const accountRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (accountRef.current && !accountRef.current.contains(e.target)) {
+        setIsAccountOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (!profile) {
     return (
@@ -57,16 +68,41 @@ export default function NavBar({ suites, profile }) {
               );
             })}
           </div>
-          <span className="text-sm text-slate-500">{profile.display_name}</span>
+
           <StartRunButton suites={suites} />
-          <form action={logout}>
+
+          <div className="relative" ref={accountRef}>
             <button
-              type="submit"
-              className="text-sm text-slate-500 hover:text-danger"
+              onClick={() => setIsAccountOpen(!isAccountOpen)}
+              className="flex items-center gap-2 pl-4 border-l text-sm text-slate-600 hover:text-primary"
             >
-              Log out
+              <span className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold">
+                {profile.display_name?.charAt(0).toUpperCase() || "?"}
+              </span>
+              {profile.display_name}
+              <span className="text-xs">{isAccountOpen ? "▲" : "▼"}</span>
             </button>
-          </form>
+
+            {isAccountOpen && (
+              <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg py-1 z-50">
+                <Link
+                  href="/settings"
+                  onClick={() => setIsAccountOpen(false)}
+                  className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+                >
+                  Settings
+                </Link>
+                <form action={logout}>
+                  <button
+                    type="submit"
+                    className="block w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+                  >
+                    Log out
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
 
         <button
@@ -97,7 +133,21 @@ export default function NavBar({ suites, profile }) {
               </Link>
             );
           })}
-          <div className="pt-2 flex items-center justify-between">
+          <Link
+            href="/settings"
+            onClick={() => setIsMenuOpen(false)}
+            className={`block px-3 py-2 rounded text-sm font-medium ${
+              pathname.startsWith("/settings")
+                ? "bg-primary text-white"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Settings
+          </Link>
+          <div className="pt-2">
+            <StartRunButton suites={suites} />
+          </div>
+          <div className="pt-3 mt-1 border-t flex items-center justify-between">
             <span className="text-sm text-slate-500">
               {profile.display_name}
             </span>
@@ -109,9 +159,6 @@ export default function NavBar({ suites, profile }) {
                 Log out
               </button>
             </form>
-          </div>
-          <div className="pt-2">
-            <StartRunButton suites={suites} />
           </div>
         </div>
       )}
