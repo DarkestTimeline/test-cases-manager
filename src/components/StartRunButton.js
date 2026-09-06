@@ -47,17 +47,6 @@ export default function StartRunButton({ suites }) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Tester Name
-                  </label>
-                  <input
-                    type="text"
-                    name="testerName"
-                    required
-                    className="w-full border rounded p-2"
-                  />
-                </div>
-                <div>
                   <label className="block text-sm font-medium mb-1">OS</label>
                   <input
                     type="text"

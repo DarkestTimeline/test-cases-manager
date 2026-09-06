@@ -8,15 +8,24 @@ import { formatId } from "@/lib/displayId";
 export async function startRun(formData) {
   const supabase = await createClient();
   const suiteId = formData.get("suiteId");
-  const testerName = formData.get("testerName");
   const os = formData.get("os");
   const buildVersion = formData.get("build_version");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .single();
 
   const { data: run, error: runError } = await supabase
     .from("test_runs")
     .insert({
       suite_id: suiteId,
-      tester_name: testerName,
+      tester_name: profile?.display_name || user.email,
+      started_by: user.id,
       os,
       build_version: buildVersion,
     })
