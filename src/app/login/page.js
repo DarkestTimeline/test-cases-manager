@@ -1,9 +1,9 @@
+import Link from "next/link";
 import { login, loginAsDemo } from "./actions";
 import Button from "@/components/Button";
-import Link from "next/link";
 
 export default async function LoginPage({ searchParams }) {
-  const { error } = await searchParams;
+  const { error, email } = await searchParams;
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-8">
@@ -23,7 +23,9 @@ export default async function LoginPage({ searchParams }) {
             <input
               type="email"
               name="email"
+              defaultValue={email || ""}
               required
+              autoFocus={!error}
               className="w-full border rounded p-2"
             />
           </div>
@@ -33,6 +35,7 @@ export default async function LoginPage({ searchParams }) {
               type="password"
               name="password"
               required
+              autoFocus={!!error}
               className="w-full border rounded p-2"
             />
           </div>
@@ -51,13 +54,14 @@ export default async function LoginPage({ searchParams }) {
           <Button type="submit" variant="secondary" className="w-full">
             Try the Demo
           </Button>
-          <p className="text-sm text-slate-500 text-center mt-4">
-            Need an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
         </form>
+
+        <p className="text-sm text-slate-500 text-center mt-4">
+          Need an account?{" "}
+          <Link href="/signup" className="text-primary hover:underline">
+            Sign up
+          </Link>
+        </p>
       </div>
     </main>
   );
