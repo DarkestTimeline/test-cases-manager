@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const SETTINGS_NAV = [
+  { label: "Profile", href: "/settings/profile" },
   { label: "Import", href: "/settings/import" },
   { label: "Export", href: "/settings/export" },
 ];
