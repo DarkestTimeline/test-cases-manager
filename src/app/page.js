@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import Card from "@/components/Card";
 import Badge from "@/components/Badge";
@@ -9,6 +9,7 @@ import { formatStatusLabel } from "@/lib/formatLabel";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  const supabase = await createClient();
   const [
     { count: testCaseCount },
     { count: suiteCount },
