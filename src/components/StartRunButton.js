@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 import { startRun } from "@/app/runs/actions";
+import { useFormStatus } from "react-dom";
 import Button from "./Button";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="success" size="sm" disabled={pending}>
+      {pending ? "Starting..." : "Start Run"}
+    </Button>
+  );
+}
 
 export default function StartRunButton({ suites }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -75,9 +85,7 @@ export default function StartRunButton({ suites }) {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" variant="success" size="sm">
-                    Start Run
-                  </Button>
+                  <SubmitButton />
                 </div>
               </form>
             )}

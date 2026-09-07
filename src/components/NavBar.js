@@ -18,7 +18,14 @@ export default function NavBar({ suites, profile }) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [prevProfileId, setPrevProfileId] = useState(profile?.id);
   const accountRef = useRef(null);
+
+  if (profile?.id !== prevProfileId) {
+    setPrevProfileId(profile?.id);
+    setIsAccountOpen(false);
+    setIsMenuOpen(false);
+  }
 
   useEffect(() => {
     function handleClickOutside(e) {

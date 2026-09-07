@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from "@/lib/supabase/server";
 import ResultsList from "./ResultsList";
 import { completeRun, cancelRun } from "../actions";
 import { formatId } from "@/lib/displayId";
@@ -112,13 +112,29 @@ export default async function RunDetail({ params }) {
             <form action={completeRun} className="space-y-2">
               <input type="hidden" name="runId" value={run.id} />
               <p className="text-sm font-medium">Mark this run as:</p>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-1 text-sm">
-                  <input type="radio" name="outcome" value="pass" required />{" "}
-                  Pass
+              <div className="flex gap-3">
+                <label className="flex-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="outcome"
+                    value="pass"
+                    required
+                    className="peer sr-only"
+                  />
+                  <span className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-slate-300 bg-white text-slate-700 font-semibold text-sm peer-checked:bg-success peer-checked:text-white peer-checked:border-success hover:border-success hover:bg-success/5 transition-colors">
+                    <span aria-hidden="true">✓</span> Pass
+                  </span>
                 </label>
-                <label className="flex items-center gap-1 text-sm">
-                  <input type="radio" name="outcome" value="fail" /> Fail
+                <label className="flex-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="outcome"
+                    value="fail"
+                    className="peer sr-only"
+                  />
+                  <span className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-slate-300 bg-white text-slate-700 font-semibold text-sm peer-checked:bg-danger peer-checked:text-white peer-checked:border-danger hover:border-danger hover:bg-danger/5 transition-colors">
+                    <span aria-hidden="true">✕</span> Fail
+                  </span>
                 </label>
               </div>
               <Button type="submit" variant="dark">
