@@ -93,6 +93,13 @@ export default function NavBar({ suites, profile }) {
             {isAccountOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg py-1 z-50">
                 <Link
+                  href="/profile"
+                  onClick={() => setIsAccountOpen(false)}
+                  className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+                >
+                  Profile
+                </Link>
+                <Link
                   href="/settings"
                   onClick={() => setIsAccountOpen(false)}
                   className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
@@ -140,6 +147,17 @@ export default function NavBar({ suites, profile }) {
               </Link>
             );
           })}
+          <Link
+            href="/profile"
+            onClick={() => setIsMenuOpen(false)}
+            className={`block px-3 py-2 rounded text-sm font-medium ${
+              pathname.startsWith("/profile")
+                ? "bg-primary text-white"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Profile
+          </Link>
           <Link
             href="/settings"
             onClick={() => setIsMenuOpen(false)}

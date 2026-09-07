@@ -18,11 +18,11 @@ export async function updateDisplayName(formData) {
     .eq("id", user.id);
 
   if (error) {
-    redirect(`/settings/profile?error=${encodeURIComponent(error.message)}`);
+    redirect(`/profile?error=${encodeURIComponent(error.message)}`);
   }
 
   revalidatePath("/");
-  redirect("/settings/profile?success=Display name updated.");
+  redirect("/profile?success=Display name updated.");
 }
 
 export async function updatePassword(formData) {
@@ -33,7 +33,7 @@ export async function updatePassword(formData) {
 
   if (newPassword !== confirmPassword) {
     redirect(
-      `/settings/profile?error=${encodeURIComponent("New passwords do not match.")}`,
+      `/profile?error=${encodeURIComponent("New passwords do not match.")}`,
     );
   }
 
@@ -48,7 +48,7 @@ export async function updatePassword(formData) {
 
   if (verifyError) {
     redirect(
-      `/settings/profile?error=${encodeURIComponent("Current password is incorrect.")}`,
+      `/profile?error=${encodeURIComponent("Current password is incorrect.")}`,
     );
   }
 

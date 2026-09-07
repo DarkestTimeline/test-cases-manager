@@ -39,7 +39,7 @@ export default function ReportsCharts({ data }) {
             <Line
               type="monotone"
               dataKey="passRate"
-              stroke="#0d9488"
+              stroke="#2563eb"
               strokeWidth={2}
               connectNulls={false}
             />
@@ -58,7 +58,7 @@ export default function ReportsCharts({ data }) {
             <XAxis dataKey="week" tick={{ fontSize: 12 }} />
             <YAxis allowDecimals={false} />
             <Tooltip />
-            <Bar dataKey="volume" fill="#0d9488" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="volume" fill="#2563eb" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
