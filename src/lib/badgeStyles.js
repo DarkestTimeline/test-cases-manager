@@ -17,3 +17,10 @@ export const OUTCOME_STYLES = {
   fail: "bg-red-100 text-red-700",
   cancelled: "bg-slate-200 text-slate-600",
 };
+
+export const PRIORITY_STYLES = {
+  low: "bg-slate-100 text-slate-600",
+  medium: "bg-primary-light text-primary",
+  high: "bg-amber-100 text-amber-700",
+  critical: "bg-red-100 text-red-700",
+};

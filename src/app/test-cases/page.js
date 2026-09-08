@@ -4,6 +4,9 @@ import { archiveTestCase, restoreTestCase, cloneTestCase } from "./actions";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
 import Link from "next/link";
+import { PRIORITY_STYLES } from "@/lib/badgeStyles";
+import Badge from "@/components/Badge";
+import { formatStatusLabel } from "@/lib/formatLabel";
 
 const PAGE_SIZE = 10;
 
@@ -117,6 +120,9 @@ export default async function TestCasesList({ searchParams }) {
                       </span>
                     )}
                     {tc.title}
+                    <Badge className={PRIORITY_STYLES[tc.priority]}>
+                      {formatStatusLabel(tc.priority)}
+                    </Badge>
                   </Link>
                   <p className="text-sm text-slate-600 mt-1">
                     {tc.expected_result}

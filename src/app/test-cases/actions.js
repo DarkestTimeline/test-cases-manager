@@ -12,10 +12,11 @@ export async function createTestCase(formData) {
   const steps_to_reproduce = formData.get("steps_to_reproduce");
   const expected_result = formData.get("expected_result");
   const moduleIds = formData.getAll("moduleIds");
+  const priority = formData.get('priority')
 
   const { data: testCase, error } = await supabase
     .from("test_cases")
-    .insert({ title, preconditions, steps_to_reproduce, expected_result })
+    .insert({ title, preconditions, steps_to_reproduce, expected_result, priority })
     .select()
     .single();
 
@@ -43,11 +44,12 @@ export async function updateTestCase(formData) {
   const preconditions = formData.get("preconditions");
   const steps_to_reproduce = formData.get("steps_to_reproduce");
   const expected_result = formData.get("expected_result");
+  const priority = formData.get("priority");
   const moduleIds = formData.getAll("moduleIds");
 
   const { error } = await supabase
     .from("test_cases")
-    .update({ title, preconditions, steps_to_reproduce, expected_result })
+    .update({ title, preconditions, steps_to_reproduce, expected_result, priority })
     .eq("id", testCaseId);
 
   if (error) throw new Error(error.message);
@@ -116,6 +118,7 @@ export async function cloneTestCase(formData) {
       preconditions: source.preconditions,
       steps_to_reproduce: source.steps_to_reproduce,
       expected_result: source.expected_result,
+      priority: source.priority,
     })
     .select()
     .single();
@@ -166,6 +169,7 @@ export async function importTestCases(rows) {
     preconditions: row.preconditions || null,
     steps_to_reproduce: row.steps_to_reproduce,
     expected_result: row.expected_result,
+    priority: row.priority || null,
   }));
 
   const { data: inserted, error } = await supabase
@@ -261,7 +265,7 @@ export async function exportTestCases(scope) {
   let query = supabase
     .from("test_cases")
     .select(
-      "id, title, preconditions, steps_to_reproduce, expected_result, module_cases(modules(name))",
+      "id, title, preconditions, steps_to_reproduce, expected_result, priority, module_cases(modules(name))",
     )
     .is("archived_at", null)
     .order("seq_number");
@@ -276,6 +280,7 @@ export async function exportTestCases(scope) {
     preconditions: tc.preconditions,
     steps_to_reproduce: tc.steps_to_reproduce,
     expected_result: tc.expected_result,
+    priority: tc.priority,
     modules: tc.module_cases.map((mc) => mc.modules.name).join(", "),
   }));
 }
