@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import {
   STATUS_STYLES,
@@ -15,7 +15,7 @@ const PAGE_SIZE = 10;
 
 export default async function RunsDashboard({ searchParams }) {
   const supabase = await createClient();
-  const { status, suiteId, tester, startDate, endDate, page } =
+  const { status, suiteId, tester, startDate, endDate, page, mine } =
     await searchParams;
   const currentPage = parseInt(page) || 1;
   const from = (currentPage - 1) * PAGE_SIZE;
@@ -28,6 +28,14 @@ export default async function RunsDashboard({ searchParams }) {
     })
     .order("started_at", { ascending: false })
     .range(from, to);
+
+  if (mine) {
+    const authClient = await createClient();
+    const {
+      data: { user },
+    } = await authClient.auth.getUser();
+    query = query.eq("started_by", user.id);
+  }
 
   if (status) query = query.eq("status", status);
   if (suiteId) query = query.eq("suite_id", suiteId);
@@ -70,6 +78,7 @@ export default async function RunsDashboard({ searchParams }) {
       startDate,
       endDate,
       page: currentPage,
+      mine,
     };
     const merged = { ...current, ...overrides };
     const params = new URLSearchParams();
@@ -79,16 +88,17 @@ export default async function RunsDashboard({ searchParams }) {
     if (merged.startDate) params.set("startDate", merged.startDate);
     if (merged.endDate) params.set("endDate", merged.endDate);
     if (merged.page && merged.page > 1) params.set("page", merged.page);
+    if (merged.mine) params.set("mine", "true");
     const qs = params.toString();
     return qs ? `/runs?${qs}` : "/runs";
   }
 
-  const hasActiveFilters = status || suiteId || tester || startDate || endDate;
+  const hasActiveFilters =
+    status || suiteId || tester || startDate || endDate || mine;
 
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
       <h1 className="mb-4">Runs Dashboard</h1>
-
       <div className="flex gap-2 mb-4">
         {filters.map((f) => {
           const isActive = f.value ? status === f.value : !status;
@@ -149,9 +159,17 @@ export default async function RunsDashboard({ searchParams }) {
             className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
           />
         </label>
-        <Button type="submit" className="w-full sm:w-auto">
-          Filter
-        </Button>
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            name="mine"
+            value="true"
+            defaultChecked={!!mine}
+            className="rounded"
+          />
+          My Runs Only
+        </label>
+        <Button type="submit">Filter</Button>
         {hasActiveFilters && (
           <Button href="/runs" variant="ghost">
             Clear all
