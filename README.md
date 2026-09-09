@@ -158,5 +158,3 @@ The app is deployed on Vercel. Pushing to the main branch triggers a new deploym
 - **Plain text over Postgres enums for status fields** — easier to extend with new statuses without a migration.
 - **Soft delete over hard delete** for all primary resources, so archived data can't orphan historical run references.
 - **"Select all" as a frozen bulk copy** when adding a module's cases to a suite, rather than a live link.
-- **Simplicity over premature complexity** — features like bulk test case creation and mid-run quick-add were designed, then deliberately reversed after deciding they added complexity without real benefit.
-- **Provider isolation for any future LLM integration** — planned AI features wrap model calls behind a single function (e.g. `generateTestCases(docText)`) so swapping providers later is low-risk.
