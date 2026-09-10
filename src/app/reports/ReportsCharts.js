@@ -39,6 +39,7 @@ export default function ReportsCharts({ data }) {
             <Line
               type="monotone"
               dataKey="passRate"
+              name="Pass Rate"
               stroke="#2563eb"
               strokeWidth={2}
               connectNulls={false}
@@ -55,10 +56,10 @@ export default function ReportsCharts({ data }) {
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="week" tick={{ fontSize: 12 }} />
+            <XAxis dataKey="week" name="Week" tick={{ fontSize: 12 }} />
             <YAxis allowDecimals={false} />
             <Tooltip />
-            <Bar dataKey="volume" fill="#2563eb" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="volume" name="Run Volume" fill="#2563eb" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

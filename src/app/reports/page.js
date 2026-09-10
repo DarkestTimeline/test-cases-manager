@@ -129,7 +129,46 @@ export default async function ReportsPage({ searchParams }) {
       const decided = m.pass + m.fail;
       return {
         ...m,
-        passRate: decided > 0 ? Math.round((m.pass / decided) * 100) : null,
+        passsRate: decided > 0 ? Math.round((m.pass / decided) * 100) : null,
+      };
+    })
+    .sort((a, b) =>
+      a.pasRate === null
+        ? 1
+        : b.passRate === null
+          ? -1
+          : a.passRate - b.passRate,
+    );
+
+  const { data: testerRuns } = await supabase
+    .from("test_runs")
+    .select("started_by, status, outcome, profiles(display_name)")
+    .not("started_by", "is", null);
+
+  const testerBuckets = {};
+  (testerRuns || []).forEach((run) => {
+    if (!testerBuckets[run.started_by]) {
+      testerBuckets[run.started_by] = {
+        id: run.started_by,
+        name: run.profiles?.display_name || "Unknown",
+        total: 0,
+        pass: 0,
+        fail: 0,
+      };
+    }
+    testerBuckets[run.started_by].total += 1;
+    if (run.status === "completed" && run.outcome === "pass")
+      testerBuckets[run.started_by].pass += 1;
+    if (run.status === "completed" && run.outcome === "fail")
+      testerBuckets[run.started_by].fail += 1;
+  });
+
+  const testerData = Object.values(testerBuckets)
+    .map((t) => {
+      const decided = t.pass + t.fail;
+      return {
+        ...t,
+        passRate: decided > 0 ? Math.round((t.pass / decided) * 100) : null,
       };
     })
     .sort((a, b) =>
@@ -176,6 +215,19 @@ export default async function ReportsPage({ searchParams }) {
           items={moduleData}
           itemLabel="Module"
           countLabel="Results"
+        />
+      </div>
+
+      <div className="mt-10">
+        <h2 className="mb-2">Per-Tester Breakdown</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          All-time pass rate by tester, worst first. Only includes runs started
+          since accounts were added.
+        </p>
+        <BreakdownChart
+          items={testerData}
+          itemLabel="Tester"
+          countLabel="Runs"
         />
       </div>
     </main>
