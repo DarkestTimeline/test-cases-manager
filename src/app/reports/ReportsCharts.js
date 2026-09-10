@@ -31,7 +31,7 @@ export default function ReportsCharts({ data }) {
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="week" tick={{ fontSize: 12 }} />
+            <XAxis dataKey="week" name="Week" tick={{ fontSize: 12 }} />
             <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
             <Tooltip
               formatter={(value) => (value === null ? "No data" : `${value}%`)}

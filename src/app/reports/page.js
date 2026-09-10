@@ -129,7 +129,7 @@ export default async function ReportsPage({ searchParams }) {
       const decided = m.pass + m.fail;
       return {
         ...m,
-        passsRate: decided > 0 ? Math.round((m.pass / decided) * 100) : null,
+        passRate: decided > 0 ? Math.round((m.pass / decided) * 100) : null,
       };
     })
     .sort((a, b) =>
