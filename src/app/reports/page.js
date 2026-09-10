@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from "@/lib/supabase/server";
 import ReportsCharts from "./ReportsCharts";
-import SuiteBreakdownChart from "./SuiteBreakdownChart";
+import BreakdownChart from "@/components/BreakdownChart";
 import Button from "@/components/Button";
 
-const WEEK_OPTIONS = [2, 4, 8, 12, 26, 52];
+const WEEK_OPTIONS = [4, 8, 12, 26, 52];
 
 function getWeekStart(dateStr) {
   const d = new Date(dateStr);
@@ -15,9 +15,9 @@ function getWeekStart(dateStr) {
 }
 
 export default async function ReportsPage({ searchParams }) {
-  const supabase = await createClient();
   const { weeks } = await searchParams;
   const weeksToShow = parseInt(weeks) || 12;
+  const supabase = await createClient();
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - weeksToShow * 7);
@@ -31,9 +31,8 @@ export default async function ReportsPage({ searchParams }) {
   const weekBuckets = {};
   (runs || []).forEach((run) => {
     const week = getWeekStart(run.started_at);
-    if (!weekBuckets[week]) {
+    if (!weekBuckets[week])
       weekBuckets[week] = { week, total: 0, pass: 0, fail: 0 };
-    }
     weekBuckets[week].total += 1;
     if (run.status === "completed" && run.outcome === "pass")
       weekBuckets[week].pass += 1;
@@ -62,7 +61,7 @@ export default async function ReportsPage({ searchParams }) {
     if (!run.suite_id) return;
     if (!suiteBuckets[run.suite_id]) {
       suiteBuckets[run.suite_id] = {
-        suiteId: run.suite_id,
+        id: run.suite_id,
         name: run.suites?.name || "Unknown Suite",
         total: 0,
         pass: 0,
@@ -84,11 +83,62 @@ export default async function ReportsPage({ searchParams }) {
         passRate: decided > 0 ? Math.round((s.pass / decided) * 100) : null,
       };
     })
-    .sort((a, b) => {
-      if (a.passRate === null) return 1;
-      if (b.passRate === null) return -1;
-      return a.passRate - b.passRate;
+    .sort((a, b) =>
+      a.passRate === null
+        ? 1
+        : b.passRate === null
+          ? -1
+          : a.passRate - b.passRate,
+    );
+
+  const { data: allResults } = await supabase
+    .from("run_results")
+    .select("test_case_id, status");
+  const { data: moduleCasesData } = await supabase
+    .from("module_cases")
+    .select("test_case_id, modules(id, name)");
+
+  const modulesByTestCaseId = {};
+  (moduleCasesData || []).forEach((mc) => {
+    if (!mc.modules) return;
+    if (!modulesByTestCaseId[mc.test_case_id])
+      modulesByTestCaseId[mc.test_case_id] = [];
+    modulesByTestCaseId[mc.test_case_id].push(mc.modules);
+  });
+
+  const moduleBuckets = {};
+  (allResults || []).forEach((result) => {
+    const mods = modulesByTestCaseId[result.test_case_id] || [];
+    mods.forEach((mod) => {
+      if (!moduleBuckets[mod.id])
+        moduleBuckets[mod.id] = {
+          id: mod.id,
+          name: mod.name,
+          total: 0,
+          pass: 0,
+          fail: 0,
+        };
+      moduleBuckets[mod.id].total += 1;
+      if (result.status === "pass") moduleBuckets[mod.id].pass += 1;
+      if (result.status === "fail") moduleBuckets[mod.id].fail += 1;
     });
+  });
+
+  const moduleData = Object.values(moduleBuckets)
+    .map((m) => {
+      const decided = m.pass + m.fail;
+      return {
+        ...m,
+        passRate: decided > 0 ? Math.round((m.pass / decided) * 100) : null,
+      };
+    })
+    .sort((a, b) =>
+      a.passRate === null
+        ? 1
+        : b.passRate === null
+          ? -1
+          : a.passRate - b.passRate,
+    );
 
   return (
     <main className="p-8 w-full max-w-4xl mx-auto">
@@ -114,7 +164,19 @@ export default async function ReportsPage({ searchParams }) {
         <p className="text-sm text-slate-500 mb-4">
           All-time pass rate by suite, worst first.
         </p>
-        <SuiteBreakdownChart suites={suiteData} />
+        <BreakdownChart items={suiteData} itemLabel="Suite" countLabel="Runs" />
+      </div>
+
+      <div className="mt-10">
+        <h2 className="mb-2">Module Breakdown</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          All-time pass rate by module, worst first.
+        </p>
+        <BreakdownChart
+          items={moduleData}
+          itemLabel="Module"
+          countLabel="Results"
+        />
       </div>
     </main>
   );

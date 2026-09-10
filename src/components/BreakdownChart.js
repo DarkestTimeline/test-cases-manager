@@ -11,12 +11,16 @@ import {
   Cell,
 } from "recharts";
 
-export default function SuiteBreakdownChart({ suites }) {
-  if (suites.length === 0) {
-    return <p className="text-slate-500">No suite run history yet.</p>;
+export default function BreakdownChart({
+  items,
+  itemLabel = "Item",
+  countLabel = "Total",
+}) {
+  if (items.length === 0) {
+    return <p className="text-slate-500">No data yet.</p>;
   }
 
-  const chartHeight = Math.max(150, suites.length * 50);
+  const chartHeight = Math.max(150, items.length * 50);
 
   function colorFor(passRate) {
     if (passRate === null) return "#cbd5e1";
@@ -28,7 +32,7 @@ export default function SuiteBreakdownChart({ suites }) {
   return (
     <div>
       <ResponsiveContainer width="100%" height={chartHeight}>
-        <BarChart data={suites} layout="vertical" margin={{ left: 40 }}>
+        <BarChart data={items} layout="vertical" margin={{ left: 40 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             type="number"
@@ -45,8 +49,8 @@ export default function SuiteBreakdownChart({ suites }) {
             formatter={(value) => (value === null ? "No data" : `${value}%`)}
           />
           <Bar dataKey="passRate" radius={[0, 4, 4, 0]}>
-            {suites.map((s) => (
-              <Cell key={s.suiteId} fill={colorFor(s.passRate)} />
+            {items.map((item) => (
+              <Cell key={item.id} fill={colorFor(item.passRate)} />
             ))}
           </Bar>
         </BarChart>
@@ -55,22 +59,22 @@ export default function SuiteBreakdownChart({ suites }) {
       <table className="w-full text-sm mt-6 border rounded overflow-hidden">
         <thead className="bg-slate-100">
           <tr>
-            <th className="text-left p-2">Suite</th>
-            <th className="text-right p-2">Runs</th>
+            <th className="text-left p-2">{itemLabel}</th>
+            <th className="text-right p-2">{countLabel}</th>
             <th className="text-right p-2">Pass</th>
             <th className="text-right p-2">Fail</th>
             <th className="text-right p-2">Pass Rate</th>
           </tr>
         </thead>
         <tbody>
-          {suites.map((s) => (
-            <tr key={s.suiteId} className="border-t">
-              <td className="p-2">{s.name}</td>
-              <td className="p-2 text-right">{s.total}</td>
-              <td className="p-2 text-right">{s.pass}</td>
-              <td className="p-2 text-right">{s.fail}</td>
+          {items.map((item) => (
+            <tr key={item.id} className="border-t">
+              <td className="p-2">{item.name}</td>
+              <td className="p-2 text-right">{item.total}</td>
+              <td className="p-2 text-right">{item.pass}</td>
+              <td className="p-2 text-right">{item.fail}</td>
               <td className="p-2 text-right">
-                {s.passRate === null ? "—" : `${s.passRate}%`}
+                {item.passRate === null ? "—" : `${item.passRate}%`}
               </td>
             </tr>
           ))}

@@ -26,6 +26,8 @@ QA Test Case Manager is a Next.js application for organizing manual QA test case
 
 Built as a self-directed learning project to get hands-on with full-stack development — data modeling, the Server/Client Component boundary, and Row Level Security in particular.
 
+**Development notes:** Code was written with AI pair-programming assistance (Claude), with each feature scoped, explained, and reviewed before implementation rather than generated wholesale.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -84,27 +86,40 @@ No ORM is used — the app talks to Postgres directly through the Supabase JS cl
 
 ```
 .
+├── public/
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   └── keep-alive/route.js   # Vercel Cron endpoint, pings DB daily
-│   │   ├── (auth routes)             # Sign in / sign up / invite-code gate
-│   │   ├── modules/                  # Module CRUD + case assignment
-│   │   ├── suites/                   # Suite CRUD + case assignment
-│   │   ├── test-cases/               # Test case CRUD
-│   │   ├── runs/                     # Run execution + runs dashboard
-│   │   ├── reports/                  # Reporting dashboard (Recharts)
-│   │   └── settings/                 # Import/Export tabs
-│   ├── components/                   # Shared Button, Badge, Card, etc.
-│   ├── lib/
-│   │   ├── supabase/                 # Supabase client setup (browser + server)
-│   │   └── badgeStyles.js            # Shared status → badge style mapping
-│   └── middleware.js                 # Route protection for authenticated pages
-├── vercel.json                       # Cron schedule config
+│   │   │   └── keep-alive/          # Vercel Cron endpoint, pings DB daily
+│   │   ├── login/
+│   │   ├── signup/
+│   │   ├── profile/
+│   │   ├── modules/
+│   │   │   ├── new/
+│   │   │   └── [id]/
+│   │   ├── suites/
+│   │   │   ├── new/
+│   │   │   └── [id]/
+│   │   ├── test-cases/
+│   │   │   ├── new/
+│   │   │   └── [id]/
+│   │   │       └── edit/
+│   │   ├── runs/
+│   │   │   └── [id]/
+│   │   ├── reports/
+│   │   └── settings/
+│   │       ├── export/
+│   │       └── import/
+│   ├── components/
+│   └── lib/
+│       └── supabase/                # Browser + server Supabase client setup
+├── vercel.json                      # Cron schedule config
 └── package.json
 ```
 
-*(Adjust the tree above to match your actual folder names if they differ — this reflects the structure as built.)*
+Notes on route structure:
+- `test-cases/[id]/edit` is a dedicated edit route, while `modules/[id]` and `suites/[id]` handle editing inline rather than through a separate route.
+- Each route folder follows standard App Router conventions (`page.js`, and `route.js` for the `api/keep-alive` endpoint).
 
 ## Getting Started
 
