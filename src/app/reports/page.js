@@ -133,7 +133,7 @@ export default async function ReportsPage({ searchParams }) {
       };
     })
     .sort((a, b) =>
-      a.pasRate === null
+      a.passRate === null
         ? 1
         : b.passRate === null
           ? -1
