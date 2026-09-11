@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { updateResult } from "../actions";
 import { STATUS_STYLES, RUN_STATUS_STYLES } from "@/lib/badgeStyles";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
-import { formatStatusLabel } from "@/lib/formatLabel";
 
 function summarize(results) {
   const counts = {
@@ -38,6 +37,25 @@ export default function ResultsList({
 }) {
   return (
     <div className="space-y-6">
+      {!isLocked && (
+        <p className="text-xs text-slate-400">
+          Tip: hover a test case and press{" "}
+          <kbd className="px-1 py-0.5 bg-slate-100 rounded border text-slate-600">
+            P
+          </kbd>{" "}
+          <kbd className="px-1 py-0.5 bg-slate-100 rounded border text-slate-600">
+            F
+          </kbd>{" "}
+          <kbd className="px-1 py-0.5 bg-slate-100 rounded border text-slate-600">
+            B
+          </kbd>{" "}
+          <kbd className="px-1 py-0.5 bg-slate-100 rounded border text-slate-600">
+            S
+          </kbd>{" "}
+          to mark it quickly.
+        </p>
+      )}
+
       {moduleGroups.map((group) => {
         const { counts, label, style } = summarize(group.results);
         return (
@@ -86,9 +104,12 @@ export default function ResultsList({
   );
 }
 
+const SHORTCUT_MAP = { p: "pass", f: "fail", b: "blocked", s: "skipped" };
+
 function ResultItem({ result, runId, isLocked }) {
   const [status, setStatus] = useState(result.status);
   const [notes, setNotes] = useState(result.notes || "");
+  const [isHovered, setIsHovered] = useState(false);
 
   async function handleStatusClick(newStatus) {
     if (isLocked) return;
@@ -106,8 +127,29 @@ function ResultItem({ result, runId, isLocked }) {
     await updateResult({ resultId: result.id, status, notes, runId });
   }
 
+  useEffect(() => {
+    if (!isHovered || isLocked) return;
+
+    function handleKeyDown(e) {
+      const tag = e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      const newStatus = SHORTCUT_MAP[e.key.toLowerCase()];
+      if (newStatus) {
+        handleStatusClick(newStatus);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isHovered, isLocked, notes]);
+
   return (
-    <li className="border rounded-lg p-4">
+    <li
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`border rounded-lg p-4 transition-shadow ${isHovered && !isLocked ? "ring-2 ring-primary" : ""}`}
+    >
       <div className="flex justify-between items-start gap-3">
         <h2 className="text-base font-semibold text-slate-900">
           {result.test_case_code && (
@@ -117,9 +159,7 @@ function ResultItem({ result, runId, isLocked }) {
           )}
           {result.title}
         </h2>
-        <Badge className={STATUS_STYLES[status]}>
-          {formatStatusLabel(status)}
-        </Badge>
+        <Badge className={STATUS_STYLES[status]}>{status}</Badge>
       </div>
 
       <div className="mt-3 text-sm text-slate-600 space-y-2">
