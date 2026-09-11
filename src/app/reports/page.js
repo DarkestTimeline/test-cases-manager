@@ -2,8 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import ReportsCharts from "./ReportsCharts";
 import BreakdownChart from "@/components/BreakdownChart";
 import Button from "@/components/Button";
+import Badge from "@/components/Badge";
+import { formatId } from "@/lib/displayId";
+import { PRIORITY_STYLES } from "@/lib/badgeStyles";
+import { formatStatusLabel } from "@/lib/formatLabel";
 
 const WEEK_OPTIONS = [4, 8, 12, 26, 52];
+const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
 
 function getWeekStart(dateStr) {
   const d = new Date(dateStr);
@@ -179,6 +184,22 @@ export default async function ReportsPage({ searchParams }) {
           : a.passRate - b.passRate,
     );
 
+  const { data: activeTestCases } = await supabase
+    .from("test_cases")
+    .select("id, title, seq_number, priority")
+    .is("archived_at", null);
+
+  const { data: everRunTestCaseIds } = await supabase
+    .from("run_results")
+    .select("test_case_id");
+  const runTestCaseIdSet = new Set(
+    (everRunTestCaseIds || []).map((r) => r.test_case_id),
+  );
+
+  const neverRunTestCases = (activeTestCases || [])
+    .filter((tc) => !runTestCaseIdSet.has(tc.id))
+    .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
+
   return (
     <main className="p-8 w-full max-w-4xl mx-auto">
       <h1 className="mb-4">Reports</h1>
@@ -229,6 +250,46 @@ export default async function ReportsPage({ searchParams }) {
           itemLabel="Tester"
           countLabel="Runs"
         />
+      </div>
+
+      <div className="mt-10">
+        <h2 className="mb-2">Coverage Gaps</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          Active test cases that have never been run, most urgent first.
+        </p>
+        {neverRunTestCases.length === 0 ? (
+          <p className="text-success text-sm font-medium">
+            Every active test case has been run at least once. 🎉
+          </p>
+        ) : (
+          <table className="w-full text-sm border rounded overflow-hidden">
+            <thead className="bg-slate-100">
+              <tr>
+                <th className="text-left p-2">Test Case</th>
+                <th className="text-left p-2">Priority</th>
+              </tr>
+            </thead>
+            <tbody>
+              {neverRunTestCases.map((tc) => (
+                <tr key={tc.id} className="border-t">
+                  <td className="p-2">
+                    {tc.seq_number && (
+                      <span className="text-slate-400 mr-2">
+                        {formatId("TC", tc.seq_number)}
+                      </span>
+                    )}
+                    {tc.title}
+                  </td>
+                  <td className="p-2">
+                    <Badge className={PRIORITY_STYLES[tc.priority]}>
+                      {formatStatusLabel(tc.priority)}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </main>
   );

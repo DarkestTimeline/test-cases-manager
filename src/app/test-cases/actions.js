@@ -12,11 +12,18 @@ export async function createTestCase(formData) {
   const steps_to_reproduce = formData.get("steps_to_reproduce");
   const expected_result = formData.get("expected_result");
   const moduleIds = formData.getAll("moduleIds");
-  const priority = formData.get('priority')
+  const priority = formData.get("priority");
+  const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
 
   const { data: testCase, error } = await supabase
     .from("test_cases")
-    .insert({ title, preconditions, steps_to_reproduce, expected_result, priority })
+    .insert({
+      title,
+      preconditions,
+      steps_to_reproduce,
+      expected_result,
+      priority,
+    })
     .select()
     .single();
 
@@ -49,7 +56,13 @@ export async function updateTestCase(formData) {
 
   const { error } = await supabase
     .from("test_cases")
-    .update({ title, preconditions, steps_to_reproduce, expected_result, priority })
+    .update({
+      title,
+      preconditions,
+      steps_to_reproduce,
+      expected_result,
+      priority,
+    })
     .eq("id", testCaseId);
 
   if (error) throw new Error(error.message);
@@ -141,13 +154,11 @@ export async function cloneTestCase(formData) {
     const nextPosition =
       existing && existing.length > 0 ? existing[0].position + 1 : 0;
 
-    await supabase
-      .from("module_cases")
-      .insert({
-        module_id: link.module_id,
-        test_case_id: clone.id,
-        position: nextPosition,
-      });
+    await supabase.from("module_cases").insert({
+      module_id: link.module_id,
+      test_case_id: clone.id,
+      position: nextPosition,
+    });
   }
 
   revalidatePath("/test-cases");
@@ -164,13 +175,19 @@ export async function importTestCases(rows) {
     );
   }
 
-  const rowsToInsert = rows.map((row) => ({
-    title: row.title,
-    preconditions: row.preconditions || null,
-    steps_to_reproduce: row.steps_to_reproduce,
-    expected_result: row.expected_result,
-    priority: row.priority || null,
-  }));
+  const rowsToInsert = rows.map((row) => {
+    const base = {
+      title: row.title,
+      preconditions: row.preconditions || null,
+      steps_to_reproduce: row.steps_to_reproduce,
+      expected_result: row.expected_result,
+    };
+    const priority = (row.priority || "").trim().toLowerCase();
+    if (VALID_PRIORITIES.includes(priority)) {
+      base.priority = priority;
+    }
+    return base;
+  });
 
   const { data: inserted, error } = await supabase
     .from("test_cases")

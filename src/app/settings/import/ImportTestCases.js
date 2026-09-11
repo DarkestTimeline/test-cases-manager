@@ -14,7 +14,8 @@ const REQUIRED_COLUMNS = [
   "steps_to_reproduce",
   "expected_result",
 ];
-const TEMPLATE_COLUMNS = [...REQUIRED_COLUMNS, "modules"];
+const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
+const TEMPLATE_COLUMNS = [...REQUIRED_COLUMNS, "priority", "modules"];
 
 export default function ImportTestCases({ modules }) {
   const [rows, setRows] = useState([]);
@@ -160,6 +161,7 @@ export default function ImportTestCases({ modules }) {
                   <th className="text-left p-2">Preconditions</th>
                   <th className="text-left p-2">Steps</th>
                   <th className="text-left p-2">Expected Result</th>
+                  <th className="text-left p-2">Priority</th>
                   <th className="text-left p-2">Modules</th>
                 </tr>
               </thead>
@@ -206,6 +208,21 @@ export default function ImportTestCases({ modules }) {
                       {row.expected_result || (
                         <span className="text-slate-400 italic">—</span>
                       )}
+                    </td>
+                    <td className="p-2 align-top">
+                      {row.priority || (
+                        <span className="text-slate-400 italic">—</span>
+                      )}
+                      {row.priority &&
+                        !VALID_PRIORITIES.includes(
+                          row.priority.trim().toLowerCase(),
+                        ) && (
+                          <div className="mt-1">
+                            <Badge className="bg-amber-100 text-amber-700">
+                              Invalid — will default to Medium
+                            </Badge>
+                          </div>
+                        )}
                     </td>
                     <td className="p-2 align-top">
                       {row.modules || (

@@ -58,6 +58,19 @@ export default async function NewTestCase() {
             className="w-full border rounded p-2"
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Priority</label>
+          <select
+            name="priority"
+            defaultValue="medium"
+            className="w-full border rounded p-2"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
 
         {modules.length > 0 && (
           <div>
