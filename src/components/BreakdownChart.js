@@ -48,7 +48,7 @@ export default function BreakdownChart({
           <Tooltip
             formatter={(value) => (value === null ? "No data" : `${value}%`)}
           />
-          <Bar dataKey="passRate" radius={[0, 4, 4, 0]}>
+          <Bar dataKey="passRate" name="Pass Rate" radius={[0, 4, 4, 0]}>
             {items.map((item) => (
               <Cell key={item.id} fill={colorFor(item.passRate)} />
             ))}

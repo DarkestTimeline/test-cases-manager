@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+
 export default function ReportsCharts({ data }) {
   if (data.length === 0) {
     return (

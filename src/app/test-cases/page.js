@@ -120,10 +120,10 @@ export default async function TestCasesList({ searchParams }) {
                       </span>
                     )}
                     {tc.title}
-                    <Badge className={PRIORITY_STYLES[tc.priority]}>
-                      {formatStatusLabel(tc.priority)}
-                    </Badge>
                   </Link>
+                  <Badge className={`ml-2 ${PRIORITY_STYLES[tc.priority]}`}>
+                    {formatStatusLabel(tc.priority)}
+                  </Badge>
                   <p className="text-sm text-slate-600 mt-1">
                     {tc.expected_result}
                   </p>
