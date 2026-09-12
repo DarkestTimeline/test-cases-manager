@@ -36,6 +36,10 @@ export default async function AdminUsersPage() {
           >
             <div>
               <p className="font-medium">{profile.display_name}</p>
+              <p className="text-sm text-slate-500">{profile.email}</p>
+              <p className="text-xs text-slate-400">
+                Member since {new Date(profile.created_at).toLocaleDateString()}
+              </p>
               <div className="flex gap-2 mt-1">
                 <Badge className="bg-primary-light text-primary">
                   {formatStatusLabel(profile.role)}
