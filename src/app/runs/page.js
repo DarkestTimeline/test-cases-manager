@@ -15,7 +15,7 @@ const PAGE_SIZE = 10;
 
 export default async function RunsDashboard({ searchParams }) {
   const supabase = await createClient();
-  const { status, suiteId, tester, startDate, endDate, page, mine } =
+  const { status, suiteId, tester, startDate, endDate, page, mine, outcome } =
     await searchParams;
   const currentPage = parseInt(page) || 1;
   const from = (currentPage - 1) * PAGE_SIZE;
@@ -38,6 +38,7 @@ export default async function RunsDashboard({ searchParams }) {
   }
 
   if (status) query = query.eq("status", status);
+  if (outcome) query = query.eq("outcome", outcome);
   if (suiteId) query = query.eq("suite_id", suiteId);
   if (tester) query = query.ilike("tester_name", `%${tester}%`);
   if (startDate) query = query.gte("started_at", startDate);
@@ -79,6 +80,7 @@ export default async function RunsDashboard({ searchParams }) {
       endDate,
       page: currentPage,
       mine,
+      outcome,
     };
     const merged = { ...current, ...overrides };
     const params = new URLSearchParams();
@@ -89,6 +91,7 @@ export default async function RunsDashboard({ searchParams }) {
     if (merged.endDate) params.set("endDate", merged.endDate);
     if (merged.page && merged.page > 1) params.set("page", merged.page);
     if (merged.mine) params.set("mine", "true");
+    if (merged.outcome) params.set("outcome", merged.outcome);
     const qs = params.toString();
     return qs ? `/runs?${qs}` : "/runs";
   }
@@ -159,6 +162,15 @@ export default async function RunsDashboard({ searchParams }) {
             className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
           />
         </label>
+        <select
+          name="outcome"
+          defaultValue={outcome || ""}
+          className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <option value="">Any Outcome</option>
+          <option value="pass">Pass</option>
+          <option value="fail">Fail</option>
+        </select>
         <label className="flex items-center gap-2 text-sm text-slate-600">
           <input
             type="checkbox"
@@ -169,6 +181,7 @@ export default async function RunsDashboard({ searchParams }) {
           />
           My Runs Only
         </label>
+
         <Button type="submit">Filter</Button>
         {hasActiveFilters && (
           <Button href="/runs" variant="ghost">

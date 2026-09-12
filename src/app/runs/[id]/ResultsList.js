@@ -111,16 +111,19 @@ function ResultItem({ result, runId, isLocked }) {
   const [notes, setNotes] = useState(result.notes || "");
   const [isHovered, setIsHovered] = useState(false);
 
-  async function handleStatusClick(newStatus) {
-    if (isLocked) return;
-    setStatus(newStatus);
-    await updateResult({
-      resultId: result.id,
-      status: newStatus,
-      notes,
-      runId,
-    });
-  }
+  const handleStatusClick = useCallback(
+    async (newStatus) => {
+      if (isLocked) return;
+      setStatus(newStatus);
+      await updateResult({
+        resultId: result.id,
+        status: newStatus,
+        notes,
+        runId,
+      });
+    },
+    [isLocked, notes, result.id, runId],
+  );
 
   async function handleSaveNotes() {
     if (isLocked) return;
@@ -142,7 +145,7 @@ function ResultItem({ result, runId, isLocked }) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isHovered, isLocked, notes]);
+  }, [isHovered, isLocked, notes, handleStatusClick]);
 
   return (
     <li
