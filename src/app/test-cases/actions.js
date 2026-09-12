@@ -13,7 +13,7 @@ export async function createTestCase(formData) {
   const expected_result = formData.get("expected_result");
   const moduleIds = formData.getAll("moduleIds");
   const priority = formData.get("priority");
-  const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
+
 
   const { data: testCase, error } = await supabase
     .from("test_cases")
