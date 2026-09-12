@@ -147,6 +147,15 @@ export default function NavBar({ suites, profile }) {
               </Link>
             );
           })}
+          {profile.role === "admin" && (
+            <Link
+              href="/admin/users"
+              onClick={() => setIsAccountOpen(false)}
+              className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+            >
+              Manage Users
+            </Link>
+          )}
           <Link
             href="/profile"
             onClick={() => setIsMenuOpen(false)}

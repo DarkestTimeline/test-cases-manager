@@ -43,6 +43,21 @@ export async function proxy(request) {
     return NextResponse.redirect(url);
   }
 
+  if (user && !isPublicRoute) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", user.id)
+      .single();
+    if (profile && !profile.is_active) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "Your account has been deactivated.");
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (user && isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/";

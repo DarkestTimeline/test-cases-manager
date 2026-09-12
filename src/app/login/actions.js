@@ -8,11 +8,26 @@ export async function login(formData) {
   const password = formData.get("password");
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
     redirect(
       `/login?error=${encodeURIComponent("Invalid email or password.")}&email=${encodeURIComponent(email)}`,
+    );
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", data.user.id)
+    .single();
+  if (profile && !profile.is_active) {
+    await supabase.auth.signOut();
+    redirect(
+      `/login?error=${encodeURIComponent("Your account has been deactivated.")}`,
     );
   }
 
