@@ -92,6 +92,15 @@ export default function NavBar({ suites, profile }) {
 
             {isAccountOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg py-1 z-50">
+                {profile.role === "admin" && (
+                  <Link
+                    href="/admin/users"
+                    onClick={() => setIsAccountOpen(false)}
+                    className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+                  >
+                    Manage Users
+                  </Link>
+                )}
                 <Link
                   href="/profile"
                   onClick={() => setIsAccountOpen(false)}
