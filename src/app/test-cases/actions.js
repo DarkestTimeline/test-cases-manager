@@ -198,8 +198,7 @@ export async function importTestCases(rows) {
 
   const { data: allModules } = await supabase
     .from("modules")
-    .select("id, name")
-    .is("archived_at", null);
+    .select("id, name, archived_at");
   const moduleByName = {};
   allModules.forEach((m) => {
     moduleByName[m.name.toLowerCase()] = m;
@@ -207,6 +206,7 @@ export async function importTestCases(rows) {
 
   const nextPositionByModule = {};
   const unmatchedNames = new Set();
+  const archivedNames = new Set();
   const moduleLinksToInsert = [];
 
   for (let i = 0; i < rows.length; i++) {
@@ -217,20 +217,15 @@ export async function importTestCases(rows) {
 
     for (const name of moduleNames) {
       const mod = moduleByName[name.toLowerCase()];
+
       if (!mod) {
         unmatchedNames.add(name);
         continue;
       }
 
-      if (!(mod.id in nextPositionByModule)) {
-        const { data: existing } = await supabase
-          .from("module_cases")
-          .select("position")
-          .eq("module_id", mod.id)
-          .order("position", { ascending: false })
-          .limit(1);
-        nextPositionByModule[mod.id] =
-          existing && existing.length > 0 ? existing[0].position + 1 : 0;
+      if (mod.archived_at) {
+        archivedNames.add(name);
+        continue;
       }
 
       moduleLinksToInsert.push({
@@ -250,10 +245,10 @@ export async function importTestCases(rows) {
   }
 
   revalidatePath("/test-cases");
-
   return {
     importedCount: inserted.length,
     unmatchedModuleNames: Array.from(unmatchedNames),
+    archivedModuleNames: Array.from(archivedNames),
   };
 }
 

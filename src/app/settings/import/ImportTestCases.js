@@ -17,7 +17,7 @@ const REQUIRED_COLUMNS = [
 const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
 const TEMPLATE_COLUMNS = [...REQUIRED_COLUMNS, "priority", "modules"];
 
-export default function ImportTestCases({ modules }) {
+export default function ImportTestCases({ modules, allModulesForWarnings }) {
   const [rows, setRows] = useState([]);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
@@ -26,6 +26,11 @@ export default function ImportTestCases({ modules }) {
   const [fileInputKey, setFileInputKey] = useState(0);
 
   const moduleNameSet = new Set(modules.map((m) => m.name.toLowerCase()));
+  const archivedModuleNameSet = new Set(
+    (allModulesForWarnings || [])
+      .filter((m) => m.archived_at)
+      .map((m) => m.name.toLowerCase()),
+  );
 
   function handleFileChange(e) {
     const file = e.target.files[0];
@@ -84,7 +89,15 @@ export default function ImportTestCases({ modules }) {
       .split(",")
       .map((n) => n.trim())
       .filter(Boolean);
-    return names.filter((name) => !moduleNameSet.has(name.toLowerCase()));
+    return names
+      .map((name) => {
+        const lower = name.toLowerCase();
+        if (archivedModuleNameSet.has(lower))
+          return { name, reason: "archived" };
+        if (!moduleNameSet.has(lower)) return { name, reason: "not found" };
+        return null;
+      })
+      .filter(Boolean);
   });
   const warningCount = rowWarnings.filter((w) => w.length > 0).length;
 
@@ -230,12 +243,15 @@ export default function ImportTestCases({ modules }) {
                       )}
                       {rowWarnings[i].length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {rowWarnings[i].map((name) => (
+                          {rowWarnings[i].map((w) => (
                             <Badge
-                              key={name}
+                              key={w.name}
                               className="bg-amber-100 text-amber-700"
                             >
-                              {name} not found
+                              &quot;{w.name}&quot;{" "}
+                              {w.reason === "archived"
+                                ? "is archived — not linked"
+                                : "not found"}
                             </Badge>
                           ))}
                         </div>

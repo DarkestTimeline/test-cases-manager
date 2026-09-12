@@ -8,6 +8,14 @@ export default async function ImportPage() {
     .select("id, name")
     .is("archived_at", null)
     .order("name");
+  const { data: allModulesForWarnings } = await supabase
+    .from("modules")
+    .select("name, archived_at");
 
-  return <ImportTestCases modules={modules || []} />;
+  return (
+    <ImportTestCases
+      modules={modules || []}
+      allModulesForWarnings={allModulesForWarnings || []}
+    />
+  );
 }
