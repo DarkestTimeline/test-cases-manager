@@ -3,21 +3,21 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-export async function signup(formData) {
+export async function signup(prevState, formData) {
   const displayName = formData.get("displayName");
   const email = formData.get("email");
   const password = formData.get("password");
   const inviteCode = formData.get("inviteCode");
 
   if (inviteCode !== process.env.INVITE_CODE) {
-    redirect(`/signup?error=${encodeURIComponent("Invalid invite code.")}`);
+    return { error: "Invalid invite code.", displayName, email };
   }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+    return { error: error.message, displayName, email };
   }
 
   if (data.user) {

@@ -2,39 +2,36 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
-export async function updateDisplayName(formData) {
+export async function updateDisplayName(prevState, formData) {
   const supabase = await createClient();
   const displayName = formData.get("displayName");
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   const { error } = await supabase
     .from("profiles")
     .update({ display_name: displayName })
     .eq("id", user.id);
 
   if (error) {
-    redirect(`/profile?error=${encodeURIComponent(error.message)}`);
+    return { error: error.message, success: null };
   }
 
   revalidatePath("/");
-  redirect("/profile?success=Display name updated.");
+  revalidatePath("/profile");
+  return { error: null, success: "Display name updated." };
 }
 
-export async function updatePassword(formData) {
+export async function updatePassword(prevState, formData) {
   const supabase = await createClient();
   const currentPassword = formData.get("currentPassword");
   const newPassword = formData.get("newPassword");
   const confirmPassword = formData.get("confirmPassword");
 
   if (newPassword !== confirmPassword) {
-    redirect(
-      `/profile?error=${encodeURIComponent("New passwords do not match.")}`,
-    );
+    return { error: "New passwords do not match.", success: null };
   }
 
   const {
@@ -47,16 +44,14 @@ export async function updatePassword(formData) {
   });
 
   if (verifyError) {
-    redirect(
-      `/profile?error=${encodeURIComponent("Current password is incorrect.")}`,
-    );
+    return { error: "Current password is incorrect.", success: null };
   }
 
   const { error } = await supabase.auth.updateUser({ password: newPassword });
 
   if (error) {
-    redirect(`/settings/profile?error=${encodeURIComponent(error.message)}`);
+    return { error: error.message, success: null };
   }
 
-  redirect("/settings/profile?success=Password updated.");
+  return { error: null, success: "Password updated." };
 }

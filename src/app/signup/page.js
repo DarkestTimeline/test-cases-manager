@@ -1,28 +1,35 @@
+"use client";
+
+import { useActionState } from "react";
 import Link from "next/link";
 import { signup } from "./actions";
 import Button from "@/components/Button";
 
-export default async function SignupPage({ searchParams }) {
-  const { error } = await searchParams;
+const initialState = { error: null, displayName: "", email: "" };
+
+export default function SignupPage() {
+  const [state, formAction, isPending] = useActionState(signup, initialState);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-8">
       <div className="w-full max-w-sm bg-white border rounded-lg p-8 shadow-sm">
         <h1 className="mb-1 text-center">Create an Account</h1>
         <p className="text-slate-500 text-sm text-center mb-6">
-          You will need an invite code to sign up
+          You&apos;ll need an invite code to sign up
         </p>
 
-        {error && (
-          <p className="text-danger text-sm mb-4 text-center">{error}</p>
+        {state.error && (
+          <p className="text-danger text-sm mb-4 text-center">{state.error}</p>
         )}
 
-        <form action={signup} className="space-y-4">
+        <form action={formAction} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Your Name</label>
             <input
+              key={`name-${state.error}`}
               type="text"
               name="displayName"
+              defaultValue={state.displayName}
               required
               className="w-full border rounded p-2"
             />
@@ -30,8 +37,10 @@ export default async function SignupPage({ searchParams }) {
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
             <input
+              key={`email-${state.error}`}
               type="email"
               name="email"
+              defaultValue={state.email}
               required
               className="w-full border rounded p-2"
             />
@@ -57,8 +66,8 @@ export default async function SignupPage({ searchParams }) {
               className="w-full border rounded p-2"
             />
           </div>
-          <Button type="submit" className="w-full">
-            Create Account
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending ? "Creating Account..." : "Create Account"}
           </Button>
         </form>
 

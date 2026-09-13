@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-export async function login(formData) {
+export async function login(prevState, formData) {
   const email = formData.get("email");
   const password = formData.get("password");
 
@@ -14,9 +14,7 @@ export async function login(formData) {
   });
 
   if (error) {
-    redirect(
-      `/login?error=${encodeURIComponent("Invalid email or password.")}&email=${encodeURIComponent(email)}`,
-    );
+    return { error: "Invalid email or password.", email };
   }
 
   const { data: profile } = await supabase
@@ -26,9 +24,7 @@ export async function login(formData) {
     .single();
   if (profile && !profile.is_active) {
     await supabase.auth.signOut();
-    redirect(
-      `/login?error=${encodeURIComponent("Your account has been deactivated.")}`,
-    );
+    return { error: "Your account has been deactivated.", email };
   }
 
   redirect("/");

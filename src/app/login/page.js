@@ -1,9 +1,14 @@
+"use client";
+
+import { useActionState } from "react";
 import Link from "next/link";
 import { login, loginAsDemo } from "./actions";
 import Button from "@/components/Button";
 
-export default async function LoginPage({ searchParams }) {
-  const { error, email } = await searchParams;
+const initialState = { error: null, email: "" };
+
+export default function LoginPage() {
+  const [state, formAction, isPending] = useActionState(login, initialState);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-8">
@@ -13,34 +18,36 @@ export default async function LoginPage({ searchParams }) {
           Sign in to continue
         </p>
 
-        {error && (
-          <p className="text-danger text-sm mb-4 text-center">{error}</p>
+        {state.error && (
+          <p className="text-danger text-sm mb-4 text-center">{state.error}</p>
         )}
 
-        <form action={login} className="space-y-4">
+        <form action={formAction} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
             <input
+              key={`email-${state.error}`}
               type="email"
               name="email"
-              defaultValue={email || ""}
+              defaultValue={state.email}
               required
-              autoFocus={!error}
+              autoFocus={!state.error}
               className="w-full border rounded p-2"
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Password</label>
             <input
+              key={`password-${state.error}`}
               type="password"
               name="password"
               required
-              autoFocus={!!error}
+              autoFocus={!!state.error}
               className="w-full border rounded p-2"
             />
           </div>
-          <Button type="submit" className="w-full">
-            Sign In
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending ? "Signing In..." : "Sign In"}
           </Button>
         </form>
 
