@@ -9,17 +9,18 @@ import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
+import CollapsibleFilters from "@/components/CollapsibleFilters";
 import { formatStatusLabel } from "@/lib/formatLabel";
 
 const PAGE_SIZE = 10;
 
 export default async function RunsDashboard({ searchParams }) {
-  const supabase = await createClient();
   const { status, suiteId, tester, startDate, endDate, page, mine, outcome } =
     await searchParams;
   const currentPage = parseInt(page) || 1;
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+  const supabase = await createClient();
 
   let query = supabase
     .from("test_runs")
@@ -30,19 +31,18 @@ export default async function RunsDashboard({ searchParams }) {
     .range(from, to);
 
   if (mine) {
-    const authClient = await createClient();
     const {
       data: { user },
-    } = await authClient.auth.getUser();
+    } = await supabase.auth.getUser();
     query = query.eq("started_by", user.id);
   }
 
   if (status) query = query.eq("status", status);
-  if (outcome) query = query.eq("outcome", outcome);
   if (suiteId) query = query.eq("suite_id", suiteId);
   if (tester) query = query.ilike("tester_name", `%${tester}%`);
   if (startDate) query = query.gte("started_at", startDate);
   if (endDate) query = query.lte("started_at", `${endDate}T23:59:59`);
+  if (outcome) query = query.eq("outcome", outcome);
 
   const { data: runs, error, count } = await query;
   if (error) return <p className="p-8 text-danger">Error: {error.message}</p>;
@@ -89,19 +89,27 @@ export default async function RunsDashboard({ searchParams }) {
     if (merged.tester) params.set("tester", merged.tester);
     if (merged.startDate) params.set("startDate", merged.startDate);
     if (merged.endDate) params.set("endDate", merged.endDate);
-    if (merged.page && merged.page > 1) params.set("page", merged.page);
     if (merged.mine) params.set("mine", "true");
     if (merged.outcome) params.set("outcome", merged.outcome);
+    if (merged.page && merged.page > 1) params.set("page", merged.page);
     const qs = params.toString();
     return qs ? `/runs?${qs}` : "/runs";
   }
 
-  const hasActiveFilters =
-    status || suiteId || tester || startDate || endDate || mine;
+  const advancedFilterCount = [
+    suiteId,
+    tester,
+    startDate,
+    endDate,
+    outcome,
+    mine,
+  ].filter(Boolean).length;
+  const hasActiveFilters = status || advancedFilterCount > 0;
 
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
       <h1 className="mb-4">Runs Dashboard</h1>
+
       <div className="flex gap-2 mb-4">
         {filters.map((f) => {
           const isActive = f.value ? status === f.value : !status;
@@ -118,77 +126,80 @@ export default async function RunsDashboard({ searchParams }) {
         })}
       </div>
 
-      <form
-        method="GET"
-        action="/runs"
-        className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center mb-6"
-      >
-        {status && <input type="hidden" name="status" value={status} />}
-        <select
-          name="suiteId"
-          defaultValue={suiteId || ""}
-          className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
+      <CollapsibleFilters activeCount={advancedFilterCount}>
+        <form
+          method="GET"
+          action="/runs"
+          className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center"
         >
-          <option value="">All Suites</option>
-          {suites.map((suite) => (
-            <option key={suite.id} value={suite.id}>
-              {suite.seq_number ? `${formatId("S", suite.seq_number)} ` : ""}
-              {suite.name}
-            </option>
-          ))}
-        </select>
-        <input
-          type="text"
-          name="tester"
-          defaultValue={tester || ""}
-          placeholder="Search tester..."
-          className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
-          <span className="shrink-0">From</span>
+          {status && <input type="hidden" name="status" value={status} />}
+          <select
+            name="suiteId"
+            defaultValue={suiteId || ""}
+            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">All Suites</option>
+            {suites.map((suite) => (
+              <option key={suite.id} value={suite.id}>
+                {suite.seq_number ? `${formatId("S", suite.seq_number)} ` : ""}
+                {suite.name}
+              </option>
+            ))}
+          </select>
           <input
-            type="date"
-            name="startDate"
-            defaultValue={startDate || ""}
-            className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
+            type="text"
+            name="tester"
+            defaultValue={tester || ""}
+            placeholder="Search tester..."
+            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
           />
-        </label>
-        <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
-          <span className="shrink-0">To</span>
-          <input
-            type="date"
-            name="endDate"
-            defaultValue={endDate || ""}
-            className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
-          />
-        </label>
-        <select
-          name="outcome"
-          defaultValue={outcome || ""}
-          className="border rounded p-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-primary"
-        >
-          <option value="">Any Outcome</option>
-          <option value="pass">Pass</option>
-          <option value="fail">Fail</option>
-        </select>
-        <label className="flex items-center gap-2 text-sm text-slate-600">
-          <input
-            type="checkbox"
-            name="mine"
-            value="true"
-            defaultChecked={!!mine}
-            className="rounded"
-          />
-          My Runs Only
-        </label>
-
-        <Button type="submit">Filter</Button>
-        {hasActiveFilters && (
-          <Button href="/runs" variant="ghost">
-            Clear all
+          <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
+            <span className="shrink-0">From</span>
+            <input
+              type="date"
+              name="startDate"
+              defaultValue={startDate || ""}
+              className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
+            <span className="shrink-0">To</span>
+            <input
+              type="date"
+              name="endDate"
+              defaultValue={endDate || ""}
+              className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
+            />
+          </label>
+          <select
+            name="outcome"
+            defaultValue={outcome || ""}
+            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Any Outcome</option>
+            <option value="pass">Pass</option>
+            <option value="fail">Fail</option>
+          </select>
+          <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
+            <input
+              type="checkbox"
+              name="mine"
+              value="true"
+              defaultChecked={!!mine}
+              className="rounded"
+            />
+            My Runs Only
+          </label>
+          <Button type="submit" className="w-full sm:w-auto">
+            Filter
           </Button>
-        )}
-      </form>
+          {advancedFilterCount > 0 && (
+            <Button href="/runs" variant="ghost">
+              Clear all
+            </Button>
+          )}
+        </form>
+      </CollapsibleFilters>
 
       {runs.length === 0 ? (
         <p className="text-slate-500">No runs match these filters.</p>
