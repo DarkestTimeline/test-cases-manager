@@ -16,7 +16,6 @@ A full-stack manual QA test case management application built to let multiple te
 - [Environment Variables](#environment-variables)
 - [Deployment](#deployment)
 - [Key Design Decisions](#key-design-decisions)
-- [Roadmap](#roadmap)
 
 ---
 
