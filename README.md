@@ -151,6 +151,23 @@ The app will be available at `http://localhost:3000`.
 3. Set up the trigger that auto-creates a `profiles` row on new Supabase Auth signups.
 4. Configure the invite-code check used to gate signups.
 
+### Database Seeding
+
+A reusable `seed.mjs` script populates the database with realistic demo data — modules, test cases, suites, test runs, and run results — reusing existing `profiles` rows as the `started_by` value on runs.
+
+```powershell
+node seed.mjs
+```
+
+- The script uses the Supabase **service role key**, so it must be run locally (or in a controlled environment), never from client-side code.
+- It wipes and refills `modules`, `test_cases`, `suites`, `test_runs`, and `run_results` — this is destructive to whatever data is currently in those tables.
+- As a safety measure against accidentally targeting the wrong project, it prints the target Supabase project URL and requires typing `yes` to confirm before wiping anything.
+- Two schema quirks the script (and any future inserts) must respect:
+  - `seq_number` on `modules` / `suites` / `test_cases` is a `GENERATED ALWAYS AS IDENTITY` column — never include it in an insert.
+  - `test_cases` has no `test_case_code` column; that field only exists on `run_results`, where it's captured as part of the run-start snapshot.
+
+*(Adjust the `node seed.mjs` path above if the script lives in a subfolder, e.g. `scripts/seed.mjs`, in your repo.)*
+
 ## Environment Variables
 
 | Variable | Description |
@@ -172,3 +189,5 @@ The app is deployed on Vercel. Pushing to the main branch triggers a new deploym
 - **Plain text over Postgres enums for status fields** — easier to extend with new statuses without a migration.
 - **Soft delete over hard delete** for all primary resources, so archived data can't orphan historical run references.
 - **"Select all" as a frozen bulk copy** when adding a module's cases to a suite, rather than a live link.
+- **Simplicity over premature complexity** — features like bulk test case creation and mid-run quick-add were designed, then deliberately reversed after deciding they added complexity without real benefit.
+- **Provider isolation for any future LLM integration** — planned AI features wrap model calls behind a single function (e.g. `generateTestCases(docText)`) so swapping providers later is low-risk.
