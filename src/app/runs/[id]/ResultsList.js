@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { updateResult } from "../actions";
 import { STATUS_STYLES, RUN_STATUS_STYLES } from "@/lib/badgeStyles";
 import Button from "@/components/Button";
