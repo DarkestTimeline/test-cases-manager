@@ -74,7 +74,7 @@ export default async function Home() {
 
       {inProgressRuns.length > 0 && (
         <div className="mb-10">
-          <h2 className="mb-3">Continue Where You Left Off</h2>
+          <h2 className="mb-3">Ongoing Runs</h2>
           <ul className="space-y-2">
             {inProgressRuns.map((run) => (
               <li key={run.id}>

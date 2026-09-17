@@ -91,6 +91,9 @@ export default async function RunDetail({ params }) {
               {formatStatusLabel(run.outcome)}
             </Badge>
           )}
+          {run.status === "cancelled" && !run.outcome && (
+            <Badge className="bg-slate-100 text-slate-500">No Outcome</Badge>
+          )}
         </p>
       </div>
 

@@ -246,6 +246,11 @@ export default async function RunsDashboard({ searchParams }) {
                           {formatStatusLabel(run.outcome)}
                         </Badge>
                       )}
+                      {run.status === "cancelled" && !run.outcome && (
+                        <Badge className="bg-slate-100 text-slate-500">
+                          No Outcome
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
