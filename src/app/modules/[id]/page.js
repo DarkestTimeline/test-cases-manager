@@ -3,12 +3,13 @@ import { addTestCasesToModule, updateModule, cloneModule } from "../actions";
 import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
-import SortableModuleCases from "./SortableModuleCases";
 import BackLink from "@/components/BackLink";
+import SortableModuleCases from "./SortableModuleCases";
+import AddTestCasesPicker from "@/components/AddTestCasesPicker";
 
 export default async function ModuleDetail({ params }) {
-  const supabase = await createClient();
   const { id } = await params;
+  const supabase = await createClient();
 
   const { data: mod } = await supabase
     .from("modules")
@@ -42,7 +43,9 @@ export default async function ModuleDetail({ params }) {
               ? "bg-slate-200 text-slate-600"
               : "bg-emerald-100 text-emerald-700"
           }
-        ></Badge>
+        >
+          {mod.archived_at ? "Archived" : "Active"}
+        </Badge>
         {mod.seq_number && (
           <span className="text-slate-400 text-sm">
             {formatId("M", mod.seq_number)}
@@ -83,26 +86,19 @@ export default async function ModuleDetail({ params }) {
       <h2 className="mb-2">Test Cases in this Module</h2>
       <SortableModuleCases linkedCases={linkedCases} moduleId={mod.id} />
 
-      <h2 className="mb-2">Add More Test Cases</h2>
+      <h2 className="mb-2 mt-6">Add Test Cases</h2>
       {availableTestCases.length === 0 ? (
         <p className="text-slate-500">
           All test cases are already in this module.
         </p>
       ) : (
-        <form action={addTestCasesToModule} className="space-y-2">
+        <form action={addTestCasesToModule} className="space-y-4">
           <input type="hidden" name="moduleId" value={mod.id} />
-          {availableTestCases.map((tc) => (
-            <label
-              key={tc.id}
-              className="flex items-center gap-2 border rounded p-2"
-            >
-              <input type="checkbox" name="testCaseIds" value={tc.id} />
-              {tc.title}
-            </label>
-          ))}
-          <Button type="submit" className="mt-2">
-            Add Selected
-          </Button>
+          <AddTestCasesPicker
+            moduleGroups={[]}
+            ungrouped={availableTestCases}
+          />
+          <Button type="submit">Add Selected</Button>
         </form>
       )}
     </main>

@@ -3,12 +3,13 @@ import { addTestCasesToSuite, updateSuite, cloneSuite } from "../actions";
 import { formatId } from "@/lib/displayId";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
-import SortableSuiteCases from "./SortableSuiteCases";
 import BackLink from "@/components/BackLink";
+import SortableSuiteCases from "./SortableSuiteCases";
+import AddTestCasesPicker from "@/components/AddTestCasesPicker";
 
 export default async function SuiteDetail({ params }) {
-  const supabase = await createClient();
   const { id } = await params;
+  const supabase = await createClient();
 
   const { data: suite } = await supabase
     .from("suites")
@@ -68,7 +69,9 @@ export default async function SuiteDetail({ params }) {
               ? "bg-slate-200 text-slate-600"
               : "bg-emerald-100 text-emerald-700"
           }
-        ></Badge>
+        >
+          {suite.archived_at ? "Archived" : "Active"}
+        </Badge>
         {suite.seq_number && (
           <span className="text-slate-400 text-sm">
             {formatId("S", suite.seq_number)}
@@ -109,51 +112,7 @@ export default async function SuiteDetail({ params }) {
       <h2 className="mb-2">Test Cases in this Suite</h2>
       <SortableSuiteCases linkedCases={linkedCases} suiteId={suite.id} />
 
-      {moduleGroups.length > 0 && (
-        <>
-          <h2 className="mb-2">Quick Add by Module</h2>
-          <div className="space-y-2 mb-6">
-            {moduleGroups.map((group) => (
-              <div key={group.module.id} className="border rounded p-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">
-                    {group.module.name} ({group.cases.length} test case
-                    {group.cases.length !== 1 ? "s" : ""})
-                  </span>
-                  <form action={addTestCasesToSuite}>
-                    <input type="hidden" name="suiteId" value={suite.id} />
-                    {group.cases.map((tc) => (
-                      <input
-                        key={tc.id}
-                        type="hidden"
-                        name="testCaseIds"
-                        value={tc.id}
-                      />
-                    ))}
-                    <Button type="submit" variant="success" size="sm">
-                      Add All
-                    </Button>
-                  </form>
-                </div>
-                <ul className="mt-2 text-xs text-slate-500 list-disc list-inside space-y-0.5">
-                  {group.cases.map((tc) => (
-                    <li key={tc.id}>
-                      {tc.seq_number && (
-                        <span className="text-slate-400">
-                          {formatId("TC", tc.seq_number)}{" "}
-                        </span>
-                      )}
-                      {tc.title}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      <h2 className="mb-2">Add Individual Test Cases</h2>
+      <h2 className="mb-2 mt-6">Add Test Cases</h2>
       {availableTestCases.length === 0 ? (
         <p className="text-slate-500">
           All test cases are already in this suite.
@@ -161,42 +120,10 @@ export default async function SuiteDetail({ params }) {
       ) : (
         <form action={addTestCasesToSuite} className="space-y-4">
           <input type="hidden" name="suiteId" value={suite.id} />
-          {moduleGroups.map((group) => (
-            <div key={group.module.id}>
-              <p className="text-sm font-medium text-slate-700 mb-1">
-                {group.module.name}
-              </p>
-              <div className="space-y-1">
-                {group.cases.map((tc) => (
-                  <label
-                    key={tc.id}
-                    className="flex items-center gap-2 border rounded p-2"
-                  >
-                    <input type="checkbox" name="testCaseIds" value={tc.id} />
-                    {tc.title}
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
-          {ungrouped.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-slate-700 mb-1">
-                No Module
-              </p>
-              <div className="space-y-1">
-                {ungrouped.map((tc) => (
-                  <label
-                    key={tc.id}
-                    className="flex items-center gap-2 border rounded p-2"
-                  >
-                    <input type="checkbox" name="testCaseIds" value={tc.id} />
-                    {tc.title}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
+          <AddTestCasesPicker
+            moduleGroups={moduleGroups}
+            ungrouped={ungrouped}
+          />
           <Button type="submit">Add Selected</Button>
         </form>
       )}
