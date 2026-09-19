@@ -1,22 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatId } from "@/lib/displayId";
-import { archiveTestCase, restoreTestCase, cloneTestCase } from "./actions";
-import Button from "@/components/Button";
-import Card from "@/components/Card";
 import Link from "next/link";
-import { PRIORITY_STYLES } from "@/lib/badgeStyles";
+import { formatId } from "@/lib/displayId";
+import { archiveTestCase, restoreTestCase } from "./actions";
+import Button from "@/components/Button";
 import Badge from "@/components/Badge";
-import { formatStatusLabel } from "@/lib/formatLabel";
+import CollapsibleFilters from "@/components/CollapsibleFilters";
+import { PRIORITY_STYLES } from "@/lib/badgeStyles";
+import {formatStatusLabel} from "@/lib/formatLabel";
 
 const PAGE_SIZE = 10;
 
 export default async function TestCasesList({ searchParams }) {
-  const { archived, search, page } = await searchParams;
+  const supabase = await createClient();
+  const { archived, search, page, priority, moduleId } = await searchParams;
   const showingArchived = archived === "true";
   const currentPage = parseInt(page) || 1;
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-  const supabase = await createClient();
 
   let query = supabase
     .from("test_cases")
@@ -29,25 +29,53 @@ export default async function TestCasesList({ searchParams }) {
     : query.is("archived_at", null);
 
   if (search) query = query.ilike("title", `%${search}%`);
+  if (priority) query = query.eq("priority", priority);
+
+  if (moduleId) {
+    const { data: moduleCaseIds } = await supabase
+      .from("module_cases")
+      .select("test_case_id")
+      .eq("module_id", moduleId);
+    const ids = (moduleCaseIds || []).map((mc) => mc.test_case_id);
+    query =
+      ids.length > 0
+        ? query.in("id", ids)
+        : query.eq("id", "00000000-0000-0000-0000-000000000000");
+  }
 
   const { data: testCases, error, count } = await query;
 
   if (error) {
-    return <p className="p-8 text-red-600">Error: {error.message}</p>;
+    return <p className="p-8 text-danger">Error: {error.message}</p>;
   }
 
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE);
+  const { data: modules } = await supabase
+    .from("modules")
+    .select("id, name")
+    .is("archived_at", null)
+    .order("name");
 
   function buildHref(overrides = {}) {
-    const current = { archived: archived || null, search, page: currentPage };
+    const current = {
+      archived: archived || null,
+      search,
+      page: currentPage,
+      priority,
+      moduleId,
+    };
     const merged = { ...current, ...overrides };
     const params = new URLSearchParams();
     if (merged.archived) params.set("archived", merged.archived);
     if (merged.search) params.set("search", merged.search);
+    if (merged.priority) params.set("priority", merged.priority);
+    if (merged.moduleId) params.set("moduleId", merged.moduleId);
     if (merged.page && merged.page > 1) params.set("page", merged.page);
     const qs = params.toString();
     return qs ? `/test-cases?${qs}` : "/test-cases";
   }
+
+  const advancedFilterCount = [priority, moduleId].filter(Boolean).length;
 
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
@@ -68,10 +96,12 @@ export default async function TestCasesList({ searchParams }) {
         </div>
       </div>
 
-      <form method="GET" action="/test-cases" className="flex gap-2 mb-6">
+      <form method="GET" action="/test-cases" className="flex gap-2 mb-2">
         {showingArchived && (
           <input type="hidden" name="archived" value="true" />
         )}
+        {priority && <input type="hidden" name="priority" value={priority} />}
+        {moduleId && <input type="hidden" name="moduleId" value={moduleId} />}
         <input
           type="text"
           name="search"
@@ -79,9 +109,7 @@ export default async function TestCasesList({ searchParams }) {
           placeholder="Search by title..."
           className="border rounded p-2 text-sm flex-1 max-w-xs"
         />
-        <Button type="submit" variant="primary">
-          Search
-        </Button>
+        <Button type="submit">Search</Button>
         {search && (
           <Button
             href={buildHref({ search: null, page: 1 })}
@@ -93,10 +121,57 @@ export default async function TestCasesList({ searchParams }) {
         )}
       </form>
 
+      <CollapsibleFilters activeCount={advancedFilterCount}>
+        <form
+          method="GET"
+          action="/test-cases"
+          className="flex flex-col sm:flex-row gap-2 sm:items-center"
+        >
+          {showingArchived && (
+            <input type="hidden" name="archived" value="true" />
+          )}
+          {search && <input type="hidden" name="search" value={search} />}
+          <select
+            name="priority"
+            defaultValue={priority || ""}
+            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Any Priority</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+          <select
+            name="moduleId"
+            defaultValue={moduleId || ""}
+            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Any Module</option>
+            {modules.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" className="w-full sm:w-auto">
+            Filter
+          </Button>
+          {advancedFilterCount > 0 && (
+            <Button
+              href={buildHref({ priority: null, moduleId: null, page: 1 })}
+              variant="ghost"
+            >
+              Clear
+            </Button>
+          )}
+        </form>
+      </CollapsibleFilters>
+
       {testCases.length === 0 ? (
-        <p className="text-gray-500">
-          {search
-            ? "No test cases match your search."
+        <p className="text-slate-500">
+          {search || advancedFilterCount > 0
+            ? "No test cases match your filters."
             : showingArchived
               ? "No archived test cases."
               : "No test cases yet."}
@@ -105,9 +180,9 @@ export default async function TestCasesList({ searchParams }) {
         <>
           <ul className="space-y-3">
             {testCases.map((tc) => (
-              <Card
+              <li
                 key={tc.id}
-                className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3"
+                className="border rounded p-4 flex justify-between items-start gap-3"
               >
                 <div>
                   <Link
@@ -121,7 +196,7 @@ export default async function TestCasesList({ searchParams }) {
                     )}
                     {tc.title}
                   </Link>
-                  <Badge className={`ml-2 ${PRIORITY_STYLES[tc.priority]}`}>
+                  <Badge className={`${PRIORITY_STYLES[tc.priority]} ml-2`}>
                     {formatStatusLabel(tc.priority)}
                   </Badge>
                   <p className="text-sm text-slate-600 mt-1">
@@ -129,12 +204,6 @@ export default async function TestCasesList({ searchParams }) {
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
-                  <form action={cloneTestCase}>
-                    <input type="hidden" name="testCaseId" value={tc.id} />
-                    <Button type="submit" variant="ghost">
-                      Clone
-                    </Button>
-                  </form>
                   <form
                     action={showingArchived ? restoreTestCase : archiveTestCase}
                   >
@@ -142,13 +211,13 @@ export default async function TestCasesList({ searchParams }) {
                     <Button
                       type="submit"
                       variant={showingArchived ? "success" : "secondary"}
-                      className="text-xs px-3 py-1"
+                      size="sm"
                     >
                       {showingArchived ? "Restore" : "Archive"}
                     </Button>
                   </form>
                 </div>
-              </Card>
+              </li>
             ))}
           </ul>
 
@@ -162,9 +231,9 @@ export default async function TestCasesList({ searchParams }) {
                   ← Previous
                 </Button>
               ) : (
-                <span className="text-sm text-gray-300">← Previous</span>
+                <span className="text-sm text-slate-300">← Previous</span>
               )}
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-slate-500">
                 Page {currentPage} of {totalPages}
               </span>
               {currentPage < totalPages ? (
@@ -175,7 +244,7 @@ export default async function TestCasesList({ searchParams }) {
                   Next →
                 </Button>
               ) : (
-                <span className="text-sm text-gray-300">Next →</span>
+                <span className="text-sm text-slate-300">Next →</span>
               )}
             </div>
           )}
