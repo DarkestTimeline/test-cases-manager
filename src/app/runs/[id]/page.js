@@ -8,6 +8,7 @@ import Badge from "@/components/Badge";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import ConfirmButton from "@/components/ConfirmButton";
 import BackLink from "@/components/BackLink";
+import ProgressBar from "@/components/ProgressBar";
 
 export default async function RunDetail({ params }) {
   const supabase = await createClient();
@@ -95,6 +96,18 @@ export default async function RunDetail({ params }) {
             <Badge className="bg-slate-100 text-slate-500">No Outcome</Badge>
           )}
         </p>
+        <div className="mt-2">
+          <ProgressBar
+            counts={{
+              pass: results.filter((r) => r.status === "pass").length,
+              fail: results.filter((r) => r.status === "fail").length,
+              blocked: results.filter((r) => r.status === "blocked").length,
+              skipped: results.filter((r) => r.status === "skipped").length,
+              pending: results.filter((r) => r.status === "pending").length,
+            }}
+            total={totalCount}
+          />
+        </div>
       </div>
 
       <ResultsList
