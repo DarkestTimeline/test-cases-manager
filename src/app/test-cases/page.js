@@ -6,7 +6,7 @@ import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import CollapsibleFilters from "@/components/CollapsibleFilters";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
-import {formatStatusLabel} from "@/lib/formatLabel";
+import { formatStatusLabel } from "@/lib/formatLabel";
 
 const PAGE_SIZE = 10;
 
@@ -28,7 +28,10 @@ export default async function TestCasesList({ searchParams }) {
     ? query.not("archived_at", "is", null)
     : query.is("archived_at", null);
 
-  if (search) query = query.ilike("title", `%${search}%`);
+  if (search)
+    query = query.or(
+      `title.ilike.%${search}%,steps_to_reproduce.ilike.%${search}%,expected_result.ilike.%${search}%`,
+    );
   if (priority) query = query.eq("priority", priority);
 
   if (moduleId) {
@@ -106,7 +109,7 @@ export default async function TestCasesList({ searchParams }) {
           type="text"
           name="search"
           defaultValue={search || ""}
-          placeholder="Search by title..."
+          placeholder="Search title, steps, or expected result..."
           className="border rounded p-2 text-sm flex-1 max-w-xs"
         />
         <Button type="submit">Search</Button>
