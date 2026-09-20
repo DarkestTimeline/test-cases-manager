@@ -11,6 +11,7 @@ import Badge from "@/components/Badge";
 import Card from "@/components/Card";
 import CollapsibleFilters from "@/components/CollapsibleFilters";
 import { formatStatusLabel } from "@/lib/formatLabel";
+import ProgressBar from "@/components/ProgressBar";
 
 const PAGE_SIZE = 10;
 
@@ -253,7 +254,13 @@ export default async function RunsDashboard({ searchParams }) {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-3">
+                  <div className="mt-3">
+                    <ProgressBar
+                      counts={counts}
+                      total={run.run_results.length}
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-2">
                     {counts.pass > 0 && (
                       <Badge className={STATUS_STYLES.pass}>
                         {counts.pass} pass
