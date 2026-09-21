@@ -60,7 +60,7 @@ export default async function RunDetail({ params }) {
   const isActive = run.status === "in_progress";
 
   return (
-    <main className="p-8 w-full max-w-2xl mx-auto">
+    <main className="p-8 w-full max-w-5xl mx-auto">
       <BackLink href="/runs" label="Runs Dashboard" />
       <div className="mb-6">
         <h1>

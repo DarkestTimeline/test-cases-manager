@@ -25,7 +25,7 @@ export default async function EditTestCase({ params }) {
   const linkedModuleIds = linkedModules.map((lm) => lm.module_id);
 
   return (
-    <main className="p-8 w-full max-w-2xl mx-auto">
+    <main className="p-8 w-full max-w-5xl mx-auto">
       <BackLink href="/test-cases" label="Test Cases" />
       <h1 className="mb-6">Edit Test Case</h1>
       <form action={updateTestCase} className="space-y-4">

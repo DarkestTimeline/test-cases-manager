@@ -60,7 +60,7 @@ export default async function SuiteDetail({ params }) {
   const moduleGroups = Object.values(grouped);
 
   return (
-    <main className="p-8 w-full max-w-2xl mx-auto">
+    <main className="p-8 w-full max-w-5xl mx-auto">
       <BackLink href="/suites" label="Suites" />
       <div className="flex items-center gap-2 mb-4">
         <Badge

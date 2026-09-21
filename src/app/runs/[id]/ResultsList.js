@@ -30,6 +30,46 @@ function summarize(results) {
   return { counts, label, style };
 }
 
+function ModuleSection({ title, results, runId, isLocked }) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const { counts, label, style } = summarize(results);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex justify-between items-center mb-2 border-b pb-1 text-left"
+      >
+        <h2 className="flex items-center gap-2">
+          <span className="text-sm text-slate-400">
+            {isExpanded ? "▼" : "▶"}
+          </span>
+          {title}
+        </h2>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500">
+            {counts.pass}/{results.length} passed
+          </span>
+          <Badge className={style}>{label}</Badge>
+        </div>
+      </button>
+      {isExpanded && (
+        <ul className="space-y-4">
+          {results.map((result) => (
+            <ResultItem
+              key={result.id}
+              result={result}
+              runId={runId}
+              isLocked={isLocked}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function ResultsList({
   moduleGroups,
   ungroupedResults,
@@ -57,55 +97,36 @@ export default function ResultsList({
         </p>
       )}
 
-      {moduleGroups.map((group) => {
-        const { counts, label, style } = summarize(group.results);
-        return (
-          <div key={group.module.id}>
-            <div className="flex justify-between items-center mb-2 border-b pb-1">
-              <h2>{group.module.name}</h2>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">
-                  {counts.pass}/{group.results.length} passed
-                </span>
-                <Badge className={style}>{label}</Badge>
-              </div>
-            </div>
-            <ul className="space-y-4">
-              {group.results.map((result) => (
-                <ResultItem
-                  key={result.id}
-                  result={result}
-                  runId={runId}
-                  isLocked={isLocked}
-                />
-              ))}
-            </ul>
-          </div>
-        );
-      })}
+      {moduleGroups.map((group) => (
+        <ModuleSection
+          key={group.module.id}
+          title={group.module.name}
+          results={group.results}
+          runId={runId}
+          isLocked={isLocked}
+        />
+      ))}
 
       {ungroupedResults.length > 0 && (
-        <div>
-          {moduleGroups.length > 0 && (
-            <h2 className="mb-2 border-b pb-1">No Module</h2>
-          )}
-          <ul className="space-y-4">
-            {ungroupedResults.map((result) => (
-              <ResultItem
-                key={result.id}
-                result={result}
-                runId={runId}
-                isLocked={isLocked}
-              />
-            ))}
-          </ul>
-        </div>
+        <ModuleSection
+          title="No Module"
+          results={ungroupedResults}
+          runId={runId}
+          isLocked={isLocked}
+        />
       )}
     </div>
   );
 }
 
 const SHORTCUT_MAP = { p: "pass", f: "fail", b: "blocked", s: "skipped" };
+
+const RESOLVED_ACCENT = {
+  pass: "border-l-4 border-l-success bg-success/5",
+  fail: "border-l-4 border-l-danger bg-danger/5",
+  blocked: "border-l-4 border-l-warning bg-warning/5",
+  skipped: "border-l-4 border-l-skip bg-skip/5",
+};
 
 function ResultItem({ result, runId, isLocked }) {
   const [status, setStatus] = useState(result.status);
@@ -146,13 +167,13 @@ function ResultItem({ result, runId, isLocked }) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isHovered, isLocked, notes, handleStatusClick]);
+  }, [isHovered, isLocked, handleStatusClick]);
 
   return (
     <li
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`border rounded-lg p-4 transition-shadow ${isHovered && !isLocked ? "ring-2 ring-primary" : ""}`}
+      className={`border rounded-lg p-4 transition-shadow transition-colors ${RESOLVED_ACCENT[status] || ""} ${isHovered && !isLocked ? "ring-2 ring-primary" : ""}`}
     >
       <div className="flex justify-between items-start gap-3">
         <h2 className="text-base font-semibold text-slate-900">
@@ -183,6 +204,9 @@ function ResultItem({ result, runId, isLocked }) {
           disabled={isLocked}
           variant="success"
           size="sm"
+          className={
+            status === "pass" ? "ring-2 ring-offset-1 ring-success" : ""
+          }
         >
           Pass
         </Button>
@@ -191,6 +215,9 @@ function ResultItem({ result, runId, isLocked }) {
           disabled={isLocked}
           variant="danger"
           size="sm"
+          className={
+            status === "fail" ? "ring-2 ring-offset-1 ring-danger" : ""
+          }
         >
           Fail
         </Button>
@@ -199,6 +226,9 @@ function ResultItem({ result, runId, isLocked }) {
           disabled={isLocked}
           variant="warning"
           size="sm"
+          className={
+            status === "blocked" ? "ring-2 ring-offset-1 ring-warning" : ""
+          }
         >
           Blocked
         </Button>
@@ -207,6 +237,9 @@ function ResultItem({ result, runId, isLocked }) {
           disabled={isLocked}
           variant="skip"
           size="sm"
+          className={
+            status === "skipped" ? "ring-2 ring-offset-1 ring-skip" : ""
+          }
         >
           Skipped
         </Button>
