@@ -9,6 +9,7 @@ import { formatStatusLabel } from "@/lib/formatLabel";
 import ConfirmButton from "@/components/ConfirmButton";
 import BackLink from "@/components/BackLink";
 import ProgressBar from "@/components/ProgressBar";
+import Card from "@/components/Card";
 
 export default async function RunDetail({ params }) {
   const supabase = await createClient();
@@ -118,56 +119,53 @@ export default async function RunDetail({ params }) {
       />
 
       {isActive && (
-        <div className="mt-6 border-t pt-4 space-y-4">
+        <Card className="mt-6">
           {pendingCount > 0 ? (
             <p className="text-sm text-slate-500">
               {pendingCount} test case{pendingCount !== 1 ? "s" : ""} still
               pending — mark all results before completing this run.
             </p>
           ) : (
-            <form action={completeRun} className="space-y-2">
-              <input type="hidden" name="runId" value={run.id} />
-              <p className="text-sm font-medium">Mark this run as:</p>
+            <>
+              <p className="text-sm font-medium mb-3">Mark this run as:</p>
               <div className="flex gap-3">
-                <label className="flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="outcome"
-                    value="pass"
-                    required
-                    className="peer sr-only"
-                  />
-                  <span className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-slate-300 bg-white text-slate-700 font-semibold text-sm peer-checked:bg-success peer-checked:text-white peer-checked:border-success hover:border-success hover:bg-success/5 transition-colors">
-                    <span aria-hidden="true">✓</span> Pass
-                  </span>
-                </label>
-                <label className="flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="outcome"
-                    value="fail"
-                    className="peer sr-only"
-                  />
-                  <span className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-slate-300 bg-white text-slate-700 font-semibold text-sm peer-checked:bg-danger peer-checked:text-white peer-checked:border-danger hover:border-danger hover:bg-danger/5 transition-colors">
-                    <span aria-hidden="true">✕</span> Fail
-                  </span>
-                </label>
+                <form action={completeRun} className="flex-1">
+                  <input type="hidden" name="runId" value={run.id} />
+                  <input type="hidden" name="outcome" value="pass" />
+                  <ConfirmButton
+                    message="Mark this run as Pass and complete it?"
+                    variant="success"
+                    className="w-full"
+                  >
+                    ✓ Pass
+                  </ConfirmButton>
+                </form>
+                <form action={completeRun} className="flex-1">
+                  <input type="hidden" name="runId" value={run.id} />
+                  <input type="hidden" name="outcome" value="fail" />
+                  <ConfirmButton
+                    message="Mark this run as Fail and complete it?"
+                    variant="danger"
+                    className="w-full"
+                  >
+                    ✕ Fail
+                  </ConfirmButton>
+                </form>
               </div>
-              <Button type="submit" variant="dark">
-                Complete Run
-              </Button>
-            </form>
+            </>
           )}
-          <form action={cancelRun}>
-            <input type="hidden" name="runId" value={run.id} />
-            <ConfirmButton
-              message="Cancel this run? This cannot be undone."
-              variant="dangerOutline"
-            >
-              Cancel This Run
-            </ConfirmButton>
-          </form>
-        </div>
+          <div className="mt-6 pt-4 border-t flex justify-end">
+            <form action={cancelRun}>
+              <input type="hidden" name="runId" value={run.id} />
+              <ConfirmButton
+                message="Cancel this run? This cannot be undone."
+                variant="dangerOutline"
+              >
+                Cancel This Run
+              </ConfirmButton>
+            </form>
+          </div>
+        </Card>
       )}
     </main>
   );
