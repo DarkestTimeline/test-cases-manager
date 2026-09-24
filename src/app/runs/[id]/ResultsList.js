@@ -184,7 +184,9 @@ function ResultItem({ result, runId, isLocked }) {
           )}
           {result.title}
         </h2>
-        <Badge className={STATUS_STYLES[status]}>{formatStatusLabel(status)}</Badge>
+        <Badge className={STATUS_STYLES[status]}>
+          {formatStatusLabel(status)}
+        </Badge>
       </div>
 
       <div className="mt-3 text-sm text-slate-600 space-y-2">
@@ -250,6 +252,7 @@ function ResultItem({ result, runId, isLocked }) {
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
+            onBlur={handleSaveNotes}
             placeholder="Add a note..."
             rows={2}
             disabled={isLocked}

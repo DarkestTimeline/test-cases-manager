@@ -4,6 +4,7 @@ import { useState } from "react";
 import Badge from "./Badge";
 import Button from "./Button";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
+import { formatStatusLabel } from '@/lib/formatLabel'
 
 function Group({ groupKey, label, cases }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -43,7 +44,7 @@ function Group({ groupKey, label, cases }) {
                 {tc.title}
               </span>
               <Badge className={PRIORITY_STYLES[tc.priority]}>
-                {tc.priority}
+                {formatStatusLabel(tc.priority)}
               </Badge>
             </label>
           ))}
