@@ -80,7 +80,7 @@ export default function StartRunButton({ suites }) {
                   <Button
                     type="button"
                     variant="secondary"
-                    size="sm"
+                    size="md"
                     onClick={() => setIsOpen(false)}
                   >
                     Cancel

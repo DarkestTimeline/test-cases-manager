@@ -262,7 +262,7 @@ function ResultItem({ result, runId, isLocked }) {
             onClick={handleSaveNotes}
             disabled={isLocked}
             variant="primary"
-            size="sm"
+            size="md"
             className="mt-1"
           >
             Save Note

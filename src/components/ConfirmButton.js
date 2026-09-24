@@ -40,7 +40,7 @@ export default function ConfirmButton({
               <Button
                 type="button"
                 variant="secondary"
-                size="sm"
+                size="md"
                 onClick={() => setFormEl(null)}
               >
                 Cancel
@@ -48,7 +48,7 @@ export default function ConfirmButton({
               <Button
                 type="button"
                 variant="danger"
-                size="sm"
+                size="md"
                 onClick={handleConfirm}
               >
                 Confirm
