@@ -103,7 +103,7 @@ export default async function ModulesList({ searchParams }) {
                 className="flex justify-between items-start gap-3"
               >
                 <Link href={`/modules/${mod.id}`} className="flex-1">
-                  <span className="font-semibold hover:underline">
+                  <span className="font-semibold">
                     {mod.seq_number && (
                       <span className="text-slate-400 font-normal mr-2">
                         {formatId("S", mod.seq_number)}

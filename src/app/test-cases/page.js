@@ -185,10 +185,10 @@ export default async function TestCasesList({ searchParams }) {
             {testCases.map((tc) => (
               <li
                 key={tc.id}
-                className="border rounded p-4 flex justify-between items-start gap-3"
+                className="border rounded p-4 flex justify-between items-start gap-3 hover:border-primary transition-colors"
               >
                 <Link href={`/test-cases/${tc.id}/edit`} className="flex-1">
-                  <span className="font-semibold text-slate-900 hover:underline">
+                  <span className="font-semibold text-slate-900">
                     {tc.seq_number && (
                       <span className="text-slate-400 font-normal mr-2">
                         {formatId("TC", tc.seq_number)}

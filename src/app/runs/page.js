@@ -210,84 +210,88 @@ export default async function RunsDashboard({ searchParams }) {
             {runs.map((run) => {
               const counts = countsFor(run);
               return (
-                <Link key={run.id} href={`/runs/${run.id}`}>
-                  <Card className="hover:border-primary transition-colors">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="font-semibold">
-                          {run.suites.seq_number && (
-                            <span className="text-slate-400 font-normal mr-2">
-                              {formatId("S", run.suites.seq_number)}
-                            </span>
+                <li key={run.id}>
+                  <Link href={`/runs/${run.id}`} className="block">
+                    <Card className="hover:border-primary transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-semibold">
+                            {run.suites.seq_number && (
+                              <span className="text-slate-400 font-normal mr-2">
+                                {formatId("S", run.suites.seq_number)}
+                              </span>
+                            )}
+                            {run.suites.name}
+                          </span>
+                          <p className="text-sm text-slate-600">
+                            Tester: {run.tester_name}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            Started:{" "}
+                            {new Date(run.started_at).toLocaleDateString()}
+                            {run.completed_at && (
+                              <>
+                                {" "}
+                                · Completed:{" "}
+                                {new Date(
+                                  run.completed_at,
+                                ).toLocaleDateString()}
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex gap-1 items-start">
+                          <Badge className={RUN_STATUS_STYLES[run.status]}>
+                            {formatStatusLabel(run.status)}
+                          </Badge>
+                          {run.outcome && (
+                            <Badge className={OUTCOME_STYLES[run.outcome]}>
+                              {formatStatusLabel(run.outcome)}
+                            </Badge>
                           )}
-                          {run.suites.name}
-                        </span>
-                        <p className="text-sm text-slate-600">
-                          Tester: {run.tester_name}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          Started:{" "}
-                          {new Date(run.started_at).toLocaleDateString()}
-                          {run.completed_at && (
-                            <>
-                              {" "}
-                              · Completed:{" "}
-                              {new Date(run.completed_at).toLocaleDateString()}
-                            </>
+                          {run.status === "cancelled" && !run.outcome && (
+                            <Badge className="bg-slate-100 text-slate-500">
+                              No Outcome
+                            </Badge>
                           )}
-                        </p>
+                        </div>
                       </div>
-                      <div className="flex gap-1 items-start">
-                        <Badge className={RUN_STATUS_STYLES[run.status]}>
-                          {formatStatusLabel(run.status)}
-                        </Badge>
-                        {run.outcome && (
-                          <Badge className={OUTCOME_STYLES[run.outcome]}>
-                            {formatStatusLabel(run.outcome)}
+                      <div className="mt-3">
+                        <ProgressBar
+                          counts={counts}
+                          total={run.run_results.length}
+                        />
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        {counts.pass > 0 && (
+                          <Badge className={STATUS_STYLES.pass}>
+                            {counts.pass} pass
                           </Badge>
                         )}
-                        {run.status === "cancelled" && !run.outcome && (
-                          <Badge className="bg-slate-100 text-slate-500">
-                            No Outcome
+                        {counts.fail > 0 && (
+                          <Badge className={STATUS_STYLES.fail}>
+                            {counts.fail} fail
+                          </Badge>
+                        )}
+                        {counts.blocked > 0 && (
+                          <Badge className={STATUS_STYLES.blocked}>
+                            {counts.blocked} blocked
+                          </Badge>
+                        )}
+                        {counts.skipped > 0 && (
+                          <Badge className={STATUS_STYLES.skipped}>
+                            {counts.skipped} skipped
+                          </Badge>
+                        )}
+                        {counts.pending > 0 && (
+                          <Badge className={STATUS_STYLES.pending}>
+                            {counts.pending} pending
                           </Badge>
                         )}
                       </div>
-                    </div>
-                    <div className="mt-3">
-                      <ProgressBar
-                        counts={counts}
-                        total={run.run_results.length}
-                      />
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      {counts.pass > 0 && (
-                        <Badge className={STATUS_STYLES.pass}>
-                          {counts.pass} pass
-                        </Badge>
-                      )}
-                      {counts.fail > 0 && (
-                        <Badge className={STATUS_STYLES.fail}>
-                          {counts.fail} fail
-                        </Badge>
-                      )}
-                      {counts.blocked > 0 && (
-                        <Badge className={STATUS_STYLES.blocked}>
-                          {counts.blocked} blocked
-                        </Badge>
-                      )}
-                      {counts.skipped > 0 && (
-                        <Badge className={STATUS_STYLES.skipped}>
-                          {counts.skipped} skipped
-                        </Badge>
-                      )}
-                      {counts.pending > 0 && (
-                        <Badge className={STATUS_STYLES.pending}>
-                          {counts.pending} pending
-                        </Badge>
-                      )}
-                    </div>
-                  </Card>
-                </Link>
+                    </Card>
+                  </Link>
+                </li>
               );
             })}
           </ul>
