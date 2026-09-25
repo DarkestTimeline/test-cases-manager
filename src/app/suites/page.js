@@ -100,36 +100,31 @@ export default async function SuitesList({ searchParams }) {
             {suites.map((suite) => (
               <Card
                 key={suite.id}
-                className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3"
+                className="flex justify-between items-start gap-3"
               >
-                <div>
-                  <Link
-                    href={`/suites/${suite.id}`}
-                    className="font-semibold hover:underline"
-                  >
+                <Link href={`/suites/${suite.id}`} className="flex-1">
+                  <span className="font-semibold hover:underline">
                     {suite.seq_number && (
-                      <span className="text-gray-400 font-normal mr-2">
+                      <span className="text-slate-400 font-normal mr-2">
                         {formatId("S", suite.seq_number)}
                       </span>
                     )}
                     {suite.name}
-                  </Link>
-                  <p className="text-sm text-gray-600 mt-1">
+                  </span>
+                  <p className="text-sm text-slate-600 mt-1">
                     {suite.description}
                   </p>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <form action={showingArchived ? restoreSuite : archiveSuite}>
-                    <input type="hidden" name="suiteId" value={suite.id} />
-                    <Button
-                      type="submit"
-                      variant={showingArchived ? "success" : "secondary"}
-                      size="sm"
-                    >
-                      {showingArchived ? "Restore" : "Archive"}
-                    </Button>
-                  </form>
-                </div>
+                </Link>
+                <form action={showingArchived ? restoreSuite : archiveSuite}>
+                  <input type="hidden" name="suiteId" value={suite.id} />
+                  <Button
+                    type="submit"
+                    variant={showingArchived ? "success" : "secondary"}
+                    size="sm"
+                  >
+                    {showingArchived ? "Restore" : "Archive"}
+                  </Button>
+                </form>
               </Card>
             ))}
           </ul>

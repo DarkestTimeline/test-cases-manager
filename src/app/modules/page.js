@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatId } from "@/lib/displayId";
 import { archiveModule, restoreModule } from "./actions";
@@ -100,38 +100,31 @@ export default async function ModulesList({ searchParams }) {
             {modules.map((mod) => (
               <Card
                 key={mod.id}
-                className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3"
+                className="flex justify-between items-start gap-3"
               >
-                <div>
-                  <Link
-                    href={`/modules/${mod.id}`}
-                    className="font-semibold hover:underline"
-                  >
+                <Link href={`/modules/${mod.id}`} className="flex-1">
+                  <span className="font-semibold hover:underline">
                     {mod.seq_number && (
-                      <span className="text-gray-400 font-normal mr-2">
-                        {formatId("M", mod.seq_number)}
+                      <span className="text-slate-400 font-normal mr-2">
+                        {formatId("S", mod.seq_number)}
                       </span>
                     )}
                     {mod.name}
-                  </Link>
-                  <p className="text-sm text-gray-600 mt-1">
+                  </span>
+                  <p className="text-sm text-slate-600 mt-1">
                     {mod.description}
                   </p>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <form
-                    action={showingArchived ? restoreModule : archiveModule}
+                </Link>
+                <form action={showingArchived ? restoreModule : archiveModule}>
+                  <input type="hidden" name="moduleId" value={mod.id} />
+                  <Button
+                    type="submit"
+                    variant={showingArchived ? "success" : "secondary"}
+                    size="sm"
                   >
-                    <input type="hidden" name="moduleId" value={mod.id} />
-                    <Button
-                      type="submit"
-                      variant={showingArchived ? "success" : "secondary"}
-                      size="sm"
-                    >
-                      {showingArchived ? "Restore" : "Archive"}
-                    </Button>
-                  </form>
-                </div>
+                    {showingArchived ? "Restore" : "Archive"}
+                  </Button>
+                </form>
               </Card>
             ))}
           </ul>

@@ -20,6 +20,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { reorderSuiteCases, removeTestCaseFromSuite } from "../actions";
 import { formatId } from "@/lib/displayId";
 import ConfirmButton from "@/components/ConfirmButton";
+import Badge from "@/components/Badge";
+import { PRIORITY_STYLES } from "@/lib/badgeStyles";
+import { formatStatusLabel } from "@/lib/formatLabel";
 
 function SortableRow({ linkedCase, suiteId }) {
   const {
@@ -51,13 +54,16 @@ function SortableRow({ linkedCase, suiteId }) {
         >
           ⠿
         </span>
-        <span>
+        <span className="flex items-center gap-2">
           {linkedCase.test_cases.seq_number && (
             <span className="text-slate-400 mr-2">
               {formatId("TC", linkedCase.test_cases.seq_number)}
             </span>
           )}
           {linkedCase.test_cases.title}
+          <Badge className={PRIORITY_STYLES[linkedCase.test_cases.priority]}>
+            {formatStatusLabel(linkedCase.test_cases.priority)}
+          </Badge>
         </span>
       </div>
       <form action={removeTestCaseFromSuite}>

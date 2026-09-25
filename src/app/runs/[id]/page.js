@@ -135,8 +135,10 @@ export default async function RunDetail({ params }) {
                   <ConfirmButton
                     message="Mark this run as Pass and complete it?"
                     variant="success"
+                    confirmVariant="success"
                     className="w-full"
                   >
+                    {" "}
                     ✓ Pass
                   </ConfirmButton>
                 </form>

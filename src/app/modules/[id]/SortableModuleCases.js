@@ -20,6 +20,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { reorderModuleCases, removeTestCaseFromModule } from "../actions";
 import { formatId } from "@/lib/displayId";
 import ConfirmButton from "@/components/ConfirmButton";
+import Badge from "@/components/Badge";
+import { PRIORITY_STYLES } from "@/lib/badgeStyles";
+import { formatStatusLabel } from "@/lib/formatLabel";
 
 function SortableRow({ linkedCase, moduleId }) {
   const {
@@ -51,20 +54,23 @@ function SortableRow({ linkedCase, moduleId }) {
         >
           ⠿
         </span>
-        <span>
+        <span className="flex items-center gap-2">
           {linkedCase.test_cases.seq_number && (
             <span className="text-slate-400 mr-2">
               {formatId("TC", linkedCase.test_cases.seq_number)}
             </span>
           )}
           {linkedCase.test_cases.title}
+          <Badge className={PRIORITY_STYLES[linkedCase.test_cases.priority]}>
+            {formatStatusLabel(linkedCase.test_cases.priority)}
+          </Badge>
         </span>
       </div>
       <form action={removeTestCaseFromModule}>
         <input type="hidden" name="moduleCaseId" value={linkedCase.id} />
         <input type="hidden" name="moduleId" value={moduleId} />
         <ConfirmButton
-          message="Remove this test case from the suite?"
+          message="Remove this test case from the module?"
           variant="ghostDanger"
         >
           Remove

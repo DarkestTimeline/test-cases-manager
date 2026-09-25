@@ -7,6 +7,7 @@ export default function ConfirmButton({
   children,
   message,
   variant = "ghostDanger",
+  confirmVariant,
   ...rest
 }) {
   const [formEl, setFormEl] = useState(null);
@@ -47,7 +48,7 @@ export default function ConfirmButton({
               </Button>
               <Button
                 type="button"
-                variant="danger"
+                variant={confirmVariant || "danger"}
                 size="md"
                 onClick={handleConfirm}
               >

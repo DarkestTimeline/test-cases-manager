@@ -187,25 +187,22 @@ export default async function TestCasesList({ searchParams }) {
                 key={tc.id}
                 className="border rounded p-4 flex justify-between items-start gap-3"
               >
-                <div>
-                  <Link
-                    href={`/test-cases/${tc.id}/edit`}
-                    className="font-semibold text-slate-900 hover:underline"
-                  >
+                <Link href={`/test-cases/${tc.id}/edit`} className="flex-1">
+                  <span className="font-semibold text-slate-900 hover:underline">
                     {tc.seq_number && (
                       <span className="text-slate-400 font-normal mr-2">
                         {formatId("TC", tc.seq_number)}
                       </span>
                     )}
                     {tc.title}
-                  </Link>
+                  </span>
                   <Badge className={`${PRIORITY_STYLES[tc.priority]} ml-2`}>
                     {formatStatusLabel(tc.priority)}
                   </Badge>
                   <p className="text-sm text-slate-600 mt-1">
                     {tc.expected_result}
                   </p>
-                </div>
+                </Link>
                 <div className="flex gap-2 items-center">
                   <form
                     action={showingArchived ? restoreTestCase : archiveTestCase}
