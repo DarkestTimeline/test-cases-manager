@@ -52,6 +52,7 @@ export default async function ReportsPage({ searchParams }) {
       return {
         week: bucket.week,
         volume: bucket.total,
+        decided,
         passRate:
           decided > 0 ? Math.round((bucket.pass / decided) * 100) : null,
       };
