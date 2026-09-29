@@ -6,6 +6,7 @@ import Badge from "@/components/Badge";
 import { formatId } from "@/lib/displayId";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
 import { formatStatusLabel } from "@/lib/formatLabel";
+import WorkloadChart from "@/components/WorkloadChart";
 
 const WEEK_OPTIONS = [4, 8, 12, 26, 52];
 const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -148,7 +149,7 @@ export default async function ReportsPage({ searchParams }) {
 
   const { data: testerRuns } = await supabase
     .from("test_runs")
-    .select("started_by, status, outcome, profiles(display_name)")
+    .select("started_by, status, profiles(display_name)")
     .not("started_by", "is", null);
 
   const testerBuckets = {};
@@ -157,33 +158,22 @@ export default async function ReportsPage({ searchParams }) {
       testerBuckets[run.started_by] = {
         id: run.started_by,
         name: run.profiles?.display_name || "Unknown",
-        total: 0,
-        pass: 0,
-        fail: 0,
+        completed: 0,
+        inProgress: 0,
+        cancelled: 0,
       };
     }
-    testerBuckets[run.started_by].total += 1;
-    if (run.status === "completed" && run.outcome === "pass")
-      testerBuckets[run.started_by].pass += 1;
-    if (run.status === "completed" && run.outcome === "fail")
-      testerBuckets[run.started_by].fail += 1;
+    if (run.status === "completed")
+      testerBuckets[run.started_by].completed += 1;
+    if (run.status === "in_progress")
+      testerBuckets[run.started_by].inProgress += 1;
+    if (run.status === "cancelled")
+      testerBuckets[run.started_by].cancelled += 1;
   });
 
-  const testerData = Object.values(testerBuckets)
-    .map((t) => {
-      const decided = t.pass + t.fail;
-      return {
-        ...t,
-        passRate: decided > 0 ? Math.round((t.pass / decided) * 100) : null,
-      };
-    })
-    .sort((a, b) =>
-      a.passRate === null
-        ? 1
-        : b.passRate === null
-          ? -1
-          : a.passRate - b.passRate,
-    );
+  const testerData = Object.values(testerBuckets).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
 
   const { data: activeTestCases } = await supabase
     .from("test_cases")
@@ -241,16 +231,13 @@ export default async function ReportsPage({ searchParams }) {
       </div>
 
       <div className="mt-10">
-        <h2 className="mb-2">Per-Tester Breakdown</h2>
+        <h2 className="mb-2">Tester Workload</h2>
         <p className="text-sm text-slate-500 mb-4">
-          All-time pass rate by tester, worst first. Only includes runs started
-          since accounts were added.
+          Completed runs per tester, in alphabetical order. This shows how much
+          testing each person is doing, not how well it went. Only includes runs
+          started since accounts were added.
         </p>
-        <BreakdownChart
-          items={testerData}
-          itemLabel="Tester"
-          countLabel="Runs"
-        />
+        <WorkloadChart items={testerData} />
       </div>
 
       <div className="mt-10">
