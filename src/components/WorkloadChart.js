@@ -16,7 +16,7 @@ function truncate(text, max = 22) {
 
 export default function WorkloadChart({ items }) {
   if (items.length === 0) {
-    return <p className="text-slate-500">No data yet.</p>;
+    return <p className="text-slate-500">No data in this time range.</p>;
   }
 
   const chartHeight = Math.max(150, items.length * 50);

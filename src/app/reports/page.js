@@ -1,12 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import ReportsCharts from "./ReportsCharts";
 import BreakdownChart from "@/components/BreakdownChart";
+import WorkloadChart from "@/components/WorkloadChart";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import { formatId } from "@/lib/displayId";
-import { PRIORITY_STYLES } from "@/lib/badgeStyles";
 import { formatStatusLabel } from "@/lib/formatLabel";
-import WorkloadChart from "@/components/WorkloadChart";
+import { PRIORITY_STYLES } from "@/lib/badgeStyles";
 
 const WEEK_OPTIONS = [4, 8, 12, 26, 52];
 const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -27,11 +27,12 @@ export default async function ReportsPage({ searchParams }) {
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - weeksToShow * 7);
+  const startISO = startDate.toISOString();
 
   const { data: runs } = await supabase
     .from("test_runs")
     .select("started_at, status, outcome")
-    .gte("started_at", startDate.toISOString())
+    .gte("started_at", startISO)
     .order("started_at");
 
   const weekBuckets = {};
@@ -59,12 +60,13 @@ export default async function ReportsPage({ searchParams }) {
       };
     });
 
-  const { data: allRuns } = await supabase
+  const { data: windowRuns } = await supabase
     .from("test_runs")
-    .select("suite_id, status, outcome, suites(name)");
+    .select("suite_id, status, outcome, suites(name)")
+    .gte("started_at", startISO);
 
   const suiteBuckets = {};
-  (allRuns || []).forEach((run) => {
+  (windowRuns || []).forEach((run) => {
     if (!run.suite_id) return;
     if (!suiteBuckets[run.suite_id]) {
       suiteBuckets[run.suite_id] = {
@@ -98,9 +100,11 @@ export default async function ReportsPage({ searchParams }) {
           : a.passRate - b.passRate,
     );
 
-  const { data: allResults } = await supabase
+  const { data: windowResults } = await supabase
     .from("run_results")
-    .select("test_case_id, status");
+    .select("test_case_id, status, test_runs!inner(started_at)")
+    .gte("test_runs.started_at", startISO);
+
   const { data: moduleCasesData } = await supabase
     .from("module_cases")
     .select("test_case_id, modules(id, name)");
@@ -114,7 +118,7 @@ export default async function ReportsPage({ searchParams }) {
   });
 
   const moduleBuckets = {};
-  (allResults || []).forEach((result) => {
+  (windowResults || []).forEach((result) => {
     const mods = modulesByTestCaseId[result.test_case_id] || [];
     mods.forEach((mod) => {
       if (!moduleBuckets[mod.id])
@@ -150,7 +154,8 @@ export default async function ReportsPage({ searchParams }) {
   const { data: testerRuns } = await supabase
     .from("test_runs")
     .select("started_by, status, profiles(display_name)")
-    .not("started_by", "is", null);
+    .not("started_by", "is", null)
+    .gte("started_at", startISO);
 
   const testerBuckets = {};
   (testerRuns || []).forEach((run) => {
@@ -195,17 +200,23 @@ export default async function ReportsPage({ searchParams }) {
     <main className="p-8 w-full max-w-4xl mx-auto">
       <h1 className="mb-4">Reports</h1>
 
-      <div className="flex gap-2 mb-6">
-        {WEEK_OPTIONS.map((w) => (
-          <Button
-            key={w}
-            href={`/reports?weeks=${w}`}
-            variant={weeksToShow === w ? "primary" : "secondary"}
-            size="sm"
-          >
-            {w} weeks
-          </Button>
-        ))}
+      <div className="mb-6">
+        <p className="text-sm text-slate-500 mb-2">
+          Time range. Applies to every section except Coverage Gaps, and is
+          based on when each run started.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {WEEK_OPTIONS.map((w) => (
+            <Button
+              key={w}
+              href={`/reports?weeks=${w}`}
+              variant={weeksToShow === w ? "primary" : "secondary"}
+              size="sm"
+            >
+              {w} weeks
+            </Button>
+          ))}
+        </div>
       </div>
 
       <ReportsCharts data={chartData} />
@@ -213,7 +224,8 @@ export default async function ReportsPage({ searchParams }) {
       <div className="mt-10">
         <h2 className="mb-2">Suite Breakdown</h2>
         <p className="text-sm text-slate-500 mb-4">
-          All-time pass rate by suite, worst first.
+          Pass rate by suite for runs started in the last {weeksToShow} weeks,
+          worst first.
         </p>
         <BreakdownChart items={suiteData} itemLabel="Suite" countLabel="Runs" />
       </div>
@@ -221,7 +233,8 @@ export default async function ReportsPage({ searchParams }) {
       <div className="mt-10">
         <h2 className="mb-2">Module Breakdown</h2>
         <p className="text-sm text-slate-500 mb-4">
-          All-time pass rate by module, worst first.
+          Pass rate by module for results from runs started in the last{" "}
+          {weeksToShow} weeks, worst first.
         </p>
         <BreakdownChart
           items={moduleData}
@@ -233,9 +246,9 @@ export default async function ReportsPage({ searchParams }) {
       <div className="mt-10">
         <h2 className="mb-2">Tester Workload</h2>
         <p className="text-sm text-slate-500 mb-4">
-          Completed runs per tester, in alphabetical order. This shows how much
-          testing each person is doing, not how well it went. Only includes runs
-          started since accounts were added.
+          Runs per tester over the last {weeksToShow} weeks, in alphabetical
+          order. This shows how much testing each person is doing, not how well
+          it went. Only includes runs started since accounts were added.
         </p>
         <WorkloadChart items={testerData} />
       </div>
@@ -243,7 +256,8 @@ export default async function ReportsPage({ searchParams }) {
       <div className="mt-10">
         <h2 className="mb-2">Coverage Gaps</h2>
         <p className="text-sm text-slate-500 mb-4">
-          Active test cases that have never been run, most urgent first.
+          Active test cases that have never been run, most urgent first. Not
+          affected by the time range above.
         </p>
         {neverRunTestCases.length === 0 ? (
           <p className="text-success text-sm font-medium">
