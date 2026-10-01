@@ -5,6 +5,7 @@ import Badge from "@/components/Badge";
 import { formatId } from "@/lib/displayId";
 import { RUN_STATUS_STYLES, OUTCOME_STYLES } from "@/lib/badgeStyles";
 import { formatStatusLabel } from "@/lib/formatLabel";
+import StatCard from "@/components/StatCard";
 
 export const dynamic = "force-dynamic";
 
@@ -65,10 +66,7 @@ export default async function Home() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
         {stats.map((stat) => (
-          <Card key={stat.label} className="text-center">
-            <p className="text-3xl font-bold text-primary">{stat.value}</p>
-            <p className="text-sm text-slate-500 mt-1">{stat.label}</p>
-          </Card>
+          <StatCard key={stat.label} label={stat.label} value={stat.value} />
         ))}
       </div>
 

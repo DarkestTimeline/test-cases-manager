@@ -12,6 +12,7 @@ import Card from "@/components/Card";
 import CollapsibleFilters from "@/components/CollapsibleFilters";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import ProgressBar from "@/components/ProgressBar";
+import DateRangeFields from "@/components/DateRangeFields";
 
 const PAGE_SIZE = 10;
 
@@ -154,24 +155,7 @@ export default async function RunsDashboard({ searchParams }) {
             placeholder="Search tester..."
             className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
-            <span className="shrink-0">From</span>
-            <input
-              type="date"
-              name="startDate"
-              defaultValue={startDate || ""}
-              className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
-            />
-          </label>
-          <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
-            <span className="shrink-0">To</span>
-            <input
-              type="date"
-              name="endDate"
-              defaultValue={endDate || ""}
-              className="border rounded p-2 text-sm h-9 flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:light]"
-            />
-          </label>
+          <DateRangeFields startDate={startDate} endDate={endDate} />
           <select
             name="outcome"
             defaultValue={outcome || ""}

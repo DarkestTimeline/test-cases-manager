@@ -2,11 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import ReportsCharts from "./ReportsCharts";
 import BreakdownChart from "@/components/BreakdownChart";
 import WorkloadChart from "@/components/WorkloadChart";
+import StatCard from "@/components/StatCard";
+import DateRangeFields from "@/components/DateRangeFields";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import { formatId } from "@/lib/displayId";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
+import { getPassRateColor } from "@/lib/reportColors";
 
 const WEEK_OPTIONS = [4, 8, 12, 26, 52];
 const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -20,20 +23,107 @@ function getWeekStart(dateStr) {
   return d.toISOString().split("T")[0];
 }
 
+function describeAge(date) {
+  const days = Math.floor((Date.now() - date.getTime()) / 86400000);
+  if (days <= 0) return "today";
+  if (days === 1) return "1 day ago";
+  return `${days} days ago`;
+}
+
+function parseDateParam(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? value : null;
+}
+
+function formatDay(dateStr) {
+  return new Date(`${dateStr}T00:00:00Z`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 export default async function ReportsPage({ searchParams }) {
-  const { weeks } = await searchParams;
+  const {
+    weeks,
+    startDate: startParam,
+    endDate: endParam,
+  } = await searchParams;
+  const startDate = parseDateParam(startParam);
+  const endDate = parseDateParam(endParam);
+  const isCustomRange = Boolean(startDate || endDate);
+  const rangeIsBackwards = Boolean(startDate && endDate && startDate > endDate);
   const weeksToShow = parseInt(weeks) || 12;
   const supabase = await createClient();
 
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - weeksToShow * 7);
-  const startISO = startDate.toISOString();
+  let rangeStart = null;
+  let rangeEnd = null;
+  let rangeShort;
+  let rangePhrase;
 
-  const { data: runs } = await supabase
-    .from("test_runs")
-    .select("started_at, status, outcome")
-    .gte("started_at", startISO)
-    .order("started_at");
+  if (isCustomRange) {
+    rangeStart = startDate;
+    rangeEnd = endDate ? `${endDate}T23:59:59` : null;
+    if (startDate && endDate) {
+      rangeShort = `${formatDay(startDate)} to ${formatDay(endDate)}`;
+      rangePhrase = `from ${rangeShort}`;
+    } else if (startDate) {
+      rangeShort = `since ${formatDay(startDate)}`;
+      rangePhrase = rangeShort;
+    } else {
+      rangeShort = `up to ${formatDay(endDate)}`;
+      rangePhrase = rangeShort;
+    }
+  } else {
+    const start = new Date();
+    start.setDate(start.getDate() - weeksToShow * 7);
+    rangeStart = start.toISOString();
+    rangeShort = `last ${weeksToShow} weeks`;
+    rangePhrase = `in the ${rangeShort}`;
+  }
+
+  function withRange(query, column) {
+    let q = query;
+    if (rangeStart) q = q.gte(column, rangeStart);
+    if (rangeEnd) q = q.lte(column, rangeEnd);
+    return q;
+  }
+
+  const [
+    { count: inProgressCount },
+    { data: latestStarted },
+    { data: latestCompleted },
+  ] = await Promise.all([
+    supabase
+      .from("test_runs")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "in_progress"),
+    supabase
+      .from("test_runs")
+      .select("started_at")
+      .order("started_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("test_runs")
+      .select("completed_at")
+      .not("completed_at", "is", null)
+      .order("completed_at", { ascending: false })
+      .limit(1),
+  ]);
+
+  const activityDates = [
+    latestStarted?.[0]?.started_at,
+    latestCompleted?.[0]?.completed_at,
+  ]
+    .filter(Boolean)
+    .map((d) => new Date(d));
+  const lastActivity =
+    activityDates.length > 0 ? new Date(Math.max(...activityDates)) : null;
+
+  const { data: runs } = await withRange(
+    supabase.from("test_runs").select("started_at, status, outcome"),
+    "started_at",
+  ).order("started_at");
 
   const weekBuckets = {};
   (runs || []).forEach((run) => {
@@ -60,10 +150,26 @@ export default async function ReportsPage({ searchParams }) {
       };
     });
 
-  const { data: windowRuns } = await supabase
-    .from("test_runs")
-    .select("suite_id, status, outcome, suites(name)")
-    .gte("started_at", startISO);
+  const overallPass = Object.values(weekBuckets).reduce(
+    (sum, b) => sum + b.pass,
+    0,
+  );
+  const overallFail = Object.values(weekBuckets).reduce(
+    (sum, b) => sum + b.fail,
+    0,
+  );
+  const overallDecided = overallPass + overallFail;
+  const overallPassRate =
+    overallDecided > 0
+      ? Math.round((overallPass / overallDecided) * 100)
+      : null;
+
+  const { data: windowRuns } = await withRange(
+    supabase
+      .from("test_runs")
+      .select("suite_id, status, outcome, suites(name)"),
+    "started_at",
+  );
 
   const suiteBuckets = {};
   (windowRuns || []).forEach((run) => {
@@ -100,10 +206,12 @@ export default async function ReportsPage({ searchParams }) {
           : a.passRate - b.passRate,
     );
 
-  const { data: windowResults } = await supabase
-    .from("run_results")
-    .select("test_case_id, status, test_runs!inner(started_at)")
-    .gte("test_runs.started_at", startISO);
+  const { data: windowResults } = await withRange(
+    supabase
+      .from("run_results")
+      .select("test_case_id, status, test_runs!inner(started_at)"),
+    "test_runs.started_at",
+  );
 
   const { data: moduleCasesData } = await supabase
     .from("module_cases")
@@ -151,11 +259,13 @@ export default async function ReportsPage({ searchParams }) {
           : a.passRate - b.passRate,
     );
 
-  const { data: testerRuns } = await supabase
-    .from("test_runs")
-    .select("started_by, status, profiles(display_name)")
-    .not("started_by", "is", null)
-    .gte("started_at", startISO);
+  const { data: testerRuns } = await withRange(
+    supabase
+      .from("test_runs")
+      .select("started_by, status, profiles(display_name)")
+      .not("started_by", "is", null),
+    "started_at",
+  );
 
   const testerBuckets = {};
   (testerRuns || []).forEach((run) => {
@@ -200,23 +310,94 @@ export default async function ReportsPage({ searchParams }) {
     <main className="p-8 w-full max-w-4xl mx-auto">
       <h1 className="mb-4">Reports</h1>
 
-      <div className="mb-6">
-        <p className="text-sm text-slate-500 mb-2">
-          Time range. Applies to every section except Coverage Gaps, and is
-          based on when each run started.
-        </p>
-        <div className="flex flex-wrap gap-2">
+      <div className="mb-6 space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-slate-500">Quick range:</span>
           {WEEK_OPTIONS.map((w) => (
             <Button
               key={w}
               href={`/reports?weeks=${w}`}
-              variant={weeksToShow === w ? "primary" : "secondary"}
+              variant={
+                !isCustomRange && weeksToShow === w ? "primary" : "secondary"
+              }
               size="sm"
             >
               {w} weeks
             </Button>
           ))}
         </div>
+
+        <form
+          method="GET"
+          action="/reports"
+          className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center"
+        >
+          <DateRangeFields startDate={startDate} endDate={endDate} />
+          <Button type="submit" className="w-full sm:w-auto">
+            Apply
+          </Button>
+          {isCustomRange && (
+            <Button href="/reports" variant="ghost">
+              Reset
+            </Button>
+          )}
+        </form>
+
+        <p className="text-sm text-slate-500">
+          Showing runs started {rangePhrase}. Applies to the pass rate, charts
+          and breakdowns. The other summary numbers and Coverage Gaps always
+          cover everything.
+        </p>
+        {rangeIsBackwards && (
+          <p className="text-sm text-danger">
+            The start date is after the end date, so nothing matches.
+          </p>
+        )}
+        {isCustomRange && !rangeIsBackwards && (
+          <p className="text-xs text-slate-400">
+            Weekly bars at the edges of a custom range can cover only part of a
+            week.
+          </p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+        <StatCard
+          label="Pass Rate"
+          value={overallPassRate === null ? "—" : `${overallPassRate}%`}
+          valueColor={
+            overallPassRate === null
+              ? undefined
+              : getPassRateColor(overallPassRate)
+          }
+          sublabel={
+            overallDecided > 0
+              ? `${overallDecided} completed run${overallDecided === 1 ? "" : "s"}, ${rangeShort}`
+              : `no completed runs, ${rangeShort}`
+          }
+        />
+        <StatCard
+          label="Runs In Progress"
+          value={inProgressCount || 0}
+          sublabel="right now"
+        />
+        <StatCard
+          label="Never Run"
+          value={neverRunTestCases.length}
+          sublabel={`of ${(activeTestCases || []).length} active test cases`}
+        />
+        <StatCard
+          label="Last Activity"
+          value={
+            lastActivity
+              ? lastActivity.toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })
+              : "—"
+          }
+          sublabel={lastActivity ? describeAge(lastActivity) : "no runs yet"}
+        />
       </div>
 
       <ReportsCharts data={chartData} />
@@ -224,8 +405,7 @@ export default async function ReportsPage({ searchParams }) {
       <div className="mt-10">
         <h2 className="mb-2">Suite Breakdown</h2>
         <p className="text-sm text-slate-500 mb-4">
-          Pass rate by suite for runs started in the last {weeksToShow} weeks,
-          worst first.
+          Pass rate by suite, worst first. Showing runs started {rangePhrase}.
         </p>
         <BreakdownChart items={suiteData} itemLabel="Suite" countLabel="Runs" />
       </div>
@@ -233,8 +413,8 @@ export default async function ReportsPage({ searchParams }) {
       <div className="mt-10">
         <h2 className="mb-2">Module Breakdown</h2>
         <p className="text-sm text-slate-500 mb-4">
-          Pass rate by module for results from runs started in the last{" "}
-          {weeksToShow} weeks, worst first.
+          Pass rate by module, worst first. Showing results from runs started{" "}
+          {rangePhrase}.
         </p>
         <BreakdownChart
           items={moduleData}
@@ -246,9 +426,9 @@ export default async function ReportsPage({ searchParams }) {
       <div className="mt-10">
         <h2 className="mb-2">Tester Workload</h2>
         <p className="text-sm text-slate-500 mb-4">
-          Runs per tester over the last {weeksToShow} weeks, in alphabetical
-          order. This shows how much testing each person is doing, not how well
-          it went. Only includes runs started since accounts were added.
+          Runs per tester, in alphabetical order. This shows how much testing
+          each person is doing, not how well it went. Showing runs started{" "}
+          {rangePhrase}. Only includes runs started since accounts were added.
         </p>
         <WorkloadChart items={testerData} />
       </div>
@@ -257,7 +437,7 @@ export default async function ReportsPage({ searchParams }) {
         <h2 className="mb-2">Coverage Gaps</h2>
         <p className="text-sm text-slate-500 mb-4">
           Active test cases that have never been run, most urgent first. Not
-          affected by the time range above.
+          affected by the date range above.
         </p>
         {neverRunTestCases.length === 0 ? (
           <p className="text-success text-sm font-medium">
