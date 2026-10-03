@@ -6,15 +6,19 @@ import {
   OUTCOME_STYLES,
 } from "@/lib/badgeStyles";
 import { formatId } from "@/lib/displayId";
+import { formatStatusLabel } from "@/lib/formatLabel";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
 import CollapsibleFilters from "@/components/CollapsibleFilters";
-import { formatStatusLabel } from "@/lib/formatLabel";
-import ProgressBar from "@/components/ProgressBar";
+import SegmentedControl from "@/components/SegmentedControl";
+import FilterGroup from "@/components/FilterGroup";
 import DateRangeFields from "@/components/DateRangeFields";
+import ProgressBar from "@/components/ProgressBar";
 
 const PAGE_SIZE = 10;
+const FIELD_CLASS =
+  "border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary";
 
 export default async function RunsDashboard({ searchParams }) {
   const { status, suiteId, tester, startDate, endDate, page, mine, outcome } =
@@ -106,83 +110,86 @@ export default async function RunsDashboard({ searchParams }) {
     outcome,
     mine,
   ].filter(Boolean).length;
-  const hasActiveFilters = status || advancedFilterCount > 0;
+  const hasActiveFilters = Boolean(status) || advancedFilterCount > 0;
 
   return (
     <main className="p-8 w-full max-w-5xl mx-auto">
       <h1 className="mb-4">Runs Dashboard</h1>
 
-      <div className="flex gap-2 mb-4">
-        {filters.map((f) => {
-          const isActive = f.value ? status === f.value : !status;
-          return (
-            <Button
-              key={f.label}
-              href={buildHref({ status: f.value, page: 1 })}
-              variant={isActive ? "primary" : "secondary"}
-              size="sm"
-            >
-              {f.label}
-            </Button>
-          );
-        })}
+      <div className="mb-4">
+        <SegmentedControl
+          options={filters.map((f) => ({
+            label: f.label,
+            href: buildHref({ status: f.value, page: 1 }),
+            active: f.value ? status === f.value : !status,
+          }))}
+        />
       </div>
 
       <CollapsibleFilters activeCount={advancedFilterCount}>
-        <form
-          method="GET"
-          action="/runs"
-          className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center"
-        >
+        <form method="GET" action="/runs">
           {status && <input type="hidden" name="status" value={status} />}
-          <select
-            name="suiteId"
-            defaultValue={suiteId || ""}
-            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">All Suites</option>
-            {suites.map((suite) => (
-              <option key={suite.id} value={suite.id}>
-                {suite.seq_number ? `${formatId("S", suite.seq_number)} ` : ""}
-                {suite.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            name="tester"
-            defaultValue={tester || ""}
-            placeholder="Search tester..."
-            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <DateRangeFields startDate={startDate} endDate={endDate} />
-          <select
-            name="outcome"
-            defaultValue={outcome || ""}
-            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Any Outcome</option>
-            <option value="pass">Pass</option>
-            <option value="fail">Fail</option>
-          </select>
-          <label className="flex items-center gap-2 text-sm text-slate-600 w-full sm:w-auto">
-            <input
-              type="checkbox"
-              name="mine"
-              value="true"
-              defaultChecked={!!mine}
-              className="rounded"
-            />
-            My Runs Only
-          </label>
-          <Button type="submit" className="w-full sm:w-auto">
-            Filter
-          </Button>
-          {advancedFilterCount > 0 && (
-            <Button href="/runs" variant="ghost">
-              Clear all
-            </Button>
-          )}
+          <Card className="space-y-5">
+            <FilterGroup label="Time range">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center">
+                <DateRangeFields startDate={startDate} endDate={endDate} />
+              </div>
+            </FilterGroup>
+
+            <FilterGroup label="Filter by">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center">
+                <select
+                  name="suiteId"
+                  defaultValue={suiteId || ""}
+                  className={FIELD_CLASS}
+                >
+                  <option value="">All suites</option>
+                  {(suites || []).map((suite) => (
+                    <option key={suite.id} value={suite.id}>
+                      {suite.seq_number
+                        ? `${formatId("S", suite.seq_number)} `
+                        : ""}
+                      {suite.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  name="tester"
+                  defaultValue={tester || ""}
+                  placeholder="Search tester..."
+                  className={FIELD_CLASS}
+                />
+                <select
+                  name="outcome"
+                  defaultValue={outcome || ""}
+                  className={FIELD_CLASS}
+                >
+                  <option value="">Any outcome</option>
+                  <option value="pass">Pass</option>
+                  <option value="fail">Fail</option>
+                </select>
+                <label className="flex items-center gap-2 text-sm text-slate-600 h-9">
+                  <input
+                    type="checkbox"
+                    name="mine"
+                    value="true"
+                    defaultChecked={!!mine}
+                    className="rounded"
+                  />
+                  My runs only
+                </label>
+                <Button type="submit" className="w-full sm:w-auto">
+                  Apply
+                </Button>
+                {hasActiveFilters && (
+                  <Button href="/runs" variant="ghost">
+                    Reset all
+                  </Button>
+                )}
+              </div>
+            </FilterGroup>
+          </Card>
         </form>
       </CollapsibleFilters>
 
@@ -246,7 +253,7 @@ export default async function RunsDashboard({ searchParams }) {
                           total={run.run_results.length}
                         />
                       </div>
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex flex-wrap gap-2 mt-2">
                         {counts.pass > 0 && (
                           <Badge className={STATUS_STYLES.pass}>
                             {counts.pass} pass
