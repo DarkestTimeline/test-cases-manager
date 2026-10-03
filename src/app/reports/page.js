@@ -12,9 +12,9 @@ import { formatId } from "@/lib/displayId";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
 import { getPassRateColor } from "@/lib/reportColors";
+import Link from "next/link";
 
 const WEEK_OPTIONS = [2, 4, 8, 12, 26, 52];
-const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SECTION_LABEL =
@@ -345,21 +345,21 @@ export default async function ReportsPage({ searchParams }) {
     a.name.localeCompare(b.name),
   );
 
-  const { data: activeTestCases } = await supabase
-    .from("test_cases")
-    .select("id, title, seq_number, priority")
-    .is("archived_at", null);
+  const [
+    { data: neverRunRows, error: neverRunError },
+    { count: activeTestCaseCount },
+  ] = await Promise.all([
+    supabase.rpc("never_run_test_cases"),
+    supabase
+      .from("test_cases")
+      .select("*", { count: "exact", head: true })
+      .is("archived_at", null),
+  ]);
 
-  const { data: everRunTestCaseIds } = await supabase
-    .from("run_results")
-    .select("test_case_id");
-  const runTestCaseIdSet = new Set(
-    (everRunTestCaseIds || []).map((r) => r.test_case_id),
-  );
-
-  const neverRunTestCases = (activeTestCases || [])
-    .filter((tc) => !runTestCaseIdSet.has(tc.id))
-    .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
+  const neverRunTestCases = neverRunRows || [];
+  const notInAnySuiteCount = neverRunTestCases.filter(
+    (tc) => Number(tc.suite_count) === 0,
+  ).length;
 
   return (
     <main className="p-8 w-full max-w-4xl mx-auto">
@@ -480,7 +480,7 @@ export default async function ReportsPage({ searchParams }) {
         <StatCard
           label="Never Run"
           value={neverRunTestCases.length}
-          sublabel={`of ${(activeTestCases || []).length} active test cases`}
+          sublabel={`of ${activeTestCaseCount || 0} active test cases`}
         />
         <StatCard
           label="Last Activity"
@@ -540,41 +540,85 @@ export default async function ReportsPage({ searchParams }) {
       <div className="mt-10">
         <h2 className="mb-2">Coverage Gaps</h2>
         <p className="text-sm text-slate-500 mb-4">
-          Active test cases that have never been run, most urgent first. Not
-          affected by any filter above.
+          Active test cases with no recorded result in any run, most urgent
+          first. Cases that are only in a run still in progress count until
+          someone marks them. Not affected by any filter above.
         </p>
-        {neverRunTestCases.length === 0 ? (
+        {neverRunError ? (
+          <p className="text-danger text-sm">
+            Could not load coverage gaps: {neverRunError.message}
+          </p>
+        ) : neverRunTestCases.length === 0 ? (
           <p className="text-success text-sm font-medium">
-            Every active test case has been run at least once. 🎉
+            Every active test case has a recorded result. 🎉
           </p>
         ) : (
-          <table className="w-full text-sm border rounded overflow-hidden">
-            <thead className="bg-slate-100">
-              <tr>
-                <th className="text-left p-2">Test Case</th>
-                <th className="text-left p-2">Priority</th>
-              </tr>
-            </thead>
-            <tbody>
-              {neverRunTestCases.map((tc) => (
-                <tr key={tc.id} className="border-t">
-                  <td className="p-2">
-                    {tc.seq_number && (
-                      <span className="text-slate-400 mr-2">
-                        {formatId("TC", tc.seq_number)}
-                      </span>
-                    )}
-                    {tc.title}
-                  </td>
-                  <td className="p-2">
-                    <Badge className={PRIORITY_STYLES[tc.priority]}>
-                      {formatStatusLabel(tc.priority)}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            {notInAnySuiteCount > 0 && (
+              <p className="text-sm text-amber-700 mb-3">
+                {notInAnySuiteCount} of these{" "}
+                {notInAnySuiteCount === 1 ? "is" : "are"} not in any active
+                suite, so{" "}
+                {notInAnySuiteCount === 1 ? "it cannot" : "they cannot"} be run
+                until added to one.
+              </p>
+            )}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border rounded overflow-hidden">
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="text-left p-2">Test Case</th>
+                    <th className="text-left p-2">Priority</th>
+                    <th className="text-left p-2">Modules</th>
+                    <th className="text-left p-2">Suites</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {neverRunTestCases.map((tc) => {
+                    const suiteCount = Number(tc.suite_count);
+                    return (
+                      <tr key={tc.id} className="border-t">
+                        <td className="p-2">
+                          <Link
+                            href={`/test-cases/${tc.id}/edit`}
+                            className="hover:underline"
+                          >
+                            {tc.seq_number && (
+                              <span className="text-slate-400 mr-2">
+                                {formatId("TC", tc.seq_number)}
+                              </span>
+                            )}
+                            {tc.title}
+                          </Link>
+                        </td>
+                        <td className="p-2">
+                          <Badge className={PRIORITY_STYLES[tc.priority]}>
+                            {formatStatusLabel(tc.priority)}
+                          </Badge>
+                        </td>
+                        <td className="p-2 text-slate-500">
+                          {tc.module_names?.length > 0
+                            ? tc.module_names.join(", ")
+                            : "—"}
+                        </td>
+                        <td className="p-2">
+                          {suiteCount === 0 ? (
+                            <Badge className="bg-amber-100 text-amber-700">
+                              Not in any suite
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-500">
+                              {suiteCount} suite{suiteCount === 1 ? "" : "s"}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </main>
