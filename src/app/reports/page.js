@@ -259,51 +259,28 @@ export default async function ReportsPage({ searchParams }) {
           : a.passRate - b.passRate,
     );
 
-  const { data: windowResults } = await applyFilters(
-    supabase
-      .from("run_results")
-      .select(
-        "test_case_id, status, test_runs!inner(started_at, suite_id, started_by)",
-      ),
-    { prefix: "test_runs." },
+  const { data: moduleRows, error: moduleError } = await supabase.rpc(
+    "module_breakdown",
+    {
+      p_range_start: rangeStart,
+      p_range_end: rangeEnd,
+      p_suite_id: suiteId,
+      p_tester_id: testerId,
+    },
   );
 
-  const { data: moduleCasesData } = await supabase
-    .from("module_cases")
-    .select("test_case_id, modules(id, name)");
-
-  const modulesByTestCaseId = {};
-  (moduleCasesData || []).forEach((mc) => {
-    if (!mc.modules) return;
-    if (!modulesByTestCaseId[mc.test_case_id])
-      modulesByTestCaseId[mc.test_case_id] = [];
-    modulesByTestCaseId[mc.test_case_id].push(mc.modules);
-  });
-
-  const moduleBuckets = {};
-  (windowResults || []).forEach((result) => {
-    const mods = modulesByTestCaseId[result.test_case_id] || [];
-    mods.forEach((mod) => {
-      if (!moduleBuckets[mod.id])
-        moduleBuckets[mod.id] = {
-          id: mod.id,
-          name: mod.name,
-          total: 0,
-          pass: 0,
-          fail: 0,
-        };
-      moduleBuckets[mod.id].total += 1;
-      if (result.status === "pass") moduleBuckets[mod.id].pass += 1;
-      if (result.status === "fail") moduleBuckets[mod.id].fail += 1;
-    });
-  });
-
-  const moduleData = Object.values(moduleBuckets)
+  const moduleData = (moduleRows || [])
     .map((m) => {
-      const decided = m.pass + m.fail;
+      const pass = Number(m.pass);
+      const fail = Number(m.fail);
+      const decided = pass + fail;
       return {
-        ...m,
-        passRate: decided > 0 ? Math.round((m.pass / decided) * 100) : null,
+        id: m.id,
+        name: m.name,
+        total: Number(m.total),
+        pass,
+        fail,
+        passRate: decided > 0 ? Math.round((pass / decided) * 100) : null,
       };
     })
     .sort((a, b) =>
@@ -517,11 +494,17 @@ export default async function ReportsPage({ searchParams }) {
           {suiteNote}
           {testerNote}.
         </p>
-        <BreakdownChart
-          items={moduleData}
-          itemLabel="Module"
-          countLabel="Results"
-        />
+        {moduleError ? (
+          <p className="text-danger text-sm">
+            Could not load module breakdown: {moduleError.message}
+          </p>
+        ) : (
+          <BreakdownChart
+            items={moduleData}
+            itemLabel="Module"
+            countLabel="Results"
+          />
+        )}
       </div>
 
       <div className="mt-10">

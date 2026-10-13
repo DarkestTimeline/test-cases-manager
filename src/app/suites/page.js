@@ -4,6 +4,7 @@ import { formatId } from "@/lib/displayId";
 import { archiveSuite, restoreSuite } from "./actions";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
+import { buildSearchFilter } from "@/lib/searchFilter";
 
 const PAGE_SIZE = 10;
 
@@ -25,7 +26,11 @@ export default async function SuitesList({ searchParams }) {
     ? query.not("archived_at", "is", null)
     : query.is("archived_at", null);
 
-  if (search) query = query.ilike("name", `%${search}%`);
+  if (search) {
+    query = query.or(
+      buildSearchFilter(search, { prefix: "S", columns: ["name"] }),
+    );
+  }
 
   const { data: suites, error, count } = await query;
 
@@ -71,7 +76,7 @@ export default async function SuitesList({ searchParams }) {
           type="text"
           name="search"
           defaultValue={search || ""}
-          placeholder="Search by name..."
+          placeholder="Search by name or code..."
           className="border rounded p-2 text-sm flex-1 max-w-xs"
         />
         <Button type="submit">Search</Button>

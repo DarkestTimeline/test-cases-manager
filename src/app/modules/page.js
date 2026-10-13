@@ -4,6 +4,7 @@ import { formatId } from "@/lib/displayId";
 import { archiveModule, restoreModule } from "./actions";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
+import { buildSearchFilter } from "@/lib/searchFilter";
 
 const PAGE_SIZE = 10;
 
@@ -25,7 +26,11 @@ export default async function ModulesList({ searchParams }) {
     ? query.not("archived_at", "is", null)
     : query.is("archived_at", null);
 
-  if (search) query = query.ilike("name", `%${search}%`);
+  if (search) {
+    query = query.or(
+      buildSearchFilter(search, { prefix: "M", columns: ["name"] }),
+    );
+  }
 
   const { data: modules, error, count } = await query;
 
@@ -71,7 +76,7 @@ export default async function ModulesList({ searchParams }) {
           type="text"
           name="search"
           defaultValue={search || ""}
-          placeholder="Search by name..."
+          placeholder="Search by name or code..."
           className="border rounded p-2 text-sm flex-1 max-w-xs"
         />
         <Button type="submit">Search</Button>
@@ -106,7 +111,7 @@ export default async function ModulesList({ searchParams }) {
                   <span className="font-semibold">
                     {mod.seq_number && (
                       <span className="text-slate-400 font-normal mr-2">
-                        {formatId("S", mod.seq_number)}
+                        {formatId("M", mod.seq_number)}
                       </span>
                     )}
                     {mod.name}

@@ -7,6 +7,7 @@ import Badge from "@/components/Badge";
 import CollapsibleFilters from "@/components/CollapsibleFilters";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
 import { formatStatusLabel } from "@/lib/formatLabel";
+import { buildSearchFilter } from "@/lib/searchFilter";
 
 const PAGE_SIZE = 10;
 
@@ -28,10 +29,14 @@ export default async function TestCasesList({ searchParams }) {
     ? query.not("archived_at", "is", null)
     : query.is("archived_at", null);
 
-  if (search)
+  if (search) {
     query = query.or(
-      `title.ilike.%${search}%,steps_to_reproduce.ilike.%${search}%,expected_result.ilike.%${search}%`,
+      buildSearchFilter(search, {
+        prefix: "TC",
+        columns: ["title", "steps_to_reproduce", "expected_result"],
+      }),
     );
+  }
   if (priority) query = query.eq("priority", priority);
 
   if (moduleId) {
@@ -109,7 +114,7 @@ export default async function TestCasesList({ searchParams }) {
           type="text"
           name="search"
           defaultValue={search || ""}
-          placeholder="Search title, steps, or expected result..."
+          placeholder="Search title, steps, expected result or code..."
           className="border rounded p-2 text-sm flex-1 max-w-xs"
         />
         <Button type="submit">Search</Button>
