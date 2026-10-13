@@ -1,6 +1,7 @@
 import { createSuite } from "../actions";
 import Button from "@/components/Button";
 import BackLink from "@/components/BackLink";
+import Field, { RequiredNote } from "@/components/Field";
 
 export default function NewSuite() {
   return (
@@ -8,23 +9,22 @@ export default function NewSuite() {
       <BackLink href="/suites" label="Suites" />
       <h1 className="mb-6">New Suite</h1>
       <form action={createSuite} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
+        <RequiredNote />
+        <Field label="Name" required>
           <input
             type="text"
             name="name"
             required
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Description</label>
+        </Field>
+        <Field label="Description">
           <textarea
             name="description"
             rows={2}
             className="w-full border rounded p-2"
           />
-        </div>
+        </Field>
         <Button type="submit">Create Suite</Button>
       </form>
     </main>

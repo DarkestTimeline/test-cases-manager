@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { signup } from "./actions";
 import Button from "@/components/Button";
+import Field, { RequiredNote } from "@/components/Field";
 
 const initialState = { error: null, displayName: "", email: "" };
 
@@ -23,8 +24,8 @@ export default function SignupPage() {
         )}
 
         <form action={formAction} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Your Name</label>
+          <RequiredNote allRequired />
+          <Field label="Your Name">
             <input
               key={`name-${state.error}`}
               type="text"
@@ -33,9 +34,8 @@ export default function SignupPage() {
               required
               className="w-full border rounded p-2"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+          </Field>
+          <Field label="Email">
             <input
               key={`email-${state.error}`}
               type="email"
@@ -44,9 +44,8 @@ export default function SignupPage() {
               required
               className="w-full border rounded p-2"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+          </Field>
+          <Field label="Password" hint="At least 6 characters.">
             <input
               type="password"
               name="password"
@@ -54,18 +53,15 @@ export default function SignupPage() {
               minLength={6}
               className="w-full border rounded p-2"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Invite Code
-            </label>
+          </Field>
+          <Field label="Invite Code">
             <input
               type="text"
               name="inviteCode"
               required
               className="w-full border rounded p-2"
             />
-          </div>
+          </Field>
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? "Creating Account..." : "Create Account"}
           </Button>

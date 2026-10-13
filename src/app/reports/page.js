@@ -13,10 +13,9 @@ import { formatStatusLabel } from "@/lib/formatLabel";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
 import { getPassRateColor } from "@/lib/reportColors";
 import Link from "next/link";
+import { parseIdParam, parseDateParam } from "@/lib/params";
 
 const WEEK_OPTIONS = [2, 4, 8, 12, 26, 52];
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SECTION_LABEL =
   "text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2";
 const SELECT_CLASS =
@@ -36,14 +35,6 @@ function describeAge(date) {
   if (days <= 0) return "today";
   if (days === 1) return "1 day ago";
   return `${days} days ago`;
-}
-
-function parseDateParam(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? value : null;
-}
-
-function parseIdParam(value) {
-  return UUID_PATTERN.test(value || "") ? value : null;
 }
 
 function formatDay(dateStr) {
@@ -148,7 +139,10 @@ export default async function ReportsPage({ searchParams }) {
       .order("completed_at", { ascending: false })
       .limit(1),
     supabase.from("suites").select("id, name, seq_number").order("name"),
-    supabase.from("profiles").select("id, display_name").order("display_name"),
+    supabase
+      .from("profiles")
+      .select("id, display_name, is_active")
+      .order("display_name"),
   ]);
 
   const suiteName = suiteId
@@ -393,7 +387,8 @@ export default async function ReportsPage({ searchParams }) {
                 <option value="">All testers</option>
                 {(testerOptions || []).map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.display_name}
+                    {p.display_name || "Unnamed user"}
+                    {p.is_active === false ? " (deactivated)" : ""}
                   </option>
                 ))}
               </select>

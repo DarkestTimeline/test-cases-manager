@@ -6,6 +6,7 @@ import Badge from "@/components/Badge";
 import BackLink from "@/components/BackLink";
 import SortableSuiteCases from "./SortableSuiteCases";
 import AddTestCasesPicker from "@/components/AddTestCasesPicker";
+import Field, { RequiredNote } from "@/components/Field";
 
 export default async function SuiteDetail({ params }) {
   const { id } = await params;
@@ -87,8 +88,8 @@ export default async function SuiteDetail({ params }) {
 
       <form action={updateSuite} className="space-y-3 mb-8 border-b pb-6">
         <input type="hidden" name="suiteId" value={suite.id} />
-        <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
+        <RequiredNote />
+        <Field label="Name" required>
           <input
             type="text"
             name="name"
@@ -96,16 +97,15 @@ export default async function SuiteDetail({ params }) {
             required
             className="w-full border rounded p-2 text-2xl font-bold text-slate-900"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Description</label>
+        </Field>
+        <Field label="Description">
           <textarea
             name="description"
-            defaultValue={suite.description}
+            defaultValue={suite.description || ""}
             rows={2}
             className="w-full border rounded p-2"
           />
-        </div>
+        </Field>
         <Button type="submit">Save Changes</Button>
       </form>
 

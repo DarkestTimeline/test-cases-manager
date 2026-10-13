@@ -6,6 +6,7 @@ import Badge from "@/components/Badge";
 import BackLink from "@/components/BackLink";
 import SortableModuleCases from "./SortableModuleCases";
 import AddTestCasesPicker from "@/components/AddTestCasesPicker";
+import Field, { RequiredNote } from "@/components/Field";
 
 export default async function ModuleDetail({ params }) {
   const { id } = await params;
@@ -61,8 +62,8 @@ export default async function ModuleDetail({ params }) {
 
       <form action={updateModule} className="space-y-3 mb-8 border-b pb-6">
         <input type="hidden" name="moduleId" value={mod.id} />
-        <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
+        <RequiredNote />
+        <Field label="Name" required>
           <input
             type="text"
             name="name"
@@ -70,16 +71,15 @@ export default async function ModuleDetail({ params }) {
             required
             className="w-full border rounded p-2 text-2xl font-bold text-slate-900"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Description</label>
+        </Field>
+        <Field label="Description">
           <textarea
             name="description"
-            defaultValue={mod.description}
+            defaultValue={mod.description || ""}
             rows={2}
             className="w-full border rounded p-2"
           />
-        </div>
+        </Field>
         <Button type="submit">Save Changes</Button>
       </form>
 

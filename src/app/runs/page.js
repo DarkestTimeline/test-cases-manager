@@ -7,6 +7,7 @@ import {
 } from "@/lib/badgeStyles";
 import { formatId } from "@/lib/displayId";
 import { formatStatusLabel } from "@/lib/formatLabel";
+import { parseIdParam, parseDateParam } from "@/lib/params";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
@@ -21,12 +22,37 @@ const FIELD_CLASS =
   "border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary";
 
 export default async function RunsDashboard({ searchParams }) {
-  const { status, suiteId, tester, startDate, endDate, page, mine, outcome } =
-    await searchParams;
+  const {
+    status,
+    suiteId: suiteParam,
+    testerId: testerParam,
+    startDate: startParam,
+    endDate: endParam,
+    page,
+    mine,
+    outcome,
+  } = await searchParams;
+
+  const suiteId = parseIdParam(suiteParam);
+  const testerId = parseIdParam(testerParam);
+  const startDate = parseDateParam(startParam);
+  const endDate = parseDateParam(endParam);
+
   const currentPage = parseInt(page) || 1;
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
   const supabase = await createClient();
+
+  let currentUserId = null;
+  if (mine) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    currentUserId = user?.id ?? null;
+  }
+  const mineConflict = Boolean(
+    mine && testerId && currentUserId && testerId !== currentUserId,
+  );
 
   let query = supabase
     .from("test_runs")
@@ -36,16 +62,10 @@ export default async function RunsDashboard({ searchParams }) {
     .order("started_at", { ascending: false })
     .range(from, to);
 
-  if (mine) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    query = query.eq("started_by", user.id);
-  }
-
   if (status) query = query.eq("status", status);
   if (suiteId) query = query.eq("suite_id", suiteId);
-  if (tester) query = query.ilike("tester_name", `%${tester}%`);
+  if (testerId) query = query.eq("started_by", testerId);
+  if (mine && currentUserId) query = query.eq("started_by", currentUserId);
   if (startDate) query = query.gte("started_at", startDate);
   if (endDate) query = query.lte("started_at", `${endDate}T23:59:59`);
   if (outcome) query = query.eq("outcome", outcome);
@@ -54,10 +74,14 @@ export default async function RunsDashboard({ searchParams }) {
   if (error) return <p className="p-8 text-danger">Error: {error.message}</p>;
 
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE);
-  const { data: suites } = await supabase
-    .from("suites")
-    .select("id, name, seq_number")
-    .order("name");
+
+  const [{ data: suites }, { data: testers }] = await Promise.all([
+    supabase.from("suites").select("id, name, seq_number").order("name"),
+    supabase
+      .from("profiles")
+      .select("id, display_name, is_active")
+      .order("display_name"),
+  ]);
 
   function countsFor(run) {
     const results = run.run_results;
@@ -81,7 +105,7 @@ export default async function RunsDashboard({ searchParams }) {
     const current = {
       status,
       suiteId,
-      tester,
+      testerId,
       startDate,
       endDate,
       page: currentPage,
@@ -92,7 +116,7 @@ export default async function RunsDashboard({ searchParams }) {
     const params = new URLSearchParams();
     if (merged.status) params.set("status", merged.status);
     if (merged.suiteId) params.set("suiteId", merged.suiteId);
-    if (merged.tester) params.set("tester", merged.tester);
+    if (merged.testerId) params.set("testerId", merged.testerId);
     if (merged.startDate) params.set("startDate", merged.startDate);
     if (merged.endDate) params.set("endDate", merged.endDate);
     if (merged.mine) params.set("mine", "true");
@@ -104,7 +128,7 @@ export default async function RunsDashboard({ searchParams }) {
 
   const advancedFilterCount = [
     suiteId,
-    tester,
+    testerId,
     startDate,
     endDate,
     outcome,
@@ -153,13 +177,19 @@ export default async function RunsDashboard({ searchParams }) {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="text"
-                  name="tester"
-                  defaultValue={tester || ""}
-                  placeholder="Search tester..."
+                <select
+                  name="testerId"
+                  defaultValue={testerId || ""}
                   className={FIELD_CLASS}
-                />
+                >
+                  <option value="">All testers</option>
+                  {(testers || []).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.display_name || "Unnamed user"}
+                      {p.is_active === false ? " (deactivated)" : ""}
+                    </option>
+                  ))}
+                </select>
                 <select
                   name="outcome"
                   defaultValue={outcome || ""}
@@ -194,7 +224,15 @@ export default async function RunsDashboard({ searchParams }) {
       </CollapsibleFilters>
 
       {runs.length === 0 ? (
-        <p className="text-slate-500">No runs match these filters.</p>
+        <div className="text-slate-500">
+          <p>No runs match these filters.</p>
+          {mineConflict && (
+            <p className="text-sm mt-1">
+              &quot;My runs only&quot; and a different tester are both selected,
+              so nothing can match. Untick one of them.
+            </p>
+          )}
+        </div>
       ) : (
         <>
           <ul className="space-y-3">

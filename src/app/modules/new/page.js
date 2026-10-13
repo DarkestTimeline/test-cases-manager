@@ -1,6 +1,7 @@
 import { createModule } from "../actions";
 import Button from "@/components/Button";
 import BackLink from "@/components/BackLink";
+import Field, { RequiredNote } from "@/components/Field";
 
 export default function NewModule() {
   return (
@@ -8,24 +9,23 @@ export default function NewModule() {
       <BackLink href="/modules" label="Modules" />
       <h1 className="mb-6">New Module</h1>
       <form action={createModule} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
+        <RequiredNote />
+        <Field label="Name" required>
           <input
             type="text"
             name="name"
             required
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Description</label>
+        </Field>
+        <Field label="Description">
           <textarea
             name="description"
             rows={2}
             className="w-full border rounded p-2"
           />
-        </div>
-        <Button type="submit">Create Module</Button>
+        </Field>
+        <Button type="submit">Create Suite</Button>
       </form>
     </main>
   );

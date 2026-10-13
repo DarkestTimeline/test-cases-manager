@@ -4,6 +4,7 @@ import { useState } from "react";
 import { startRun } from "@/app/runs/actions";
 import { useFormStatus } from "react-dom";
 import Button from "./Button";
+import Field, { RequiredNote } from "@/components/Field";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -40,10 +41,7 @@ export default function StartRunButton({ suites }) {
               </p>
             ) : (
               <form action={startRun} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Suite
-                  </label>
+                <Field label="Suite">
                   <select
                     name="suiteId"
                     required
@@ -55,27 +53,23 @@ export default function StartRunButton({ suites }) {
                       </option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">OS</label>
+                </Field>
+                <Field label="OS">
                   <input
                     type="text"
                     name="os"
                     placeholder="e.g. macOS 15, Windows 11"
                     className="w-full border rounded p-2"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Build / Version
-                  </label>
+                </Field>
+                <Field label="Build / Version">
                   <input
                     type="text"
                     name="build_version"
                     placeholder="e.g. v2.4.1"
                     className="w-full border rounded p-2"
                   />
-                </div>
+                </Field>
                 <div className="flex justify-end gap-2">
                   <Button
                     type="button"

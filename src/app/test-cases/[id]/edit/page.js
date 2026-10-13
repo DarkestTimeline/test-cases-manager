@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { updateTestCase } from "../../actions";
 import Button from "@/components/Button";
 import BackLink from "@/components/BackLink";
+import Field, { RequiredNote } from "@/components/Field";
 
 export default async function EditTestCase({ params }) {
   const supabase = await createClient();
@@ -30,8 +31,8 @@ export default async function EditTestCase({ params }) {
       <h1 className="mb-6">Edit Test Case</h1>
       <form action={updateTestCase} className="space-y-4">
         <input type="hidden" name="testCaseId" value={testCase.id} />
-        <div>
-          <label className="block text-sm font-medium mb-1">Title</label>
+        <RequiredNote />
+        <Field label="Title" required>
           <input
             type="text"
             name="title"
@@ -39,22 +40,16 @@ export default async function EditTestCase({ params }) {
             required
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Preconditions
-          </label>
+        </Field>
+        <Field label="Preconditions">
           <textarea
             name="preconditions"
-            defaultValue={testCase.preconditions}
+            defaultValue={testCase.preconditions || ""}
             rows={2}
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Steps to Reproduce
-          </label>
+        </Field>
+        <Field label="Steps to Reproduce" required>
           <textarea
             name="steps_to_reproduce"
             defaultValue={testCase.steps_to_reproduce}
@@ -62,11 +57,8 @@ export default async function EditTestCase({ params }) {
             rows={4}
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Expected Result
-          </label>
+        </Field>
+        <Field label="Expected Result" required>
           <textarea
             name="expected_result"
             defaultValue={testCase.expected_result}
@@ -74,9 +66,8 @@ export default async function EditTestCase({ params }) {
             rows={2}
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Priority</label>
+        </Field>
+        <Field label="Priority">
           <select
             name="priority"
             defaultValue={testCase.priority}
@@ -87,11 +78,11 @@ export default async function EditTestCase({ params }) {
             <option value="high">High</option>
             <option value="critical">Critical</option>
           </select>
-        </div>
+        </Field>
 
         {modules.length > 0 && (
           <div>
-            <label className="block text-sm font-medium mb-1">Modules</label>
+            <p className="text-sm font-medium mb-1">Modules</p>
             <div className="space-y-1">
               {modules.map((mod) => (
                 <label

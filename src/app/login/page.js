@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { login, loginAsDemo } from "./actions";
 import Button from "@/components/Button";
+import Field, { RequiredNote } from "@/components/Field";
 
 const initialState = { error: null, email: "" };
 
@@ -23,8 +24,7 @@ export default function LoginPage() {
         )}
 
         <form action={formAction} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+          <Field label="Email">
             <input
               key={`email-${state.error}`}
               type="email"
@@ -34,9 +34,8 @@ export default function LoginPage() {
               autoFocus={!state.error}
               className="w-full border rounded p-2"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+          </Field>
+          <Field label="Password">
             <input
               key={`password-${state.error}`}
               type="password"
@@ -45,7 +44,7 @@ export default function LoginPage() {
               autoFocus={!!state.error}
               className="w-full border rounded p-2"
             />
-          </div>
+          </Field>
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? "Signing In..." : "Sign In"}
           </Button>

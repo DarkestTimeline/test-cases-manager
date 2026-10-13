@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createTestCase } from "../actions";
 import Button from "@/components/Button";
 import BackLink from "@/components/BackLink";
+import Field, { RequiredNote } from "@/components/Field";
 
 export default async function NewTestCase() {
   const supabase = await createClient();
@@ -17,49 +18,39 @@ export default async function NewTestCase() {
       <BackLink href="/test-cases" label="Test Cases" />
       <h1 className="mb-6">New Test Case</h1>
       <form action={createTestCase} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Title</label>
+        <RequiredNote />
+        <Field label="Title" required>
           <input
             type="text"
             name="title"
             required
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Preconditions
-          </label>
+        </Field>
+        <Field label="Preconditions">
           <textarea
             name="preconditions"
             rows={2}
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Steps to Reproduce
-          </label>
+        </Field>
+        <Field label="Steps to Reproduce" required>
           <textarea
             name="steps_to_reproduce"
             required
             rows={4}
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Expected Result
-          </label>
+        </Field>
+        <Field label="Expected Result" required>
           <textarea
             name="expected_result"
             required
             rows={2}
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Priority</label>
+        </Field>
+        <Field label="Priority">
           <select
             name="priority"
             defaultValue="medium"
@@ -70,11 +61,11 @@ export default async function NewTestCase() {
             <option value="high">High</option>
             <option value="critical">Critical</option>
           </select>
-        </div>
+        </Field>
 
         {modules.length > 0 && (
           <div>
-            <label className="block text-sm font-medium mb-1">Modules</label>
+            <p className="text-sm font-medium mb-1">Modules</p>
             <div className="space-y-1">
               {modules.map((mod) => (
                 <label

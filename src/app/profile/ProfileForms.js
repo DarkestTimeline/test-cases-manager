@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { updateDisplayName, updatePassword } from "./actions";
 import Button from "@/components/Button";
+import Field, { RequiredNote } from "@/components/Field";
 
 const nameInitialState = { error: null, success: null };
 const passwordInitialState = { error: null, success: null };
@@ -20,7 +21,9 @@ export default function ProfileForms({ displayName }) {
   return (
     <>
       <form action={nameFormAction} className="space-y-3">
-        <h3 className="text-sm font-semibold text-slate-700">Display Name</h3>
+        <h3 className="text-sm font-semibold text-slate-700" aria-label="Display Name">
+          Display Name
+        </h3>
         {nameState.error && (
           <p className="text-danger text-sm">{nameState.error}</p>
         )}
@@ -43,25 +46,22 @@ export default function ProfileForms({ displayName }) {
         <h3 className="text-sm font-semibold text-slate-700">
           Change Password
         </h3>
+        <RequiredNote allRequired />
         {passwordState.error && (
           <p className="text-danger text-sm">{passwordState.error}</p>
         )}
         {passwordState.success && (
           <p className="text-success text-sm">{passwordState.success}</p>
         )}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Current Password
-          </label>
+        <Field label="Current Password">
           <input
             type="password"
             name="currentPassword"
             required
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">New Password</label>
+        </Field>
+        <Field label="New Password" hint="At least 6 characters.">
           <input
             type="password"
             name="newPassword"
@@ -69,11 +69,8 @@ export default function ProfileForms({ displayName }) {
             minLength={6}
             className="w-full border rounded p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Confirm New Password
-          </label>
+        </Field>
+        <Field label="Confirm New Password">
           <input
             type="password"
             name="confirmPassword"
@@ -81,7 +78,7 @@ export default function ProfileForms({ displayName }) {
             minLength={6}
             className="w-full border rounded p-2"
           />
-        </div>
+        </Field>
         <Button type="submit" size="sm" disabled={isPasswordPending}>
           {isPasswordPending ? "Updating..." : "Update Password"}
         </Button>
