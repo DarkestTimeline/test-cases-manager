@@ -3,6 +3,7 @@ import ProfileForms from "./ProfileForms";
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
 import { formatStatusLabel } from "@/lib/formatLabel";
+import { PAGE } from '@/lib/pageWidths'
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -21,7 +22,7 @@ export default async function ProfilePage() {
     .eq("started_by", user.id);
 
   return (
-    <main className="p-8 w-full max-w-md mx-auto">
+    <main className={PAGE.medium}>
       <h1 className="mb-6">Profile</h1>
       <div className="space-y-8">
         <Card>

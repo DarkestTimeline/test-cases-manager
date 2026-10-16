@@ -10,6 +10,7 @@ import ConfirmButton from "@/components/ConfirmButton";
 import BackLink from "@/components/BackLink";
 import ProgressBar from "@/components/ProgressBar";
 import Card from "@/components/Card";
+import { PAGE } from '@/lib/pageWidths'
 
 export default async function RunDetail({ params }) {
   const supabase = await createClient();
@@ -61,7 +62,7 @@ export default async function RunDetail({ params }) {
   const isActive = run.status === "in_progress";
 
   return (
-    <main className="p-8 w-full max-w-5xl mx-auto">
+    <main className={PAGE.standard}>
       <BackLink href="/runs" label="Runs Dashboard" />
       <div className="mb-6">
         <h1>

@@ -3,6 +3,7 @@ import { updateTestCase } from "../../actions";
 import Button from "@/components/Button";
 import BackLink from "@/components/BackLink";
 import Field, { RequiredNote } from "@/components/Field";
+import { PAGE } from '@/lib/pageWidths'
 
 export default async function EditTestCase({ params }) {
   const supabase = await createClient();
@@ -26,7 +27,7 @@ export default async function EditTestCase({ params }) {
   const linkedModuleIds = linkedModules.map((lm) => lm.module_id);
 
   return (
-    <main className="p-8 w-full max-w-5xl mx-auto">
+    <main className={PAGE.standard}>
       <BackLink href="/test-cases" label="Test Cases" />
       <h1 className="mb-6">Edit Test Case</h1>
       <form action={updateTestCase} className="space-y-4">

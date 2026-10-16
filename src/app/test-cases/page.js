@@ -8,6 +8,7 @@ import CollapsibleFilters from "@/components/CollapsibleFilters";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import { buildSearchFilter } from "@/lib/searchFilter";
+import { PAGE } from '@/lib/pageWidths'
 
 const PAGE_SIZE = 10;
 
@@ -86,7 +87,7 @@ export default async function TestCasesList({ searchParams }) {
   const advancedFilterCount = [priority, moduleId].filter(Boolean).length;
 
   return (
-    <main className="p-8 w-full max-w-5xl mx-auto">
+    <main className={PAGE.wide}>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h1>Test Cases</h1>
         <div className="flex flex-wrap gap-2">

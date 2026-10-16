@@ -7,6 +7,7 @@ import BackLink from "@/components/BackLink";
 import SortableSuiteCases from "./SortableSuiteCases";
 import AddTestCasesPicker from "@/components/AddTestCasesPicker";
 import Field, { RequiredNote } from "@/components/Field";
+import { PAGE } from '@/lib/pageWidths'
 
 export default async function SuiteDetail({ params }) {
   const { id } = await params;
@@ -61,7 +62,7 @@ export default async function SuiteDetail({ params }) {
   const moduleGroups = Object.values(grouped);
 
   return (
-    <main className="p-8 w-full max-w-5xl mx-auto">
+    <main className={PAGE.standard}>
       <BackLink href="/suites" label="Suites" />
       <div className="flex items-center gap-2 mb-4">
         <Badge

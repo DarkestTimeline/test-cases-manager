@@ -3,7 +3,7 @@ import { Bone, SkeletonPage } from "@/components/Skeleton";
 
 export default function Loading() {
   return (
-    <SkeletonPage width="narrow">
+    <SkeletonPage width="medium">
       <Bone className="h-8 w-32 mb-6" />
       <div className="space-y-8">
         <Card>

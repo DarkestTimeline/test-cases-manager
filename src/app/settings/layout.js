@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PAGE } from '@/lib/pageWidths'
 
 const SETTINGS_NAV = [
   { label: "Import", href: "/settings/import" },
@@ -12,7 +13,7 @@ export default function SettingsLayout({ children }) {
   const pathname = usePathname();
 
   return (
-    <main className="p-8 w-full max-w-3xl mx-auto">
+    <main className={PAGE.medium}>
       <h1 className="mb-4">Settings</h1>
 
       <div className="flex gap-1 mb-6 border-b">

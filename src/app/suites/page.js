@@ -5,6 +5,7 @@ import { archiveSuite, restoreSuite } from "./actions";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
 import { buildSearchFilter } from "@/lib/searchFilter";
+import { PAGE } from '@/lib/pageWidths'
 
 const PAGE_SIZE = 10;
 
@@ -50,7 +51,7 @@ export default async function SuitesList({ searchParams }) {
   }
 
   return (
-    <main className="p-8 w-full max-w-5xl mx-auto">
+    <main className={PAGE.wide}>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h1>Suites</h1>
         <div className="flex flex-wrap gap-2">

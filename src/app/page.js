@@ -6,6 +6,7 @@ import { formatId } from "@/lib/displayId";
 import { RUN_STATUS_STYLES, OUTCOME_STYLES } from "@/lib/badgeStyles";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import StatCard from "@/components/StatCard";
+import { PAGE } from '@/lib/pageWidths'
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ export default async function Home() {
   ];
 
   return (
-    <main className="p-8 w-full max-w-5xl mx-auto">
+    <main className={PAGE.wide}>
       <div className="mb-8">
         <h1 className="mb-1">QA Test Manager</h1>
         <p className="text-slate-600">

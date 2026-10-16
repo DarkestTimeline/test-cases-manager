@@ -16,6 +16,7 @@ import SegmentedControl from "@/components/SegmentedControl";
 import FilterGroup from "@/components/FilterGroup";
 import DateRangeFields from "@/components/DateRangeFields";
 import ProgressBar from "@/components/ProgressBar";
+import { PAGE } from '@/lib/pageWidths'
 
 const PAGE_SIZE = 10;
 const FIELD_CLASS =
@@ -137,7 +138,7 @@ export default async function RunsDashboard({ searchParams }) {
   const hasActiveFilters = Boolean(status) || advancedFilterCount > 0;
 
   return (
-    <main className="p-8 w-full max-w-5xl mx-auto">
+    <main className={PAGE.wide}>
       <h1 className="mb-4">Runs Dashboard</h1>
 
       <div className="mb-4">

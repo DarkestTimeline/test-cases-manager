@@ -3,6 +3,7 @@ import { createTestCase } from "../actions";
 import Button from "@/components/Button";
 import BackLink from "@/components/BackLink";
 import Field, { RequiredNote } from "@/components/Field";
+import { PAGE } from '@/lib/pageWidths'
 
 export default async function NewTestCase() {
   const supabase = await createClient();
@@ -14,7 +15,7 @@ export default async function NewTestCase() {
     .order("name");
 
   return (
-    <main className="p-8 w-full max-w-2xl mx-auto">
+    <main className={PAGE.standard}>
       <BackLink href="/test-cases" label="Test Cases" />
       <h1 className="mb-6">New Test Case</h1>
       <form action={createTestCase} className="space-y-4">

@@ -4,6 +4,7 @@ import { toggleUserRole, toggleUserActive } from "../actions";
 import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import { formatStatusLabel } from "@/lib/formatLabel";
+import { PAGE } from '@/lib/pageWidths'
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -26,7 +27,7 @@ export default async function AdminUsersPage() {
     .order("display_name");
 
   return (
-    <main className="p-8 w-full max-w-3xl mx-auto">
+    <main className={PAGE.medium}>
       <h1 className="mb-6">Manage Users</h1>
       <ul className="space-y-3">
         {profiles.map((profile) => (

@@ -7,6 +7,7 @@ import BackLink from "@/components/BackLink";
 import SortableModuleCases from "./SortableModuleCases";
 import AddTestCasesPicker from "@/components/AddTestCasesPicker";
 import Field, { RequiredNote } from "@/components/Field";
+import { PAGE } from '@/lib/pageWidths'
 
 export default async function ModuleDetail({ params }) {
   const { id } = await params;
@@ -35,7 +36,7 @@ export default async function ModuleDetail({ params }) {
   );
 
   return (
-    <main className="p-8 w-full max-w-5xl mx-auto">
+    <main className={PAGE.standard}>
       <BackLink href="/modules" label="Modules" />
       <div className="flex items-center gap-2 mb-4">
         <Badge
