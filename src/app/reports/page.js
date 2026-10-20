@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ReportsCharts from "./ReportsCharts";
 import BreakdownChart from "@/components/BreakdownChart";
@@ -12,23 +13,15 @@ import { formatId } from "@/lib/displayId";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
 import { getPassRateColor } from "@/lib/reportColors";
-import Link from "next/link";
 import { parseIdParam, parseDateParam } from "@/lib/params";
+import { PAGE } from "@/lib/pageWidths";
+import { createTimer } from "@/lib/timing";
 
-const WEEK_OPTIONS = [2, 4, 8, 12, 26, 52];
+const WEEK_OPTIONS = [4, 8, 12, 26, 52];
 const SECTION_LABEL =
   "text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2";
 const SELECT_CLASS =
   "border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary";
-
-function getWeekStart(dateStr) {
-  const d = new Date(dateStr);
-  const day = d.getUTCDay();
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  d.setUTCDate(d.getUTCDate() + diffToMonday);
-  d.setUTCHours(0, 0, 0, 0);
-  return d.toISOString().split("T")[0];
-}
 
 function describeAge(date) {
   const days = Math.floor((Date.now() - date.getTime()) / 86400000);
@@ -44,6 +37,32 @@ function formatDay(dateStr) {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+function toRate(pass, fail) {
+  const decided = pass + fail;
+  return decided > 0 ? Math.round((pass / decided) * 100) : null;
+}
+
+function toBreakdownItem(row) {
+  const pass = Number(row.pass);
+  const fail = Number(row.fail);
+  return {
+    id: row.id,
+    name: row.name,
+    total: Number(row.total),
+    pass,
+    fail,
+    passRate: toRate(pass, fail),
+  };
+}
+
+function byWorstFirst(a, b) {
+  if (a.passRate === null && b.passRate === null)
+    return a.name.localeCompare(b.name);
+  if (a.passRate === null) return 1;
+  if (b.passRate === null) return -1;
+  return a.passRate - b.passRate || a.name.localeCompare(b.name);
 }
 
 export default async function ReportsPage({ searchParams }) {
@@ -90,15 +109,10 @@ export default async function ReportsPage({ searchParams }) {
     rangePhrase = `in the ${rangeShort}`;
   }
 
-  function applyFilters(
-    query,
-    { prefix = "", range = true, suite = true, tester = true } = {},
-  ) {
+  function scopeToFilters(query) {
     let q = query;
-    if (range && rangeStart) q = q.gte(`${prefix}started_at`, rangeStart);
-    if (range && rangeEnd) q = q.lte(`${prefix}started_at`, rangeEnd);
-    if (suite && suiteId) q = q.eq(`${prefix}suite_id`, suiteId);
-    if (tester && testerId) q = q.eq(`${prefix}started_by`, testerId);
+    if (suiteId) q = q.eq("suite_id", suiteId);
+    if (testerId) q = q.eq("started_by", testerId);
     return q;
   }
 
@@ -110,40 +124,95 @@ export default async function ReportsPage({ searchParams }) {
     return `/reports?${params.toString()}`;
   }
 
+  const { timed, finish } = createTimer("reports");
+
+  const rangeArgs = { p_range_start: rangeStart, p_range_end: rangeEnd };
+
   const [
     { count: inProgressCount },
     { data: latestStarted },
     { data: latestCompleted },
     { data: suiteOptions },
     { data: testerOptions },
+    { data: weeklyRows, error: weeklyError },
+    { data: suiteRows, error: suiteError },
+    { data: moduleRows, error: moduleError },
+    { data: testerRows, error: testerError },
+    { data: neverRunRows, error: neverRunError },
+    { count: activeTestCaseCount },
   ] = await Promise.all([
-    applyFilters(
-      supabase
-        .from("test_runs")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "in_progress"),
-      { range: false },
+    timed(
+      "in-progress count",
+      scopeToFilters(
+        supabase
+          .from("test_runs")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "in_progress"),
+      ),
     ),
-    applyFilters(supabase.from("test_runs").select("started_at"), {
-      range: false,
-    })
-      .order("started_at", { ascending: false })
-      .limit(1),
-    applyFilters(
+    timed(
+      "latest started",
+      scopeToFilters(supabase.from("test_runs").select("started_at"))
+        .order("started_at", { ascending: false })
+        .limit(1),
+    ),
+    timed(
+      "latest completed",
+      scopeToFilters(
+        supabase
+          .from("test_runs")
+          .select("completed_at")
+          .not("completed_at", "is", null),
+      )
+        .order("completed_at", { ascending: false })
+        .limit(1),
+    ),
+    timed(
+      "suite options",
+      supabase.from("suites").select("id, name, seq_number").order("name"),
+    ),
+    timed(
+      "tester options",
       supabase
-        .from("test_runs")
-        .select("completed_at")
-        .not("completed_at", "is", null),
-      { range: false },
-    )
-      .order("completed_at", { ascending: false })
-      .limit(1),
-    supabase.from("suites").select("id, name, seq_number").order("name"),
-    supabase
-      .from("profiles")
-      .select("id, display_name, is_active")
-      .order("display_name"),
+        .from("profiles")
+        .select("id, display_name, is_active")
+        .order("display_name"),
+    ),
+    timed(
+      "weekly stats",
+      supabase.rpc("weekly_run_stats", {
+        ...rangeArgs,
+        p_suite_id: suiteId,
+        p_tester_id: testerId,
+      }),
+    ),
+    timed(
+      "suite breakdown",
+      supabase.rpc("suite_breakdown", { ...rangeArgs, p_tester_id: testerId }),
+    ),
+    timed(
+      "module breakdown",
+      supabase.rpc("module_breakdown", {
+        ...rangeArgs,
+        p_suite_id: suiteId,
+        p_tester_id: testerId,
+      }),
+    ),
+    timed(
+      "tester workload",
+      supabase.rpc("tester_workload", { ...rangeArgs, p_suite_id: suiteId }),
+    ),
+    timed("never run", supabase.rpc("never_run_test_cases")),
+    timed(
+      "active test case count",
+      supabase
+        .from("test_cases")
+        .select("*", { count: "exact", head: true })
+        .is("archived_at", null),
+    ),
   ]);
+
+  finish();
 
   const suiteName = suiteId
     ? (suiteOptions || []).find((s) => s.id === suiteId)?.name
@@ -168,164 +237,37 @@ export default async function ReportsPage({ searchParams }) {
   const lastActivity =
     activityDates.length > 0 ? new Date(Math.max(...activityDates)) : null;
 
-  const { data: runs } = await applyFilters(
-    supabase.from("test_runs").select("started_at, status, outcome"),
-  ).order("started_at");
-
-  const weekBuckets = {};
-  (runs || []).forEach((run) => {
-    const week = getWeekStart(run.started_at);
-    if (!weekBuckets[week])
-      weekBuckets[week] = { week, total: 0, pass: 0, fail: 0 };
-    weekBuckets[week].total += 1;
-    if (run.status === "completed" && run.outcome === "pass")
-      weekBuckets[week].pass += 1;
-    if (run.status === "completed" && run.outcome === "fail")
-      weekBuckets[week].fail += 1;
-  });
-
-  const chartData = Object.values(weekBuckets)
-    .sort((a, b) => a.week.localeCompare(b.week))
-    .map((bucket) => {
-      const decided = bucket.pass + bucket.fail;
+  const weekly = weeklyRows || [];
+  const chartData = weekly
+    .map((row) => {
+      const pass = Number(row.pass);
+      const fail = Number(row.fail);
       return {
-        week: bucket.week,
-        volume: bucket.total,
-        decided,
-        passRate:
-          decided > 0 ? Math.round((bucket.pass / decided) * 100) : null,
+        week: row.week_start,
+        volume: Number(row.total),
+        decided: pass + fail,
+        passRate: toRate(pass, fail),
       };
-    });
+    })
+    .sort((a, b) => a.week.localeCompare(b.week));
 
-  const overallPass = Object.values(weekBuckets).reduce(
-    (sum, b) => sum + b.pass,
-    0,
-  );
-  const overallFail = Object.values(weekBuckets).reduce(
-    (sum, b) => sum + b.fail,
-    0,
-  );
+  const overallPass = weekly.reduce((sum, row) => sum + Number(row.pass), 0);
+  const overallFail = weekly.reduce((sum, row) => sum + Number(row.fail), 0);
   const overallDecided = overallPass + overallFail;
-  const overallPassRate =
-    overallDecided > 0
-      ? Math.round((overallPass / overallDecided) * 100)
-      : null;
+  const overallPassRate = toRate(overallPass, overallFail);
 
-  const { data: windowRuns } = await applyFilters(
-    supabase
-      .from("test_runs")
-      .select("suite_id, status, outcome, suites(name)"),
-    { suite: false },
-  );
+  const suiteData = (suiteRows || []).map(toBreakdownItem).sort(byWorstFirst);
+  const moduleData = (moduleRows || []).map(toBreakdownItem).sort(byWorstFirst);
 
-  const suiteBuckets = {};
-  (windowRuns || []).forEach((run) => {
-    if (!run.suite_id) return;
-    if (!suiteBuckets[run.suite_id]) {
-      suiteBuckets[run.suite_id] = {
-        id: run.suite_id,
-        name: run.suites?.name || "Unknown Suite",
-        total: 0,
-        pass: 0,
-        fail: 0,
-      };
-    }
-    suiteBuckets[run.suite_id].total += 1;
-    if (run.status === "completed" && run.outcome === "pass")
-      suiteBuckets[run.suite_id].pass += 1;
-    if (run.status === "completed" && run.outcome === "fail")
-      suiteBuckets[run.suite_id].fail += 1;
-  });
-
-  const suiteData = Object.values(suiteBuckets)
-    .map((s) => {
-      const decided = s.pass + s.fail;
-      return {
-        ...s,
-        passRate: decided > 0 ? Math.round((s.pass / decided) * 100) : null,
-      };
-    })
-    .sort((a, b) =>
-      a.passRate === null
-        ? 1
-        : b.passRate === null
-          ? -1
-          : a.passRate - b.passRate,
-    );
-
-  const { data: moduleRows, error: moduleError } = await supabase.rpc(
-    "module_breakdown",
-    {
-      p_range_start: rangeStart,
-      p_range_end: rangeEnd,
-      p_suite_id: suiteId,
-      p_tester_id: testerId,
-    },
-  );
-
-  const moduleData = (moduleRows || [])
-    .map((m) => {
-      const pass = Number(m.pass);
-      const fail = Number(m.fail);
-      const decided = pass + fail;
-      return {
-        id: m.id,
-        name: m.name,
-        total: Number(m.total),
-        pass,
-        fail,
-        passRate: decided > 0 ? Math.round((pass / decided) * 100) : null,
-      };
-    })
-    .sort((a, b) =>
-      a.passRate === null
-        ? 1
-        : b.passRate === null
-          ? -1
-          : a.passRate - b.passRate,
-    );
-
-  const { data: testerRuns } = await applyFilters(
-    supabase
-      .from("test_runs")
-      .select("started_by, status, profiles(display_name)")
-      .not("started_by", "is", null),
-    { tester: false },
-  );
-
-  const testerBuckets = {};
-  (testerRuns || []).forEach((run) => {
-    if (!testerBuckets[run.started_by]) {
-      testerBuckets[run.started_by] = {
-        id: run.started_by,
-        name: run.profiles?.display_name || "Unknown",
-        completed: 0,
-        inProgress: 0,
-        cancelled: 0,
-      };
-    }
-    if (run.status === "completed")
-      testerBuckets[run.started_by].completed += 1;
-    if (run.status === "in_progress")
-      testerBuckets[run.started_by].inProgress += 1;
-    if (run.status === "cancelled")
-      testerBuckets[run.started_by].cancelled += 1;
-  });
-
-  const testerData = Object.values(testerBuckets).sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
-
-  const [
-    { data: neverRunRows, error: neverRunError },
-    { count: activeTestCaseCount },
-  ] = await Promise.all([
-    supabase.rpc("never_run_test_cases"),
-    supabase
-      .from("test_cases")
-      .select("*", { count: "exact", head: true })
-      .is("archived_at", null),
-  ]);
+  const testerData = (testerRows || [])
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      completed: Number(row.completed),
+      inProgress: Number(row.in_progress),
+      cancelled: Number(row.cancelled),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const neverRunTestCases = neverRunRows || [];
   const notInAnySuiteCount = neverRunTestCases.filter(
@@ -333,7 +275,7 @@ export default async function ReportsPage({ searchParams }) {
   ).length;
 
   return (
-    <main className="p-8 w-full max-w-4xl mx-auto">
+    <main className={PAGE.reports}>
       <h1 className="mb-4">Reports</h1>
 
       <form method="GET" action="/reports">
@@ -439,9 +381,11 @@ export default async function ReportsPage({ searchParams }) {
               : getPassRateColor(overallPassRate)
           }
           sublabel={
-            overallDecided > 0
-              ? `${overallDecided} completed run${overallDecided === 1 ? "" : "s"}, ${rangeShort}`
-              : `no completed runs, ${rangeShort}`
+            weeklyError
+              ? "unavailable"
+              : overallDecided > 0
+                ? `${overallDecided} completed run${overallDecided === 1 ? "" : "s"}, ${rangeShort}`
+                : `no completed runs, ${rangeShort}`
           }
         />
         <StatCard
@@ -468,7 +412,13 @@ export default async function ReportsPage({ searchParams }) {
         />
       </div>
 
-      <ReportsCharts data={chartData} />
+      {weeklyError ? (
+        <p className="text-danger text-sm">
+          Could not load the trend charts: {weeklyError.message}
+        </p>
+      ) : (
+        <ReportsCharts data={chartData} />
+      )}
 
       <div className="mt-10">
         <h2 className="mb-2">Suite Breakdown</h2>
@@ -478,7 +428,17 @@ export default async function ReportsPage({ searchParams }) {
           {suiteId &&
             " Not narrowed by the suite filter, so the suites stay comparable."}
         </p>
-        <BreakdownChart items={suiteData} itemLabel="Suite" countLabel="Runs" />
+        {suiteError ? (
+          <p className="text-danger text-sm">
+            Could not load suite breakdown: {suiteError.message}
+          </p>
+        ) : (
+          <BreakdownChart
+            items={suiteData}
+            itemLabel="Suite"
+            countLabel="Runs"
+          />
+        )}
       </div>
 
       <div className="mt-10">
@@ -512,7 +472,13 @@ export default async function ReportsPage({ searchParams }) {
           {testerId &&
             " Not narrowed by the tester filter, so the team stays comparable."}
         </p>
-        <WorkloadChart items={testerData} />
+        {testerError ? (
+          <p className="text-danger text-sm">
+            Could not load tester workload: {testerError.message}
+          </p>
+        ) : (
+          <WorkloadChart items={testerData} />
+        )}
       </div>
 
       <div className="mt-10">
