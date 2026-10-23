@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LinkPending from "./LinkPending";
 
 export default function SegmentedControl({ options }) {
   return (
@@ -15,7 +16,7 @@ export default function SegmentedControl({ options }) {
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          {option.label}
+          <LinkPending>{option.label}</LinkPending>
         </Link>
       ))}
     </div>
