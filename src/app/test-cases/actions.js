@@ -4,8 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { validateRow } from "@/lib/testCaseValidation";
+import { parseIdParam } from "@/lib/params";
 
 const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
+const EXPORT_PAGE_SIZE = 1000;
+const EXPORT_MAX_PAGES = 200;
 
 export async function createTestCase(formData) {
   const supabase = await createClient();
@@ -254,46 +257,57 @@ export async function importTestCases(rows) {
 
 export async function exportTestCases(scope) {
   const supabase = await createClient();
-  let testCaseIds = null;
+
+  let suiteId = null;
+  let moduleId = null;
 
   if (scope && scope !== "all") {
     const [type, id] = scope.split(":");
-    if (type === "suite") {
-      const { data } = await supabase
-        .from("suite_cases")
-        .select("test_case_id")
-        .eq("suite_id", id);
-      testCaseIds = data.map((d) => d.test_case_id);
-    } else if (type === "module") {
-      const { data } = await supabase
-        .from("module_cases")
-        .select("test_case_id")
-        .eq("module_id", id);
-      testCaseIds = data.map((d) => d.test_case_id);
+    const parsedId = parseIdParam(id);
+    if (!parsedId || (type !== "suite" && type !== "module")) {
+      return {
+        error:
+          "That export selection is not valid. Reload the page and try again.",
+      };
     }
+    if (type === "suite") suiteId = parsedId;
+    else moduleId = parsedId;
   }
 
-  if (testCaseIds && testCaseIds.length === 0) return [];
+  const rows = [];
+  let complete = false;
 
-  let query = supabase
-    .from("test_cases")
-    .select(
-      "id, title, preconditions, steps_to_reproduce, expected_result, priority, module_cases(modules(name))",
-    )
-    .is("archived_at", null)
-    .order("seq_number");
+  for (let page = 0; page < EXPORT_MAX_PAGES; page++) {
+    const { data, error } = await supabase
+      .rpc("export_test_cases", { p_suite_id: suiteId, p_module_id: moduleId })
+      .order("seq_number", { ascending: true })
+      .order("id", { ascending: true })
+      .range(rows.length, rows.length + EXPORT_PAGE_SIZE - 1);
 
-  if (testCaseIds) query = query.in("id", testCaseIds);
+    if (error) return { error: error.message };
 
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
+    if (!data || data.length === 0) {
+      complete = true;
+      break;
+    }
+    rows.push(...data);
+  }
 
-  return data.map((tc) => ({
-    title: tc.title,
-    preconditions: tc.preconditions,
-    steps_to_reproduce: tc.steps_to_reproduce,
-    expected_result: tc.expected_result,
-    priority: tc.priority,
-    modules: tc.module_cases.map((mc) => mc.modules.name).join(", "),
-  }));
+  if (!complete) {
+    return {
+      error:
+        "This export is too large to download in one file. Export a suite or module at a time.",
+    };
+  }
+
+  return {
+    rows: rows.map((tc) => ({
+      title: tc.title,
+      preconditions: tc.preconditions,
+      steps_to_reproduce: tc.steps_to_reproduce,
+      expected_result: tc.expected_result,
+      priority: tc.priority,
+      modules: (tc.module_names || []).join(", "),
+    })),
+  };
 }
