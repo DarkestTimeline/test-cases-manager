@@ -17,26 +17,18 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub ?? null;
 
   let profile = null;
   let suites = [];
 
-  if (user) {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+  if (userId) {
+    const [{ data: profileData }, { data: suitesData }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).single(),
+      supabase.from("suites").select("*").is("archived_at", null).order("name"),
+    ]);
     profile = profileData;
-
-    const { data: suitesData } = await supabase
-      .from("suites")
-      .select("*")
-      .is("archived_at", null)
-      .order("name");
     suites = suitesData || [];
   }
 

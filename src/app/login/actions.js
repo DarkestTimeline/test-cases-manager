@@ -38,9 +38,7 @@ export async function loginAsDemo() {
   });
 
   if (error) {
-    redirect(
-      `/login?error=${encodeURIComponent("Demo account is not set up correctly.")}`,
-    );
+    redirect("/login?error=demo");
   }
 
   redirect("/");
