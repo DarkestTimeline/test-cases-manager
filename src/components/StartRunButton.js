@@ -2,18 +2,10 @@
 
 import { useState } from "react";
 import { startRun } from "@/app/runs/actions";
-import { useFormStatus } from "react-dom";
 import Button from "./Button";
-import Field, { RequiredNote } from "@/components/Field";
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" variant="success" size="sm" disabled={pending}>
-      {pending ? "Starting..." : "Start Run"}
-    </Button>
-  );
-}
+import Modal from "./Modal";
+import FormSubmitButton from "./FormSubmitButton";
+import Field from "@/components/Field";
 
 export default function StartRunButton({ suites }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,66 +17,64 @@ export default function StartRunButton({ suites }) {
       </Button>
 
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-          onClick={() => setIsOpen(false)}
-        >
-          <div
-            className="bg-white rounded-lg p-6 max-w-md w-full shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="mb-4">Start a Run</h2>
+        <Modal label="Start a run" onClose={() => setIsOpen(false)}>
+          <h2 className="mb-4">Start a Run</h2>
 
-            {suites.length === 0 ? (
-              <p className="text-slate-500">
-                No suites exist yet — create one first.
-              </p>
-            ) : (
-              <form action={startRun} className="space-y-4">
-                <Field label="Suite">
-                  <select
-                    name="suiteId"
-                    required
-                    className="w-full border rounded p-2"
-                  >
-                    {suites.map((suite) => (
-                      <option key={suite.id} value={suite.id}>
-                        {suite.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="OS">
-                  <input
-                    type="text"
-                    name="os"
-                    placeholder="e.g. macOS 15, Windows 11"
-                    className="w-full border rounded p-2"
-                  />
-                </Field>
-                <Field label="Build / Version">
-                  <input
-                    type="text"
-                    name="build_version"
-                    placeholder="e.g. v2.4.1"
-                    className="w-full border rounded p-2"
-                  />
-                </Field>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <SubmitButton />
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
+          {suites.length === 0 ? (
+            <p className="text-slate-500">
+              No suites exist yet — create one first.
+            </p>
+          ) : (
+            <form action={startRun} className="space-y-4">
+              <Field label="Suite">
+                <select
+                  name="suiteId"
+                  required
+                  className="w-full border rounded p-2"
+                >
+                  {suites.map((suite) => (
+                    <option key={suite.id} value={suite.id}>
+                      {suite.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="OS">
+                <input
+                  type="text"
+                  name="os"
+                  placeholder="e.g. macOS 15, Windows 11"
+                  className="w-full border rounded p-2"
+                />
+              </Field>
+              <Field label="Build / Version">
+                <input
+                  type="text"
+                  name="build_version"
+                  placeholder="e.g. v2.4.1"
+                  className="w-full border rounded p-2"
+                />
+              </Field>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <FormSubmitButton
+                  variant="success"
+                  size="sm"
+                  pendingLabel="Starting..."
+                >
+                  Start Run
+                </FormSubmitButton>
+              </div>
+            </form>
+          )}
+        </Modal>
       )}
     </>
   );
