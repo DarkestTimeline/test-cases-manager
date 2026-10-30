@@ -1,110 +1,68 @@
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateTestCase } from "../../actions";
-import Button from "@/components/Button";
+import TestCaseForm from "../../TestCaseForm";
 import BackLink from "@/components/BackLink";
-import Field, { RequiredNote } from "@/components/Field";
-import { PAGE } from '@/lib/pageWidths'
+import { PAGE } from "@/lib/pageWidths";
+import { parseIdParam } from "@/lib/params";
+import { DEFAULT_PRIORITY } from "@/lib/testCaseValidation";
 
-export default async function EditTestCase({ params }) {
+const NOTICES = {
+  "modules-failed":
+    "The test case was created, but its modules could not be saved. Tick them again and save.",
+};
+
+export default async function EditTestCase({ params, searchParams }) {
+  const { id: rawId } = await params;
+  const { notice } = await searchParams;
+  const id = parseIdParam(rawId);
+  if (!id) notFound();
+
   const supabase = await createClient();
-  const { id } = await params;
+  const [{ data: testCase }, { data: modules }, { data: links }] =
+    await Promise.all([
+      supabase.from("test_cases").select("*").eq("id", id).single(),
+      supabase
+        .from("modules")
+        .select("id, name")
+        .is("archived_at", null)
+        .order("name"),
+      supabase.from("module_cases").select("module_id").eq("test_case_id", id),
+    ]);
+  if (!testCase) notFound();
 
-  const { data: testCase } = await supabase
-    .from("test_cases")
-    .select("*")
-    .eq("id", id)
-    .single();
-  const { data: modules } = await supabase
-    .from("modules")
-    .select("*")
-    .is("archived_at", null)
-    .order("name");
-  const { data: linkedModules } = await supabase
-    .from("module_cases")
-    .select("module_id")
-    .eq("test_case_id", id);
-
-  const linkedModuleIds = linkedModules.map((lm) => lm.module_id);
+  const noticeText =
+    typeof notice === "string" && Object.hasOwn(NOTICES, notice)
+      ? NOTICES[notice]
+      : null;
 
   return (
     <main className={PAGE.standard}>
       <BackLink href="/test-cases" label="Test Cases" />
       <h1 className="mb-6">Edit Test Case</h1>
-      <form action={updateTestCase} className="space-y-4">
-        <input type="hidden" name="testCaseId" value={testCase.id} />
-        <RequiredNote />
-        <Field label="Title" required>
-          <input
-            type="text"
-            name="title"
-            defaultValue={testCase.title}
-            required
-            className="w-full border rounded p-2"
-          />
-        </Field>
-        <Field label="Preconditions">
-          <textarea
-            name="preconditions"
-            defaultValue={testCase.preconditions || ""}
-            rows={2}
-            className="w-full border rounded p-2"
-          />
-        </Field>
-        <Field label="Steps to Reproduce" required>
-          <textarea
-            name="steps_to_reproduce"
-            defaultValue={testCase.steps_to_reproduce}
-            required
-            rows={4}
-            className="w-full border rounded p-2"
-          />
-        </Field>
-        <Field label="Expected Result" required>
-          <textarea
-            name="expected_result"
-            defaultValue={testCase.expected_result}
-            required
-            rows={2}
-            className="w-full border rounded p-2"
-          />
-        </Field>
-        <Field label="Priority">
-          <select
-            name="priority"
-            defaultValue={testCase.priority}
-            className="w-full border rounded p-2"
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-        </Field>
-
-        {modules.length > 0 && (
-          <div>
-            <p className="text-sm font-medium mb-1">Modules</p>
-            <div className="space-y-1">
-              {modules.map((mod) => (
-                <label
-                  key={mod.id}
-                  className="flex items-center gap-2 border rounded p-2"
-                >
-                  <input
-                    type="checkbox"
-                    name="moduleIds"
-                    value={mod.id}
-                    defaultChecked={linkedModuleIds.includes(mod.id)}
-                  />
-                  {mod.name}
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <Button type="submit">Save Changes</Button>
-      </form>
+      {noticeText && (
+        <p
+          role="status"
+          className="mb-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+        >
+          {noticeText}
+        </p>
+      )}
+      <TestCaseForm
+        action={updateTestCase}
+        testCaseId={testCase.id}
+        modules={modules || []}
+        initialValues={{
+          title: testCase.title ?? "",
+          preconditions: testCase.preconditions ?? "",
+          steps_to_reproduce: testCase.steps_to_reproduce ?? "",
+          expected_result: testCase.expected_result ?? "",
+          priority: testCase.priority ?? DEFAULT_PRIORITY,
+          moduleIds: (links || []).map((l) => l.module_id),
+        }}
+        submitLabel="Save Changes"
+        pendingLabel="Saving..."
+      />
     </main>
   );
 }

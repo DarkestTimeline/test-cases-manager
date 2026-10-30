@@ -1,4 +1,10 @@
-export default function Field({ label, required = false, hint, children }) {
+export default function Field({
+  label,
+  required = false,
+  hint,
+  error,
+  children,
+}) {
   return (
     <label className="block">
       <span className="block text-sm font-medium mb-1">
@@ -10,7 +16,12 @@ export default function Field({ label, required = false, hint, children }) {
         )}
       </span>
       {children}
-      {hint && (
+      {error && (
+        <span role="alert" className="block text-xs text-danger mt-1">
+          {error}
+        </span>
+      )}
+      {hint && !error && (
         <span className="block text-xs text-slate-400 mt-1">{hint}</span>
       )}
     </label>

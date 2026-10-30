@@ -5,8 +5,8 @@ import Papa from "papaparse";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import { downloadFile } from "@/lib/downloadFile";
-import { validateRow } from "@/lib/testCaseValidation";
 import { importTestCases } from "@/app/test-cases/actions";
+import { validateRow, MAX_IMPORT_ROWS } from "@/lib/testCaseValidation";
 
 const REQUIRED_COLUMNS = [
   "title",
@@ -52,6 +52,16 @@ export default function ImportTestCases({ modules, allModulesForWarnings }) {
           setError(`Missing expected column(s): ${missingColumns.join(", ")}`);
           return;
         }
+        if (results.data.length === 0) {
+          setError("This file has a header but no rows.");
+          return;
+        }
+        if (results.data.length > MAX_IMPORT_ROWS) {
+          setError(
+            `This file has ${results.data.length} rows. Import at most ${MAX_IMPORT_ROWS} at a time by splitting the file.`,
+          );
+          return;
+        }
         setRows(results.data);
       },
       error: () => {
@@ -69,12 +79,18 @@ export default function ImportTestCases({ modules, allModulesForWarnings }) {
     setError("");
     try {
       const result = await importTestCases(rows);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
       setImportResult(result);
       setRows([]);
       setFileName("");
       setFileInputKey((k) => k + 1);
-    } catch (err) {
-      setError(err.message);
+    } catch {
+      setError(
+        "The import did not finish, so its result is unknown. Check the Test Cases list before importing again, to avoid creating duplicates.",
+      );
     } finally {
       setIsImporting(false);
     }
@@ -136,15 +152,28 @@ export default function ImportTestCases({ modules, allModulesForWarnings }) {
       {error && <p className="text-danger text-sm mb-4">{error}</p>}
 
       {importResult && (
-        <div className="mb-4">
+        <div className="mb-4 space-y-1">
           <p className="text-success text-sm font-medium">
             Imported {importResult.importedCount} test case
-            {importResult.importedCount !== 1 ? "s" : ""} successfully!
+            {importResult.importedCount !== 1 ? "s" : ""}.
           </p>
+          {importResult.linkError && (
+            <p role="alert" className="text-sm text-danger">
+              The test cases were created, but their modules could not be linked
+              ({importResult.linkError}). Do not import this file again, or the
+              test cases will be duplicated. Assign the modules by editing them.
+            </p>
+          )}
           {importResult.unmatchedModuleNames.length > 0 && (
-            <p className="text-sm text-amber-700 mt-1">
+            <p className="text-sm text-amber-700">
               These module names did not match anything and were skipped:{" "}
               {importResult.unmatchedModuleNames.join(", ")}
+            </p>
+          )}
+          {importResult.archivedModuleNames.length > 0 && (
+            <p className="text-sm text-amber-700">
+              These modules are archived, so no links were made:{" "}
+              {importResult.archivedModuleNames.join(", ")}
             </p>
           )}
         </div>

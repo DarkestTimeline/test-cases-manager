@@ -3,89 +3,172 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { validateRow } from "@/lib/testCaseValidation";
 import { parseIdParam } from "@/lib/params";
+import {
+  MAX_IMPORT_ROWS,
+  DEFAULT_PRIORITY,
+  PRIORITIES,
+  readTestCaseForm,
+  validateRow,
+  validateTestCase,
+} from "@/lib/testCaseValidation";
 
-const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
 const EXPORT_PAGE_SIZE = 1000;
 const EXPORT_MAX_PAGES = 200;
+const FIX_FIELDS_MESSAGE = "Fix the highlighted fields and try again.";
 
-export async function createTestCase(formData) {
+function formFailure(prevState, values, { error, fieldErrors = {} }) {
+  return { error, fieldErrors, values, attempt: (prevState?.attempt ?? 0) + 1 };
+}
+
+// Links a test case to active modules, appending it at the end of each one's order.
+async function linkToModules(supabase, testCaseId, moduleIds) {
+  if (moduleIds.length === 0) return null;
+
+  const { data: modules, error } = await supabase
+    .from("modules")
+    .select("id, module_cases(position)")
+    .in("id", moduleIds)
+    .is("archived_at", null);
+  if (error) return error;
+
+  const rows = (modules || []).map((m) => ({
+    module_id: m.id,
+    test_case_id: testCaseId,
+    position:
+      Math.max(-1, ...m.module_cases.map((mc) => mc.position ?? -1)) + 1,
+  }));
+  if (rows.length === 0) return null;
+
+  const { error: insertError } = await supabase
+    .from("module_cases")
+    .insert(rows);
+  return insertError;
+}
+
+export async function createTestCase(prevState, formData) {
+  const values = readTestCaseForm(formData);
+  const fieldErrors = validateTestCase(values);
+  if (Object.keys(fieldErrors).length > 0) {
+    return formFailure(prevState, values, {
+      error: FIX_FIELDS_MESSAGE,
+      fieldErrors,
+    });
+  }
+
   const supabase = await createClient();
-  const title = formData.get("title");
-  const preconditions = formData.get("preconditions");
-  const steps_to_reproduce = formData.get("steps_to_reproduce");
-  const expected_result = formData.get("expected_result");
-  const moduleIds = formData.getAll("moduleIds");
-  const priority = formData.get("priority");
-
   const { data: testCase, error } = await supabase
     .from("test_cases")
     .insert({
-      title,
-      preconditions,
-      steps_to_reproduce,
-      expected_result,
-      priority,
+      title: values.title,
+      preconditions: values.preconditions || null,
+      steps_to_reproduce: values.steps_to_reproduce,
+      expected_result: values.expected_result,
+      priority: values.priority,
     })
-    .select()
+    .select("id")
     .single();
 
-  if (error) throw new Error(error.message);
-
-  if (moduleIds.length > 0) {
-    const rowsToInsert = moduleIds.map((moduleId) => ({
-      module_id: moduleId,
-      test_case_id: testCase.id,
-    }));
-    const { error: moduleError } = await supabase
-      .from("module_cases")
-      .insert(rowsToInsert);
-    if (moduleError) throw new Error(moduleError.message);
+  if (error) {
+    return formFailure(prevState, values, {
+      error: `Could not create the test case: ${error.message}`,
+    });
   }
 
+  const linkError = await linkToModules(
+    supabase,
+    testCase.id,
+    values.moduleIds,
+  );
+
   revalidatePath("/test-cases");
+  if (linkError) {
+    // The test case exists, so don't leave the person on a form they could resubmit.
+    redirect(`/test-cases/${testCase.id}/edit?notice=modules-failed`);
+  }
   redirect("/test-cases");
 }
 
-export async function updateTestCase(formData) {
-  const supabase = await createClient();
-  const testCaseId = formData.get("testCaseId");
-  const title = formData.get("title");
-  const preconditions = formData.get("preconditions");
-  const steps_to_reproduce = formData.get("steps_to_reproduce");
-  const expected_result = formData.get("expected_result");
-  const priority = formData.get("priority");
-  const moduleIds = formData.getAll("moduleIds");
+export async function updateTestCase(prevState, formData) {
+  const values = readTestCaseForm(formData);
+  const testCaseId = parseIdParam(formData.get("testCaseId"));
+  if (!testCaseId) {
+    return formFailure(prevState, values, {
+      error:
+        "This test case could not be identified. Reload the page and try again.",
+    });
+  }
 
-  const { error } = await supabase
+  const fieldErrors = validateTestCase(values);
+  if (Object.keys(fieldErrors).length > 0) {
+    return formFailure(prevState, values, {
+      error: FIX_FIELDS_MESSAGE,
+      fieldErrors,
+    });
+  }
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
     .from("test_cases")
     .update({
-      title,
-      preconditions,
-      steps_to_reproduce,
-      expected_result,
-      priority,
+      title: values.title,
+      preconditions: values.preconditions || null,
+      steps_to_reproduce: values.steps_to_reproduce,
+      expected_result: values.expected_result,
+      priority: values.priority,
     })
-    .eq("id", testCaseId);
+    .eq("id", testCaseId)
+    .select("id");
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    return formFailure(prevState, values, {
+      error: `Could not save changes: ${error.message}`,
+    });
+  }
+  if (!updated || updated.length === 0) {
+    return formFailure(prevState, values, {
+      error: "This test case no longer exists.",
+    });
+  }
 
-  const { error: deleteError } = await supabase
+  const { data: existingLinks, error: linksError } = await supabase
     .from("module_cases")
-    .delete()
+    .select("module_id, modules(archived_at)")
     .eq("test_case_id", testCaseId);
-  if (deleteError) throw new Error(deleteError.message);
+  if (linksError) {
+    return formFailure(prevState, values, {
+      error: `Your changes were saved, but the modules could not be read: ${linksError.message}`,
+    });
+  }
 
-  if (moduleIds.length > 0) {
-    const rowsToInsert = moduleIds.map((moduleId) => ({
-      module_id: moduleId,
-      test_case_id: testCaseId,
-    }));
-    const { error: insertError } = await supabase
+  // Only active modules are shown in the form, so only those are managed here.
+  const currentActive = new Set(
+    (existingLinks || [])
+      .filter((l) => !l.modules?.archived_at)
+      .map((l) => l.module_id),
+  );
+  const wanted = new Set(values.moduleIds);
+  const toRemove = [...currentActive].filter((id) => !wanted.has(id));
+  const toAdd = values.moduleIds.filter((id) => !currentActive.has(id));
+
+  if (toRemove.length > 0) {
+    const { error: removeError } = await supabase
       .from("module_cases")
-      .insert(rowsToInsert);
-    if (insertError) throw new Error(insertError.message);
+      .delete()
+      .eq("test_case_id", testCaseId)
+      .in("module_id", toRemove);
+    if (removeError) {
+      return formFailure(prevState, values, {
+        error: `Your changes were saved, but the modules could not be updated: ${removeError.message}`,
+      });
+    }
+  }
+
+  const linkError = await linkToModules(supabase, testCaseId, toAdd);
+  if (linkError) {
+    return formFailure(prevState, values, {
+      error: `Your changes were saved, but the modules could not be updated: ${linkError.message}`,
+    });
   }
 
   revalidatePath("/test-cases");
@@ -120,13 +203,16 @@ export async function restoreTestCase(formData) {
 
 export async function cloneTestCase(formData) {
   const supabase = await createClient();
-  const testCaseId = formData.get("testCaseId");
+  const testCaseId = parseIdParam(formData.get("testCaseId"));
+  if (!testCaseId) throw new Error("Invalid test case.");
 
-  const { data: source } = await supabase
+  const { data: source, error: sourceError } = await supabase
     .from("test_cases")
     .select("*")
     .eq("id", testCaseId)
     .single();
+  if (sourceError || !source)
+    throw new Error("That test case could not be found.");
 
   const { data: clone, error } = await supabase
     .from("test_cases")
@@ -137,122 +223,156 @@ export async function cloneTestCase(formData) {
       expected_result: source.expected_result,
       priority: source.priority,
     })
-    .select()
+    .select("id")
     .single();
-
   if (error) throw new Error(error.message);
 
-  const { data: moduleLinks } = await supabase
+  const { data: links, error: linksError } = await supabase
     .from("module_cases")
     .select("module_id")
     .eq("test_case_id", testCaseId);
+  if (linksError) throw new Error(linksError.message);
 
-  for (const link of moduleLinks) {
-    const { data: existing } = await supabase
-      .from("module_cases")
-      .select("position")
-      .eq("module_id", link.module_id)
-      .order("position", { ascending: false })
-      .limit(1);
-
-    const nextPosition =
-      existing && existing.length > 0 ? existing[0].position + 1 : 0;
-
-    await supabase.from("module_cases").insert({
-      module_id: link.module_id,
-      test_case_id: clone.id,
-      position: nextPosition,
-    });
-  }
+  const linkError = await linkToModules(
+    supabase,
+    clone.id,
+    (links || []).map((l) => l.module_id),
+  );
+  if (linkError) throw new Error(linkError.message);
 
   revalidatePath("/test-cases");
   redirect(`/test-cases/${clone.id}/edit`);
 }
 
 export async function importTestCases(rows) {
-  const supabase = await createClient();
-  const invalidRows = rows.filter((row) => validateRow(row).length > 0);
-
-  if (invalidRows.length > 0) {
-    throw new Error(
-      `Cannot import: ${invalidRows.length} row(s) still have missing required fields.`,
-    );
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return { error: "There are no rows to import." };
+  }
+  if (rows.length > MAX_IMPORT_ROWS) {
+    return {
+      error: `This file has ${rows.length} rows. Import at most ${MAX_IMPORT_ROWS} at a time by splitting the file. Nothing was imported.`,
+    };
   }
 
-  const rowsToInsert = rows.map((row) => {
-    const base = {
-      title: row.title,
-      preconditions: row.preconditions || null,
-      steps_to_reproduce: row.steps_to_reproduce,
-      expected_result: row.expected_result,
+  const invalidCount = rows.filter((row) => validateRow(row).length > 0).length;
+  if (invalidCount > 0) {
+    return {
+      error: `${invalidCount} row${invalidCount === 1 ? " is" : "s are"} missing required fields. Nothing was imported.`,
     };
-    const priority = (row.priority || "").trim().toLowerCase();
-    if (VALID_PRIORITIES.includes(priority)) {
-      base.priority = priority;
-    }
-    return base;
+  }
+
+  const supabase = await createClient();
+
+  // Read-only planning comes first, so a failure here leaves nothing half-imported.
+  const { data: allModules, error: modulesError } = await supabase
+    .from("modules")
+    .select("id, name, archived_at, module_cases(position)");
+  if (modulesError) {
+    return {
+      error: `Could not read the modules (${modulesError.message}). Nothing was imported.`,
+    };
+  }
+
+  const moduleByName = new Map();
+  (allModules || []).forEach((m) => {
+    const key = m.name.toLowerCase();
+    const current = moduleByName.get(key);
+    if (!current || (current.archived_at && !m.archived_at))
+      moduleByName.set(key, m);
   });
 
+  const unmatched = new Set();
+  const archived = new Set();
+  const plannedLinks = [];
+
+  rows.forEach((row, rowIndex) => {
+    const seen = new Set();
+    String(row.modules ?? "")
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean)
+      .forEach((name) => {
+        const mod = moduleByName.get(name.toLowerCase());
+        if (!mod) {
+          unmatched.add(name);
+          return;
+        }
+        if (mod.archived_at) {
+          archived.add(name);
+          return;
+        }
+        if (seen.has(mod.id)) return;
+        seen.add(mod.id);
+        plannedLinks.push({ rowIndex, moduleId: mod.id });
+      });
+  });
+
+  const nextPosition = new Map();
+  (allModules || []).forEach((m) => {
+    nextPosition.set(
+      m.id,
+      Math.max(-1, ...(m.module_cases || []).map((mc) => mc.position ?? -1)) +
+        1,
+    );
+  });
+
+  const rowsToInsert = rows.map((row) => {
+    const priority = String(row.priority ?? "")
+      .trim()
+      .toLowerCase();
+    return {
+      title: String(row.title).trim(),
+      preconditions: String(row.preconditions ?? "").trim() || null,
+      steps_to_reproduce: String(row.steps_to_reproduce).trim(),
+      expected_result: String(row.expected_result).trim(),
+      priority: PRIORITIES.includes(priority) ? priority : DEFAULT_PRIORITY,
+    };
+  });
+
+  // One statement, so it either all lands or none of it does.
   const { data: inserted, error } = await supabase
     .from("test_cases")
     .insert(rowsToInsert)
-    .select();
-  if (error) throw new Error(error.message);
-
-  const { data: allModules } = await supabase
-    .from("modules")
-    .select("id, name, archived_at");
-  const moduleByName = {};
-  allModules.forEach((m) => {
-    moduleByName[m.name.toLowerCase()] = m;
-  });
-
-  const nextPositionByModule = {};
-  const unmatchedNames = new Set();
-  const archivedNames = new Set();
-  const moduleLinksToInsert = [];
-
-  for (let i = 0; i < rows.length; i++) {
-    const moduleNames = (rows[i].modules || "")
-      .split(",")
-      .map((n) => n.trim())
-      .filter(Boolean);
-
-    for (const name of moduleNames) {
-      const mod = moduleByName[name.toLowerCase()];
-
-      if (!mod) {
-        unmatchedNames.add(name);
-        continue;
-      }
-
-      if (mod.archived_at) {
-        archivedNames.add(name);
-        continue;
-      }
-
-      moduleLinksToInsert.push({
-        module_id: mod.id,
-        test_case_id: inserted[i].id,
-        position: nextPositionByModule[mod.id],
-      });
-      nextPositionByModule[mod.id]++;
-    }
+    .select("id, seq_number");
+  if (error) {
+    return {
+      error: `The import failed: ${error.message}. Nothing was imported.`,
+    };
   }
 
-  if (moduleLinksToInsert.length > 0) {
+  const result = {
+    importedCount: inserted.length,
+    unmatchedModuleNames: [...unmatched],
+    archivedModuleNames: [...archived],
+    linkError: null,
+  };
+
+  // Identity numbers are handed out in input order, so sorting by them restores row order.
+  const insertedInOrder = [...inserted].sort(
+    (a, b) => a.seq_number - b.seq_number,
+  );
+
+  if (insertedInOrder.length !== rows.length) {
+    result.linkError =
+      "the imported test cases could not be matched to their rows";
+  } else if (plannedLinks.length > 0) {
+    const linkRows = plannedLinks.map(({ rowIndex, moduleId }) => {
+      const position = nextPosition.get(moduleId);
+      nextPosition.set(moduleId, position + 1);
+      return {
+        module_id: moduleId,
+        test_case_id: insertedInOrder[rowIndex].id,
+        position,
+      };
+    });
     const { error: linkError } = await supabase
       .from("module_cases")
-      .insert(moduleLinksToInsert);
-    if (linkError) throw new Error(linkError.message);
+      .insert(linkRows);
+    if (linkError) result.linkError = linkError.message;
   }
 
   revalidatePath("/test-cases");
-  return {
-    importedCount: inserted.length,
-    unmatchedModuleNames: Array.from(unmatchedNames),
-    archivedModuleNames: Array.from(archivedNames),
-  };
+  return result;
 }
 
 export async function exportTestCases(scope) {
