@@ -3,37 +3,74 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { parseIdParam } from "@/lib/params";
+import { readNameForm, validateNameForm } from "@/lib/nameValidation";
+import { FIX_FIELDS_MESSAGE, formFailure, formSuccess } from "@/lib/formState";
 
-export async function createModule(formData) {
+export async function createModule(prevState, formData) {
+  const values = readNameForm(formData);
+  const fieldErrors = validateNameForm(values, "Module");
+  if (Object.keys(fieldErrors).length > 0) {
+    return formFailure(prevState, values, {
+      error: FIX_FIELDS_MESSAGE,
+      fieldErrors,
+    });
+  }
+
   const supabase = await createClient();
-  const name = formData.get("name");
-  const description = formData.get("description");
-
   const { data: mod, error } = await supabase
     .from("modules")
-    .insert({ name, description })
-    .select()
+    .insert({ name: values.name, description: values.description || null })
+    .select("id")
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    return formFailure(prevState, values, {
+      error: `Could not create the module: ${error.message}`,
+    });
+  }
 
   revalidatePath("/modules");
   redirect(`/modules/${mod.id}`);
 }
 
-export async function updateModule(formData) {
-  const supabase = await createClient();
-  const moduleId = formData.get("moduleId");
-  const name = formData.get("name");
-  const description = formData.get("description");
+export async function updateModule(prevState, formData) {
+  const values = readNameForm(formData);
+  const moduleId = parseIdParam(formData.get("moduleId"));
+  if (!moduleId) {
+    return formFailure(prevState, values, {
+      error:
+        "This module could not be identified. Reload the page and try again.",
+    });
+  }
 
-  const { error } = await supabase
+  const fieldErrors = validateNameForm(values, "Module");
+  if (Object.keys(fieldErrors).length > 0) {
+    return formFailure(prevState, values, {
+      error: FIX_FIELDS_MESSAGE,
+      fieldErrors,
+    });
+  }
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
     .from("modules")
-    .update({ name, description })
-    .eq("id", moduleId);
-  if (error) throw new Error(error.message);
+    .update({ name: values.name, description: values.description || null })
+    .eq("id", moduleId)
+    .select("id");
+  if (error) {
+    return formFailure(prevState, values, {
+      error: `Could not save changes: ${error.message}`,
+    });
+  }
+  if (!updated || updated.length === 0) {
+    return formFailure(prevState, values, {
+      error: "This module no longer exists.",
+    });
+  }
 
   revalidatePath("/modules");
   revalidatePath(`/modules/${moduleId}`);
+  return formSuccess(prevState, values, "Changes saved.");
 }
 
 export async function archiveModule(formData) {

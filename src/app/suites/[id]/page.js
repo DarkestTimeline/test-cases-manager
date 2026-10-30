@@ -6,8 +6,8 @@ import Badge from "@/components/Badge";
 import BackLink from "@/components/BackLink";
 import SortableSuiteCases from "./SortableSuiteCases";
 import AddTestCasesPicker from "@/components/AddTestCasesPicker";
-import Field, { RequiredNote } from "@/components/Field";
-import { PAGE } from '@/lib/pageWidths'
+import { PAGE } from "@/lib/pageWidths";
+import NameDescriptionForm from "@/components/NameDescriptionForm";
 
 export default async function SuiteDetail({ params }) {
   const { id } = await params;
@@ -87,28 +87,18 @@ export default async function SuiteDetail({ params }) {
         </form>
       </div>
 
-      <form action={updateSuite} className="space-y-3 mb-8 border-b pb-6">
-        <input type="hidden" name="suiteId" value={suite.id} />
-        <RequiredNote />
-        <Field label="Name" required>
-          <input
-            type="text"
-            name="name"
-            defaultValue={suite.name}
-            required
-            className="w-full border rounded p-2 text-2xl font-bold text-slate-900"
-          />
-        </Field>
-        <Field label="Description">
-          <textarea
-            name="description"
-            defaultValue={suite.description || ""}
-            rows={2}
-            className="w-full border rounded p-2"
-          />
-        </Field>
-        <Button type="submit">Save Changes</Button>
-      </form>
+      <NameDescriptionForm
+        action={updateSuite}
+        hiddenFields={{ suiteId: suite.id }}
+        initialValues={{
+          name: suite.name ?? "",
+          description: suite.description ?? "",
+        }}
+        submitLabel="Save Changes"
+        pendingLabel="Saving..."
+        large
+        className="space-y-3 mb-8 border-b pb-6"
+      />
 
       <h2 className="mb-2">Test Cases in this Suite</h2>
       <SortableSuiteCases linkedCases={linkedCases} suiteId={suite.id} />

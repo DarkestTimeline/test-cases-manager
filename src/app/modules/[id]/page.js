@@ -6,8 +6,8 @@ import Badge from "@/components/Badge";
 import BackLink from "@/components/BackLink";
 import SortableModuleCases from "./SortableModuleCases";
 import AddTestCasesPicker from "@/components/AddTestCasesPicker";
-import Field, { RequiredNote } from "@/components/Field";
-import { PAGE } from '@/lib/pageWidths'
+import { PAGE } from "@/lib/pageWidths";
+import NameDescriptionForm from "@/components/NameDescriptionForm";
 
 export default async function ModuleDetail({ params }) {
   const { id } = await params;
@@ -61,28 +61,18 @@ export default async function ModuleDetail({ params }) {
         </form>
       </div>
 
-      <form action={updateModule} className="space-y-3 mb-8 border-b pb-6">
-        <input type="hidden" name="moduleId" value={mod.id} />
-        <RequiredNote />
-        <Field label="Name" required>
-          <input
-            type="text"
-            name="name"
-            defaultValue={mod.name}
-            required
-            className="w-full border rounded p-2 text-2xl font-bold text-slate-900"
-          />
-        </Field>
-        <Field label="Description">
-          <textarea
-            name="description"
-            defaultValue={mod.description || ""}
-            rows={2}
-            className="w-full border rounded p-2"
-          />
-        </Field>
-        <Button type="submit">Save Changes</Button>
-      </form>
+      <NameDescriptionForm
+        action={updateModule}
+        hiddenFields={{ moduleId: mod.id }}
+        initialValues={{
+          name: mod.name ?? "",
+          description: mod.description ?? "",
+        }}
+        submitLabel="Save Changes"
+        pendingLabel="Saving..."
+        large
+        className="space-y-3 mb-8 border-b pb-6"
+      />
 
       <h2 className="mb-2">Test Cases in this Module</h2>
       <SortableModuleCases linkedCases={linkedCases} moduleId={mod.id} />
