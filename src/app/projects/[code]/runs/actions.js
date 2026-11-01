@@ -4,9 +4,29 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formatId } from "@/lib/displayId";
+import { findProjectByCode } from "@/lib/projectAction";
 
 const LIST_PATH = "/projects/[code]/runs";
 const RUN_PATH = "/projects/[code]/runs/[id]";
+
+// Active suites of a project, for the "Start a run" dialog.
+export async function getProjectSuites(projectCode) {
+  const supabase = await createClient();
+  const project = await findProjectByCode(supabase, projectCode);
+  if (!project) {
+    return { error: "This project is archived or no longer exists." };
+  }
+
+  const { data, error } = await supabase
+    .from("suites")
+    .select("id, name")
+    .eq("project_id", project.id)
+    .is("archived_at", null)
+    .order("name");
+  if (error) return { error: error.message };
+
+  return { suites: data };
+}
 
 export async function startRun(formData) {
   const supabase = await createClient();

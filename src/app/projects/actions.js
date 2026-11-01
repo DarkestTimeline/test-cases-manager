@@ -61,7 +61,7 @@ export async function createProject(prevState, formData) {
     });
   }
 
-  revalidatePath("/projects");
+  revalidatePath("/", "layout");
   redirect("/projects");
 }
 
@@ -105,7 +105,7 @@ export async function updateProject(prevState, formData) {
     });
   }
 
-  revalidatePath("/projects");
+  revalidatePath("/", "layout");
   return formSuccess(prevState, values, "Changes saved.");
 }
 
@@ -124,7 +124,7 @@ async function setArchived(formData, archivedAt) {
     .eq("id", projectId);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/projects");
+  revalidatePath("/", "layout");
 }
 
 export async function archiveProject(formData) {

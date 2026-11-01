@@ -1,28 +1,60 @@
 "use client";
 
 import { useState } from "react";
-import { startRun } from "@/app/projects/[code]/runs/actions";
+import { startRun, getProjectSuites } from "@/app/projects/[code]/runs/actions";
 import Button from "./Button";
 import Modal from "./Modal";
 import FormSubmitButton from "./FormSubmitButton";
 import Field from "@/components/Field";
+import { PlayIcon } from "./icons";
 
-export default function StartRunButton({ suites }) {
+// Sidebar action. Suites are loaded when the dialog opens, so the list is
+// always current and the sidebar needs no data from the page.
+export default function StartRunButton({ projectCode, collapsed = false }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [suites, setSuites] = useState(null); // null while loading
+  const [loadError, setLoadError] = useState(null);
+
+  async function open() {
+    setIsOpen(true);
+    setSuites(null);
+    setLoadError(null);
+    const result = await getProjectSuites(projectCode);
+    if (result.error) setLoadError(result.error);
+    else setSuites(result.suites);
+  }
+
+  function close() {
+    setIsOpen(false);
+  }
 
   return (
     <>
-      <Button onClick={() => setIsOpen(true)} variant="success">
-        Start Run
-      </Button>
+      <button
+        type="button"
+        onClick={open}
+        title={collapsed ? "Start run" : undefined}
+        className={`flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover ${
+          collapsed ? "md:px-0" : ""
+        }`}
+      >
+        <PlayIcon size={14} />
+        <span className={collapsed ? "md:hidden" : ""}>Start run</span>
+      </button>
 
       {isOpen && (
-        <Modal label="Start a run" onClose={() => setIsOpen(false)}>
+        <Modal label="Start a run" onClose={close}>
           <h2 className="mb-4">Start a Run</h2>
 
-          {suites.length === 0 ? (
+          {loadError ? (
+            <p role="alert" className="text-danger text-sm">
+              {loadError}
+            </p>
+          ) : suites === null ? (
+            <p className="text-slate-400 text-sm">Loading suites…</p>
+          ) : suites.length === 0 ? (
             <p className="text-slate-500">
-              No suites exist yet — create one first.
+              No suites exist in this project yet — create one first.
             </p>
           ) : (
             <form action={startRun} className="space-y-4">
@@ -60,15 +92,11 @@ export default function StartRunButton({ suites }) {
                   type="button"
                   variant="secondary"
                   size="md"
-                  onClick={() => setIsOpen(false)}
+                  onClick={close}
                 >
                   Cancel
                 </Button>
-                <FormSubmitButton
-                  variant="success"
-                  size="sm"
-                  pendingLabel="Starting..."
-                >
+                <FormSubmitButton size="md" pendingLabel="Starting...">
                   Start Run
                 </FormSubmitButton>
               </div>
