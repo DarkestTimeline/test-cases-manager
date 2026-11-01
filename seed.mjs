@@ -1,9 +1,19 @@
 /**
  * Seed script — QA Test Case Manager
  *
- * Wipes and refills modules, test_cases, suites, runs, and run_results
- * with realistic volume so the app looks/behaves like it has real usage.
- * Real `profiles` rows are left untouched and reused for `started_by`.
+ * Wipes and refills projects, modules, test_cases, suites, runs, and
+ * run_results with realistic volume so the app looks/behaves like it has
+ * real usage. Real `profiles` rows are left untouched and reused for
+ * `started_by`.
+ *
+ * Creates four projects, each with its own modules, cases, suites and runs:
+ *   DEMO     Demo Storefront         the original demo data (web)
+ *   DEMOIOS  Demo Storefront — iOS   a platform variant of the same product
+ *   DEMOAPI  Demo Storefront — API   a different kind of test target
+ *   LEGACY   Legacy Portal           small and ARCHIVED, for archived-project UI
+ *
+ * Case IDs use the project code (DEMO-01, DEMOIOS-01, ...); numbering is
+ * assigned per project by the database, not by this script.
  *
  * Setup:
  *   npm install @supabase/supabase-js dotenv
@@ -56,9 +66,14 @@ function daysAgo(n) {
   return d.toISOString();
 }
 
+// Same format the app shows: project code + number padded to two digits.
+const caseCode = (projectCode, seqNumber) =>
+  `${projectCode}-${String(seqNumber).padStart(2, '0')}`;
+
 // ---------- content ----------
 
-const MODULES = [
+// DEMO: the original demo data, unchanged.
+const DEMO_MODULES = [
   { name: 'Authentication', description: 'Login, signup, password reset, session handling' },
   { name: 'User Profile & Settings', description: 'Profile editing, preferences, account management' },
   { name: 'Checkout & Payments', description: 'Cart, payment methods, order confirmation' },
@@ -67,7 +82,7 @@ const MODULES = [
   { name: 'Admin Dashboard', description: 'User management, reporting, system configuration' },
 ];
 
-const CASE_TEMPLATES = {
+const DEMO_CASE_TEMPLATES = {
   'Authentication': [
     ['Login with valid credentials', 'User is on the login page with an active account', 'Log in with a correct email and password', 'User is redirected to the dashboard and a session is created'],
     ['Login with incorrect password', 'User is on the login page', 'Enter a valid email with an incorrect password and submit', 'An "invalid credentials" error is shown and no session is created'],
@@ -138,10 +153,187 @@ const CASE_TEMPLATES = {
   ],
 };
 
+// ---------- other projects ----------
+// Each project is independent: its own modules, cases, suites and runs.
+
+const IOS_MODULES = [
+  { name: 'Authentication', description: 'Sign in, biometrics, and session handling on iOS' },
+  { name: 'Push Notifications', description: 'Permission, delivery, and deep links from push' },
+  { name: 'Checkout & Apple Pay', description: 'Cart, Apple Pay, saved cards, order confirmation' },
+  { name: 'Offline & Connectivity', description: 'Caching, offline banner, and sync after reconnect' },
+];
+
+const IOS_CASE_TEMPLATES = {
+  'Authentication': [
+    ['Login with valid credentials', 'App is installed and the user has an active account', 'Enter a correct email and password and tap Sign in', 'The home screen opens and a session is stored'],
+    ['Login with Face ID', 'Face ID is enrolled and enabled for the app', 'Launch the app and authenticate with Face ID', 'The user is signed in without typing credentials'],
+    ['Face ID falls back to passcode after failures', 'Face ID is enabled for the app', 'Fail Face ID twice, then enter the device passcode', 'The passcode prompt appears and a correct passcode signs the user in'],
+    ['Login with incorrect password', 'User is on the sign-in screen', 'Enter a valid email with a wrong password', 'An "invalid credentials" message is shown and the user stays signed out'],
+    ['Session persists after app relaunch', 'User is signed in', 'Force-quit the app and open it again', 'The user is still signed in'],
+    ['Logout clears stored credentials', 'User is signed in', 'Tap Log out in Settings', 'The user returns to the sign-in screen and Face ID sign-in is no longer offered'],
+    ['Password reset link opens the app', 'User requested a password reset email on this device', 'Tap the reset link in the email', 'The app opens directly on the reset password screen'],
+    ['Expired session prompts re-login', 'User session has expired on the server', 'Open any screen that needs the server', 'The user is asked to sign in again without losing their place'],
+  ],
+  'Push Notifications': [
+    ['Permission prompt on first launch', 'Fresh install, notifications not yet decided', 'Complete onboarding to the point where push is requested', 'The iOS permission prompt is shown once, with the app\'s explanation'],
+    ['Push received in the foreground', 'Notifications are allowed and the app is open', 'Send a test push to the device', 'An in-app banner is shown instead of a system alert'],
+    ['Push received in the background', 'Notifications are allowed and the app is backgrounded', 'Send a test push to the device', 'A system notification appears on the lock screen'],
+    ['Tapping a push opens the related screen', 'A push about a specific order was delivered', 'Tap the notification', 'The app opens directly on that order\'s detail screen'],
+    ['Badge count updates', 'Several unread notifications exist', 'Read one notification in the app', 'The app icon badge decreases by one'],
+    ['Disabling push in iOS Settings stops delivery', 'Notifications are allowed', 'Turn off notifications for the app in iOS Settings, then send a push', 'No notification is shown and the app handles the change gracefully'],
+    ['Quiet hours are respected', 'User has set quiet hours in the app', 'Send a push during quiet hours', 'The notification is delivered silently or held until quiet hours end'],
+  ],
+  'Checkout & Apple Pay': [
+    ['Complete checkout with Apple Pay', 'Cart has an item and Apple Pay is set up on the device', 'Choose Apple Pay and confirm with Face ID', 'The order is placed and the confirmation screen is shown'],
+    ['Apple Pay sheet cancelled by user', 'Cart has an item and Apple Pay is set up', 'Open the Apple Pay sheet and dismiss it', 'The user returns to checkout with the cart intact and no order created'],
+    ['Complete checkout with a saved card', 'User has a saved card and a non-empty cart', 'Select the saved card and place the order', 'The order is placed without re-entering card details'],
+    ['Checkout with a declined card', 'Cart has an item', 'Use a test card that simulates a decline', 'An error is shown and no order is created'],
+    ['Order confirmation shows the right total', 'An order has just been placed', 'Review the confirmation screen', 'Items, tax, and total match what was charged'],
+    ['Incoming call during payment resumes cleanly', 'Checkout is in progress', 'Receive a phone call, end it, and return to the app', 'Checkout resumes on the same step with no duplicate charge'],
+  ],
+  'Offline & Connectivity': [
+    ['Cached catalog is visible offline', 'The catalog was loaded earlier in the session', 'Enable airplane mode and reopen the catalog', 'Previously loaded items are shown from the cache'],
+    ['Offline banner appears when connection is lost', 'App is open on a screen that needs the network', 'Turn on airplane mode', 'An offline banner is shown within a few seconds'],
+    ['Add to cart offline syncs when back online', 'App is open with no connectivity', 'Add an item to the cart, then restore connectivity', 'The cart syncs and the item appears on the server cart'],
+    ['Wi-Fi to cellular switch retries the request', 'A request is in flight on Wi-Fi', 'Switch off Wi-Fi so the device moves to cellular', 'The request is retried and completes without an error screen'],
+    ['Request timeout offers a retry', 'Connection is very slow', 'Open a screen that loads remote data', 'A timeout message with a Retry button is shown'],
+    ['Queued actions are sent after reconnect', 'Several changes were made while offline', 'Restore connectivity', 'All queued changes are sent in order and none are duplicated'],
+  ],
+};
+
+const IOS_SUITES = [
+  { name: 'Smoke — iOS Core Flows', description: 'Fast sanity pass on sign-in and payment', modules: ['Authentication', 'Checkout & Apple Pay'] },
+  { name: 'Regression — Notifications & Offline', description: 'Push delivery and connectivity behaviour', modules: ['Push Notifications', 'Offline & Connectivity'] },
+  { name: 'Release Candidate — iOS 2.3', description: 'Full pass before the 2.3 release', modules: ['Authentication', 'Push Notifications', 'Checkout & Apple Pay', 'Offline & Connectivity'] },
+];
+
+const API_MODULES = [
+  { name: 'Authentication API', description: 'Token issue, refresh, revocation, and rate limiting' },
+  { name: 'Orders API', description: 'Create, read, list, and cancel orders' },
+  { name: 'Search API', description: 'Query, filter, pagination, and performance' },
+];
+
+const API_CASE_TEMPLATES = {
+  'Authentication API': [
+    ['Token issued for valid credentials', 'An active account exists', 'POST valid credentials to the token endpoint', 'Response is 200 with an access token and a refresh token'],
+    ['Wrong password returns 401', 'An active account exists', 'POST a valid email with a wrong password', 'Response is 401 and no token is issued'],
+    ['Expired token is rejected', 'An access token past its expiry time', 'Call a protected endpoint with the expired token', 'Response is 401 with an "expired token" error code'],
+    ['Refresh returns a new access token', 'A valid refresh token', 'POST the refresh token to the refresh endpoint', 'Response is 200 with a new access token'],
+    ['Revoked refresh token is rejected', 'A refresh token that was revoked at logout', 'POST the revoked token to the refresh endpoint', 'Response is 401 and no token is issued'],
+    ['Repeated failed logins are rate limited', 'An active account exists', 'Send more failed login attempts than the allowed limit within a minute', 'Further attempts return 429 with a Retry-After header'],
+    ['Missing Authorization header returns 401', 'A protected endpoint', 'Call it without an Authorization header', 'Response is 401 and the body does not leak internals'],
+  ],
+  'Orders API': [
+    ['Create order with a valid payload', 'An authenticated user and valid items', 'POST a complete order payload', 'Response is 201 with the new order id and status "pending"'],
+    ['Create order with a missing field', 'An authenticated user', 'POST a payload without the items array', 'Response is 422 with a field-level error for items'],
+    ['Get order by id', 'An order owned by the caller', 'GET the order by its id', 'Response is 200 with the full order'],
+    ['Get another user\'s order returns 403', 'An order owned by a different user', 'GET that order with the caller\'s token', 'Response is 403 and no order data is returned'],
+    ['List orders supports pagination', 'The caller has more orders than one page', 'GET the list with page size 5 and page 2', 'Response contains the second page and pagination metadata'],
+    ['Cancel an order before shipment', 'An order in status "pending"', 'POST to the cancel endpoint', 'Response is 200 and the order status becomes "cancelled"'],
+    ['Cancel a shipped order returns 409', 'An order in status "shipped"', 'POST to the cancel endpoint', 'Response is 409 and the order status is unchanged'],
+    ['Idempotency key prevents duplicate orders', 'An authenticated user', 'POST the same payload twice with the same idempotency key', 'Only one order is created and both responses return it'],
+  ],
+  'Search API': [
+    ['Query returns ranked results', 'Items matching a known keyword exist', 'GET search with that keyword', 'Response is 200 with matching items ordered by relevance'],
+    ['Empty query returns 400', 'The search endpoint', 'GET search with an empty query parameter', 'Response is 400 with a clear validation message'],
+    ['Category filter narrows results', 'Items exist in several categories', 'GET search with a category filter', 'Only items in that category are returned'],
+    ['Cursor pagination returns the next page', 'A result set larger than one page', 'GET search with the cursor from the previous response', 'The next page is returned with no duplicates or gaps'],
+    ['Special characters in the query are handled', 'The search endpoint', 'GET search with %, &, and " in the query', 'Response is 200 or an empty result, never a 500'],
+    ['Typical query responds within 500 ms', 'A warm cache and a realistic dataset', 'Time a typical search request', 'The response arrives in under 500 ms'],
+  ],
+};
+
+const API_SUITES = [
+  { name: 'API Smoke', description: 'Quick check that auth and orders respond correctly', modules: ['Authentication API', 'Orders API'] },
+  { name: 'API Regression — Orders & Search', description: 'Full regression of order and search endpoints', modules: ['Orders API', 'Search API'] },
+  { name: 'Full API Pass', description: 'Every endpoint group before a release', modules: ['Authentication API', 'Orders API', 'Search API'] },
+];
+
+const LEGACY_MODULES = [
+  { name: 'Customer Portal', description: 'Retired self-service portal, kept for reference' },
+];
+
+const LEGACY_CASE_TEMPLATES = {
+  'Customer Portal': [
+    ['Portal login with customer number', 'Customer has a portal account', 'Sign in with customer number and PIN', 'The account overview is shown'],
+    ['Download invoice as PDF', 'Customer has at least one invoice', 'Open an invoice and choose Download PDF', 'A PDF with the correct invoice details is downloaded'],
+    ['Update postal address', 'Customer is signed in', 'Edit the postal address and save', 'The new address is shown on the account overview'],
+    ['Portal session times out after inactivity', 'Customer is signed in', 'Leave the portal idle past the timeout', 'The customer is signed out and asked to sign in again'],
+  ],
+};
+
+const LEGACY_SUITES = [
+  { name: 'Portal Sanity', description: 'Last known-good pass on the retired portal', modules: ['Customer Portal'] },
+];
+
+const DEMO_SUITES = [
+  { name: 'Smoke Test — Core Flows', description: 'Fast sanity pass across the critical paths', modules: ['Authentication', 'Checkout & Payments'] },
+  { name: 'Regression — Auth & Profile', description: 'Full regression for login and account management', modules: ['Authentication', 'User Profile & Settings'] },
+  { name: 'Regression — Checkout', description: 'Full regression for cart and payment flows', modules: ['Checkout & Payments'] },
+  { name: 'Release Candidate 1.5', description: 'Full pass before the 1.5 release', modules: ['Authentication', 'Checkout & Payments', 'Search & Filtering'] },
+  { name: 'Search & Notifications Sweep', description: 'Combined pass on discovery and alerts', modules: ['Search & Filtering', 'Notifications'] },
+  { name: 'Admin Panel Full Pass', description: 'Full coverage of admin-only functionality', modules: ['Admin Dashboard'] },
+];
+
 const PRIORITY_WEIGHTS = [['medium', 40], ['high', 30], ['low', 20], ['critical', 10]];
-const OS_OPTIONS = ['macOS 14', 'Windows 11', 'Windows 10', 'Ubuntu 22.04'];
-const BUILD_VERSIONS = ['1.4.0', '1.4.1', '1.5.0-beta', '1.5.0'];
 const FALLBACK_TESTER_NAMES = ['Alex Rivera', 'Jordan Lee', 'Sam Patel', 'Casey Morgan'];
+
+// Fixed id for DEMO so the temporary column defaults from the Session 2
+// migration (if you haven't removed them yet) keep pointing at a real project.
+const DEMO_PROJECT_ID = 'd3a0d3a0-0000-4000-8000-000000000001';
+
+const PROJECT_DEFS = [
+  {
+    id: DEMO_PROJECT_ID,
+    code: 'DEMO',
+    name: 'Demo Storefront',
+    description: 'Demo data created by seed.mjs',
+    modules: DEMO_MODULES,
+    templates: DEMO_CASE_TEMPLATES,
+    suites: DEMO_SUITES,
+    suiteSize: [10, 16],
+    runsPerSuite: [2, 4],
+    osOptions: ['macOS 14', 'Windows 11', 'Windows 10', 'Ubuntu 22.04'],
+    buildVersions: ['1.4.0', '1.4.1', '1.5.0-beta', '1.5.0'],
+  },
+  {
+    code: 'DEMOIOS',
+    name: 'Demo Storefront — iOS',
+    description: 'The iOS app for the demo storefront',
+    modules: IOS_MODULES,
+    templates: IOS_CASE_TEMPLATES,
+    suites: IOS_SUITES,
+    suiteSize: [6, 10],
+    runsPerSuite: [1, 3],
+    osOptions: ['iOS 17.5', 'iOS 18.1', 'iPadOS 17.6'],
+    buildVersions: ['2.2.0', '2.3.0-rc1', '2.3.0'],
+  },
+  {
+    code: 'DEMOAPI',
+    name: 'Demo Storefront — API',
+    description: 'The public REST API behind the storefront apps',
+    modules: API_MODULES,
+    templates: API_CASE_TEMPLATES,
+    suites: API_SUITES,
+    suiteSize: [6, 10],
+    runsPerSuite: [1, 3],
+    osOptions: ['Staging (Linux)', 'CI (Ubuntu 22.04)', 'Local (macOS 14)'],
+    buildVersions: ['api-3.8.0', 'api-3.9.0-rc1', 'api-3.9.0'],
+  },
+  {
+    code: 'LEGACY',
+    name: 'Legacy Portal',
+    description: 'Retired customer portal, kept for reference',
+    archived: true,
+    modules: LEGACY_MODULES,
+    templates: LEGACY_CASE_TEMPLATES,
+    suites: LEGACY_SUITES,
+    suiteSize: [3, 4],
+    runsPerSuite: [1, 1],
+    osOptions: ['Windows 10'],
+    buildVersions: ['portal-1.9.2'],
+  },
+];
 
 // ---------- wipe ----------
 
@@ -155,6 +347,7 @@ async function wipeAll() {
     'suites',
     'test_cases',
     'modules',
+    'projects',
   ];
   for (const table of tablesInOrder) {
     const { error } = await supabase.from(table).delete().not('id', 'is', null);
@@ -163,25 +356,40 @@ async function wipeAll() {
   }
 }
 
-// ---------- seed steps ----------
+// ---------- seed steps (all scoped to one project) ----------
 
-async function seedModules() {
-  const rows = MODULES.map((m) => ({
+async function insertProject(def) {
+  const row = {
+    code: def.code,
+    name: def.name,
+    description: def.description,
+    archived_at: def.archived ? daysAgo(30) : null,
+  };
+  if (def.id) row.id = def.id;
+
+  const { data, error } = await supabase.from('projects').insert(row).select().single();
+  if (error) throw new Error(`projects insert failed (${def.code}): ${error.message}`);
+  return data;
+}
+
+async function seedModules(project, def) {
+  const rows = def.modules.map((m) => ({
+    project_id: project.id,
     name: m.name,
     description: m.description,
   }));
   const { data, error } = await supabase.from('modules').insert(rows).select();
-  if (error) throw new Error(`modules insert failed: ${error.message}`);
+  if (error) throw new Error(`modules insert failed (${project.code}): ${error.message}`);
   console.log(`Inserted ${data.length} modules`);
   return data;
 }
 
-async function seedTestCases() {
-  let seq = 1;
+async function seedTestCases(project, def) {
   const rows = [];
-  for (const mod of MODULES) {
-    for (const [title, preconditions, step, expected] of CASE_TEMPLATES[mod.name]) {
+  for (const mod of def.modules) {
+    for (const [title, preconditions, step, expected] of def.templates[mod.name]) {
       rows.push({
+        project_id: project.id,
         title,
         preconditions,
         steps_to_reproduce: `1. ${step}`,
@@ -189,9 +397,7 @@ async function seedTestCases() {
         priority: weightedPick(PRIORITY_WEIGHTS),
         archived_at: null,
         _module_name: mod.name, // local only, stripped before insert
-        _test_case_code: `TC-${String(seq).padStart(2, '0')}`, // local only — run_results snapshots this, test_cases has no such column
       });
-      seq += 1;
     }
   }
 
@@ -201,17 +407,23 @@ async function seedTestCases() {
     rows[i].archived_at = daysAgo(randInt(5, 60));
   });
 
-  const insertRows = rows.map(({ _module_name, _test_case_code, ...rest }) => rest);
+  const insertRows = rows.map(({ _module_name, ...rest }) => rest);
   const { data, error } = await supabase.from('test_cases').insert(insertRows).select();
-  if (error) throw new Error(`test_cases insert failed: ${error.message}`);
+  if (error) throw new Error(`test_cases insert failed (${project.code}): ${error.message}`);
   console.log(`Inserted ${data.length} test cases`);
 
-  // reattach local metadata for later steps, matched by title (unique across all templates)
-  const metaByTitle = new Map(rows.map((r) => [r.title, { _module_name: r._module_name, _test_case_code: r._test_case_code }]));
-  return data.map((d) => ({ ...d, ...metaByTitle.get(d.title) }));
+  // The database numbers cases per project; read the numbers back so the
+  // codes snapshotted onto run results match what the app shows.
+  // Titles are unique within a project, so they are a safe join key.
+  const moduleByTitle = new Map(rows.map((r) => [r.title, r._module_name]));
+  return data.map((d) => ({
+    ...d,
+    _module_name: moduleByTitle.get(d.title),
+    _test_case_code: caseCode(project.code, d.seq_number),
+  }));
 }
 
-async function seedModuleCases(modules, testCases) {
+async function seedModuleCases(project, modules, testCases) {
   const moduleByName = new Map(modules.map((m) => [m.name, m]));
   const rows = [];
   const positionByModule = new Map();
@@ -219,33 +431,28 @@ async function seedModuleCases(modules, testCases) {
     const mod = moduleByName.get(tc._module_name);
     const pos = (positionByModule.get(mod.id) ?? 0) + 1;
     positionByModule.set(mod.id, pos);
-    rows.push({ module_id: mod.id, test_case_id: tc.id, position: pos });
+    rows.push({ project_id: project.id, module_id: mod.id, test_case_id: tc.id, position: pos });
   }
   const { error } = await supabase.from('module_cases').insert(rows);
-  if (error) throw new Error(`module_cases insert failed: ${error.message}`);
+  if (error) throw new Error(`module_cases insert failed (${project.code}): ${error.message}`);
   console.log(`Inserted ${rows.length} module_cases links`);
 }
 
-async function seedSuites() {
-  const suiteDefs = [
-    { name: 'Smoke Test — Core Flows', description: 'Fast sanity pass across the critical paths', modules: ['Authentication', 'Checkout & Payments'] },
-    { name: 'Regression — Auth & Profile', description: 'Full regression for login and account management', modules: ['Authentication', 'User Profile & Settings'] },
-    { name: 'Regression — Checkout', description: 'Full regression for cart and payment flows', modules: ['Checkout & Payments'] },
-    { name: 'Release Candidate 1.5', description: 'Full pass before the 1.5 release', modules: ['Authentication', 'Checkout & Payments', 'Search & Filtering'] },
-    { name: 'Search & Notifications Sweep', description: 'Combined pass on discovery and alerts', modules: ['Search & Filtering', 'Notifications'] },
-    { name: 'Admin Panel Full Pass', description: 'Full coverage of admin-only functionality', modules: ['Admin Dashboard'] },
-  ];
-  const rows = suiteDefs.map((s) => ({
+async function seedSuites(project, def) {
+  const rows = def.suites.map((s) => ({
+    project_id: project.id,
     name: s.name,
     description: s.description,
   }));
   const { data, error } = await supabase.from('suites').insert(rows).select();
-  if (error) throw new Error(`suites insert failed: ${error.message}`);
+  if (error) throw new Error(`suites insert failed (${project.code}): ${error.message}`);
   console.log(`Inserted ${data.length} suites`);
-  return data.map((d, i) => ({ ...d, _modules: suiteDefs[i].modules }));
+  // suites come back in insertion order, so they line up with def.suites
+  const byName = new Map(data.map((d) => [d.name, d]));
+  return def.suites.map((s) => ({ ...byName.get(s.name), _modules: s.modules }));
 }
 
-async function seedSuiteCases(suites, testCases) {
+async function seedSuiteCases(project, def, suites, testCases) {
   const casesByModule = new Map();
   for (const tc of testCases) {
     if (!casesByModule.has(tc._module_name)) casesByModule.set(tc._module_name, []);
@@ -256,49 +463,52 @@ async function seedSuiteCases(suites, testCases) {
   const suiteCaseMap = new Map(); // suite.id -> array of test_case rows (ordered)
   for (const suite of suites) {
     const candidateCases = suite._modules.flatMap((m) => casesByModule.get(m) ?? []).filter((tc) => !tc.archived_at);
-    const chosen = shuffle(candidateCases).slice(0, Math.min(candidateCases.length, randInt(10, 16)));
+    const [minSize, maxSize] = def.suiteSize;
+    const chosen = shuffle(candidateCases).slice(0, Math.min(candidateCases.length, randInt(minSize, maxSize)));
     suiteCaseMap.set(suite.id, chosen);
     chosen.forEach((tc, i) => {
-      rows.push({ suite_id: suite.id, test_case_id: tc.id, position: i + 1 });
+      rows.push({ project_id: project.id, suite_id: suite.id, test_case_id: tc.id, position: i + 1 });
     });
   }
   const { error } = await supabase.from('suite_cases').insert(rows);
-  if (error) throw new Error(`suite_cases insert failed: ${error.message}`);
+  if (error) throw new Error(`suite_cases insert failed (${project.code}): ${error.message}`);
   console.log(`Inserted ${rows.length} suite_cases links`);
   return suiteCaseMap;
 }
 
-async function seedRunsAndResults(suites, suiteCaseMap, profiles) {
+async function seedRunsAndResults(project, def, suites, suiteCaseMap, profiles) {
   const runRows = [];
-  const runMeta = []; // parallel array: { suiteId, caseIds }
+  const runMeta = []; // parallel array: { cases }
 
   for (const suite of suites) {
     const cases = suiteCaseMap.get(suite.id) ?? [];
-    const numRuns = randInt(2, 4);
+    const numRuns = randInt(def.runsPerSuite[0], def.runsPerSuite[1]);
     for (let i = 0; i < numRuns; i++) {
-      const status = weightedPick([['completed', 60], ['in_progress', 25], ['cancelled', 15]]);
-      const startedDaysAgo = randInt(1, 45);
+      const status = def.archived
+        ? 'completed'
+        : weightedPick([['completed', 60], ['in_progress', 25], ['cancelled', 15]]);
+      const startedDaysAgo = def.archived ? randInt(60, 120) : randInt(1, 45);
       const profile = profiles.length ? rand(profiles) : null;
       const testerName = profile?.display_name || rand(FALLBACK_TESTER_NAMES);
 
-      const row = {
+      runRows.push({
+        project_id: project.id,
         suite_id: suite.id,
         tester_name: testerName,
         status,
         started_at: daysAgo(startedDaysAgo),
         completed_at: status === 'in_progress' ? null : daysAgo(randInt(0, startedDaysAgo - 1 < 0 ? 0 : startedDaysAgo - 1)),
-        os: rand(OS_OPTIONS),
-        build_version: rand(BUILD_VERSIONS),
-        outcome: null, // set after results are known, for completed/cancelled
+        os: rand(def.osOptions),
+        build_version: rand(def.buildVersions),
+        outcome: null, // set after results are known, for completed runs
         started_by: profile?.id ?? null,
-      };
-      runRows.push(row);
+      });
       runMeta.push({ cases });
     }
   }
 
   const { data: insertedRuns, error: runError } = await supabase.from('test_runs').insert(runRows).select();
-  if (runError) throw new Error(`test_runs insert failed: ${runError.message}`);
+  if (runError) throw new Error(`test_runs insert failed (${project.code}): ${runError.message}`);
   console.log(`Inserted ${insertedRuns.length} test runs`);
 
   const resultRows = [];
@@ -307,7 +517,6 @@ async function seedRunsAndResults(suites, suiteCaseMap, profiles) {
   insertedRuns.forEach((run, idx) => {
     const cases = runMeta[idx].cases;
     let anyFail = false;
-    let anyPending = false;
 
     cases.forEach((tc, position) => {
       let status;
@@ -320,7 +529,6 @@ async function seedRunsAndResults(suites, suiteCaseMap, profiles) {
         status = weightedPick([['pass', 70], ['fail', 15], ['blocked', 10], ['skipped', 5]]);
       }
       if (status === 'fail' || status === 'blocked') anyFail = true;
-      if (status === 'pending') anyPending = true;
 
       resultRows.push({
         test_run_id: run.id,
@@ -335,30 +543,42 @@ async function seedRunsAndResults(suites, suiteCaseMap, profiles) {
       });
     });
 
+    // Like the app, only completed runs get a pass/fail outcome; cancelled
+    // runs have none, and in-progress runs are still open.
     if (run.status === 'completed') {
       runOutcomeUpdates.push({ id: run.id, outcome: anyFail ? 'fail' : 'pass' });
-    } else if (run.status === 'cancelled') {
-      runOutcomeUpdates.push({ id: run.id, outcome: 'cancelled' });
     }
-    // in_progress runs keep outcome = null
   });
 
   const { error: resultError } = await supabase.from('run_results').insert(resultRows);
-  if (resultError) throw new Error(`run_results insert failed: ${resultError.message}`);
+  if (resultError) throw new Error(`run_results insert failed (${project.code}): ${resultError.message}`);
   console.log(`Inserted ${resultRows.length} run results`);
 
   for (const update of runOutcomeUpdates) {
     const { error } = await supabase.from('test_runs').update({ outcome: update.outcome }).eq('id', update.id);
-    if (error) throw new Error(`test_runs outcome update failed: ${error.message}`);
+    if (error) throw new Error(`test_runs outcome update failed (${project.code}): ${error.message}`);
   }
   console.log(`Updated outcome on ${runOutcomeUpdates.length} runs`);
+}
+
+async function seedProject(def, profiles) {
+  console.log(`\n=== ${def.code} — ${def.name}${def.archived ? ' (archived)' : ''} ===`);
+  const project = await insertProject(def);
+  const modules = await seedModules(project, def);
+  const testCases = await seedTestCases(project, def);
+  await seedModuleCases(project, modules, testCases);
+  const suites = await seedSuites(project, def);
+  const suiteCaseMap = await seedSuiteCases(project, def, suites, testCases);
+  await seedRunsAndResults(project, def, suites, suiteCaseMap, profiles);
 }
 
 // ---------- safety check ----------
 
 async function confirmDestructive() {
   console.log('\nThis will permanently WIPE and reseed the following tables:');
-  console.log('  run_results, test_runs, suite_cases, module_cases, suites, test_cases, modules');
+  console.log('  run_results, test_runs, suite_cases, module_cases, suites, test_cases, modules, projects');
+  console.log('\nEvery project is deleted first, including any you created in the app.');
+  console.log(`It then creates: ${PROJECT_DEFS.map((d) => d.code).join(', ')}`);
   console.log(`\nTarget Supabase project: ${SUPABASE_URL}`);
   console.log('(profiles / real users are left untouched)\n');
 
@@ -390,14 +610,9 @@ async function main() {
 
   await wipeAll();
 
-  const modules = await seedModules();
-  const testCases = await seedTestCases();
-  await seedModuleCases(modules, testCases);
-
-  const suites = await seedSuites();
-  const suiteCaseMap = await seedSuiteCases(suites, testCases);
-
-  await seedRunsAndResults(suites, suiteCaseMap, profiles);
+  for (const def of PROJECT_DEFS) {
+    await seedProject(def, profiles);
+  }
 
   console.log('\nSeed complete.');
 }
