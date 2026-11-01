@@ -21,15 +21,14 @@ export default async function RootLayout({ children }) {
   const userId = claimsData?.claims?.sub ?? null;
 
   let profile = null;
-  let suites = [];
 
   if (userId) {
-    const [{ data: profileData }, { data: suitesData }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", userId).single(),
-      supabase.from("suites").select("*").is("archived_at", null).order("name"),
-    ]);
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
     profile = profileData;
-    suites = suitesData || [];
   }
 
   return (
@@ -38,7 +37,7 @@ export default async function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <NavBar suites={suites} profile={profile} />
+        <NavBar profile={profile} />
         {children}
       </body>
     </html>

@@ -25,6 +25,7 @@ import { formatStatusLabel } from "@/lib/formatLabel";
 
 function SortableRow({
   linkedCase,
+  casePrefix,
   parentId,
   parentLabel,
   parentField,
@@ -64,7 +65,7 @@ function SortableRow({
         <span className="flex items-center gap-2">
           {testCase.seq_number && (
             <span className="text-slate-400 mr-2">
-              {formatId("TC", testCase.seq_number)}
+              {formatId(casePrefix, testCase.seq_number)}
             </span>
           )}
           {testCase.title}
@@ -89,6 +90,7 @@ function SortableRow({
 
 export default function SortableCaseList({
   linkedCases: initialLinkedCases,
+  casePrefix = "TC",
   parentId,
   parentLabel,
   parentField,
@@ -146,6 +148,7 @@ export default function SortableCaseList({
             <SortableRow
               key={lc.id}
               linkedCase={lc}
+              casePrefix={casePrefix}
               parentId={parentId}
               parentLabel={parentLabel}
               parentField={parentField}

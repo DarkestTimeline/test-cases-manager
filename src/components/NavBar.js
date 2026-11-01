@@ -3,18 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import StartRunButton from "./StartRunButton";
 import { logout } from "@/app/login/actions";
 
-const NAV_ITEMS = [
-  { href: "/test-cases", label: "Test Cases" },
-  { href: "/modules", label: "Modules" },
-  { href: "/suites", label: "Suites" },
-  { href: "/runs", label: "Runs" },
-  { href: "/reports", label: "Reports" },
-];
-
-export default function NavBar({ suites, profile }) {
+export default function NavBar({ profile }) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -49,34 +40,26 @@ export default function NavBar({ suites, profile }) {
     );
   }
 
+  const isProjectsActive = pathname.startsWith("/projects");
+
   return (
     <nav className="bg-white px-6 py-3 shadow-sm">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <Link href="/" className="font-bold text-primary text-lg">
+        <Link href="/projects" className="font-bold text-primary text-lg">
           QA Test Manager
         </Link>
 
         <div className="hidden sm:flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            {NAV_ITEMS.map((item) => {
-              const isActive = pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-                    isActive
-                      ? "border-primary text-primary font-semibold"
-                      : "border-transparent text-slate-600 hover:text-primary hover:border-slate-200"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          <StartRunButton suites={suites} />
+          <Link
+            href="/projects"
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+              isProjectsActive
+                ? "border-primary text-primary font-semibold"
+                : "border-transparent text-slate-600 hover:text-primary hover:border-slate-200"
+            }`}
+          >
+            Projects
+          </Link>
 
           <div className="relative" ref={accountRef}>
             <button
@@ -108,13 +91,6 @@ export default function NavBar({ suites, profile }) {
                 >
                   Profile
                 </Link>
-                <Link
-                  href="/settings"
-                  onClick={() => setIsAccountOpen(false)}
-                  className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
-                >
-                  Settings
-                </Link>
                 <form action={logout}>
                   <button
                     type="submit"
@@ -139,28 +115,26 @@ export default function NavBar({ suites, profile }) {
 
       {isMenuOpen && (
         <div className="sm:hidden mt-3 pt-3 border-t space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsMenuOpen(false)}
-                className={`block px-3 py-2 rounded text-sm font-medium ${
-                  isActive
-                    ? "bg-primary text-white"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+          <Link
+            href="/projects"
+            onClick={() => setIsMenuOpen(false)}
+            className={`block px-3 py-2 rounded text-sm font-medium ${
+              isProjectsActive
+                ? "bg-primary text-white"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Projects
+          </Link>
           {profile.role === "admin" && (
             <Link
               href="/admin/users"
-              onClick={() => setIsAccountOpen(false)}
-              className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+              onClick={() => setIsMenuOpen(false)}
+              className={`block px-3 py-2 rounded text-sm font-medium ${
+                pathname.startsWith("/admin")
+                  ? "bg-primary text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
             >
               Manage Users
             </Link>
@@ -176,20 +150,6 @@ export default function NavBar({ suites, profile }) {
           >
             Profile
           </Link>
-          <Link
-            href="/settings"
-            onClick={() => setIsMenuOpen(false)}
-            className={`block px-3 py-2 rounded text-sm font-medium ${
-              pathname.startsWith("/settings")
-                ? "bg-primary text-white"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            Settings
-          </Link>
-          <div className="pt-2">
-            <StartRunButton suites={suites} />
-          </div>
           <div className="pt-3 mt-1 border-t flex items-center justify-between">
             <span className="text-sm text-slate-500">
               {profile.display_name}

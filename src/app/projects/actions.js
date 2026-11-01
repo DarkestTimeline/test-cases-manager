@@ -9,6 +9,8 @@ import { FIX_FIELDS_MESSAGE, formFailure, formSuccess } from "@/lib/formState";
 import { getCurrentRole } from "@/lib/currentRole";
 
 const CODE_PATTERN = /^[A-Z0-9]{2,10}$/;
+// "NEW" would collide with the /projects/new page.
+const RESERVED_CODES = new Set(["NEW"]);
 const NOT_ADMIN_MESSAGE = "Only admins can manage projects.";
 
 function readProjectForm(formData) {
@@ -32,6 +34,8 @@ export async function createProject(prevState, formData) {
     fieldErrors.code = "Project code is required.";
   } else if (!CODE_PATTERN.test(values.code)) {
     fieldErrors.code = "Use 2–10 letters or digits, with no spaces.";
+  } else if (RESERVED_CODES.has(values.code)) {
+    fieldErrors.code = "That code is reserved. Choose another.";
   }
   if (Object.keys(fieldErrors).length > 0) {
     return formFailure(prevState, values, {

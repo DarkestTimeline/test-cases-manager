@@ -1,0 +1,51 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+
+export async function login(prevState, formData) {
+  const email = formData.get("email");
+  const password = formData.get("password");
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return { error: "Invalid email or password.", email };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", data.user.id)
+    .single();
+  if (profile && !profile.is_active) {
+    await supabase.auth.signOut();
+    return { error: "Your account has been deactivated.", email };
+  }
+
+  redirect("/projects");
+}
+
+export async function loginAsDemo() {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: process.env.DEMO_EMAIL,
+    password: process.env.DEMO_PASSWORD,
+  });
+
+  if (error) {
+    redirect("/login?error=demo");
+  }
+
+  redirect("/projects");
+}
+
+export async function logout() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}

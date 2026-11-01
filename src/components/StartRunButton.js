@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { startRun } from "@/app/runs/actions";
+import { startRun } from "@/app/projects/[code]/runs/actions";
 import Button from "./Button";
 import Modal from "./Modal";
 import FormSubmitButton from "./FormSubmitButton";

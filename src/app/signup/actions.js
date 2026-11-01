@@ -35,5 +35,5 @@ export async function signup(prevState, formData) {
       .eq("id", data.user.id);
   }
 
-  redirect("/");
+  redirect("/projects");
 }

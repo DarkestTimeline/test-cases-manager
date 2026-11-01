@@ -27,7 +27,7 @@ export async function login(prevState, formData) {
     return { error: "Your account has been deactivated.", email };
   }
 
-  redirect("/");
+  redirect("/projects");
 }
 
 export async function loginAsDemo() {
@@ -41,7 +41,7 @@ export async function loginAsDemo() {
     redirect("/login?error=demo");
   }
 
-  redirect("/");
+  redirect("/projects");
 }
 
 export async function logout() {

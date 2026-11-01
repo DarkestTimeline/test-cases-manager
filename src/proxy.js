@@ -2,6 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { createTimer } from "@/lib/timing";
 
+// Pages that used to live at the top level now live inside a project.
+const LEGACY_ROUTE =
+  /^\/(test-cases|modules|suites|runs|reports|settings)(\/|$)/;
+
 function redirectTo(request, supabaseResponse, pathname, params = {}) {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
@@ -52,7 +56,7 @@ async function handle(request, timed) {
   }
 
   if (userId && isPublicRoute) {
-    return redirectTo(request, supabaseResponse, "/");
+    return redirectTo(request, supabaseResponse, "/projects");
   }
 
   if (userId) {
@@ -65,6 +69,10 @@ async function handle(request, timed) {
       return redirectTo(request, supabaseResponse, "/login", {
         error: "deactivated",
       });
+    }
+
+    if (pathname === "/" || LEGACY_ROUTE.test(pathname)) {
+      return redirectTo(request, supabaseResponse, "/projects");
     }
   }
 

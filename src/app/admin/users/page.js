@@ -18,7 +18,7 @@ export default async function AdminUsersPage() {
     .single();
 
   if (currentProfile?.role !== "admin") {
-    redirect("/");
+    redirect("/projects");
   }
 
   const { data: profiles } = await supabase
