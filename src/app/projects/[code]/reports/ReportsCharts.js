@@ -32,6 +32,7 @@ function WeekTick({ x, y, payload, dataByWeek }) {
         textAnchor="middle"
         fontSize={12}
         fill="#334155"
+        className="chart-tick-main"
       >
         {formatWeek(payload.value)}
       </text>
@@ -42,6 +43,7 @@ function WeekTick({ x, y, payload, dataByWeek }) {
         textAnchor="middle"
         fontSize={11}
         fill="#94a3b8"
+        className="chart-tick-sub"
       >
         {count} run{count === 1 ? "" : "s"}
       </text>
@@ -95,7 +97,11 @@ export default function ReportsCharts({ data }) {
               radius={[4, 4, 0, 0]}
             >
               {chartData.map((d) => (
-                <Cell key={d.week} fill={getPassRateColor(d.passRate)} />
+                <Cell
+                  key={d.week}
+                  fill={getPassRateColor(d.passRate)}
+                  className={d.passRate === null ? "chart-empty-bar" : undefined}
+                />
               ))}
             </Bar>
           </BarChart>

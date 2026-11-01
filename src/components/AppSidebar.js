@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import StartRunButton from "./StartRunButton";
+import ThemeToggle from "./ThemeToggle";
 import { logout } from "@/app/login/actions";
 import { projectTileColor } from "@/lib/projectColor";
 import {
@@ -50,7 +51,7 @@ function ProjectTile({ code, className = "" }) {
 function SectionLabel({ children, collapsed }) {
   return (
     <p
-      className={`px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 ${
+      className={`px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-sidebar-dim ${
         collapsed ? "md:hidden" : ""
       }`}
     >
@@ -70,12 +71,12 @@ function NavItem({ href, label, active, collapsed, onNavigate, icon, children })
         collapsed ? "md:justify-center md:px-0" : ""
       } ${
         active
-          ? "bg-slate-800 text-white"
-          : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
+          ? "bg-sidebar-hover text-white"
+          : "text-sidebar-muted hover:bg-sidebar-hover/60 hover:text-white"
       }`}
     >
       {icon && (
-        <span className={`shrink-0 ${active ? "text-blue-400" : ""}`}>
+        <span className={`shrink-0 ${active ? "text-sidebar-accent" : ""}`}>
           {icon}
         </span>
       )}
@@ -166,7 +167,7 @@ export default function AppSidebar({
   return (
     <div className="flex flex-1 flex-col md:flex-row">
       {/* Mobile top bar */}
-      <div className="flex h-14 shrink-0 items-center justify-between bg-slate-900 px-4 text-white md:hidden">
+      <div className="flex h-14 shrink-0 items-center justify-between bg-sidebar px-4 text-white md:hidden">
         <Link href="/projects" className="flex items-center gap-3 font-semibold">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
             <CheckSquareIcon size={18} />
@@ -177,7 +178,7 @@ export default function AppSidebar({
           type="button"
           onClick={() => setIsDrawerOpen(true)}
           aria-label="Open menu"
-          className="rounded p-2 text-slate-300 hover:bg-slate-800"
+          className="rounded p-2 text-sidebar-text hover:bg-sidebar-hover"
         >
           <MenuIcon />
         </button>
@@ -193,7 +194,7 @@ export default function AppSidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col bg-slate-900 text-slate-300 transition-[transform,width] duration-200 md:sticky md:top-0 md:z-20 md:h-screen md:max-w-none md:shrink-0 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col border-r border-sidebar-line bg-sidebar text-sidebar-text transition-[transform,width] duration-200 md:sticky md:top-0 md:z-20 md:h-screen md:max-w-none md:shrink-0 md:translate-x-0 ${
           isDrawerOpen ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "md:w-16" : "md:w-64"}`}
       >
@@ -219,7 +220,7 @@ export default function AppSidebar({
             type="button"
             onClick={closeAll}
             aria-label="Close menu"
-            className="ml-auto rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white md:hidden"
+            className="ml-auto rounded p-1.5 text-sidebar-muted hover:bg-sidebar-hover hover:text-white md:hidden"
           >
             <CloseIcon size={18} />
           </button>
@@ -234,7 +235,7 @@ export default function AppSidebar({
                 onClick={() => setMenu(menu === "switcher" ? null : "switcher")}
                 aria-expanded={menu === "switcher"}
                 title={collapsed ? `${current.code} — ${current.name}` : undefined}
-                className={`flex w-full items-center gap-3 rounded-lg bg-slate-800 px-3 py-2 text-left transition-colors hover:bg-slate-700 ${
+                className={`flex w-full items-center gap-3 rounded-lg bg-sidebar-hover px-3 py-2 text-left transition-colors hover:bg-sidebar-raised ${
                   collapsed ? "md:justify-center md:px-0" : ""
                 }`}
               >
@@ -243,14 +244,14 @@ export default function AppSidebar({
                   <span className="block truncate text-sm font-semibold text-white">
                     {current.name}
                   </span>
-                  <span className="block truncate font-mono text-xs text-slate-400">
+                  <span className="block truncate font-mono text-xs text-sidebar-muted">
                     {current.code}
                     {current.archived_at ? " · archived" : ""}
                   </span>
                 </span>
                 <ChevronsUpDownIcon
                   size={16}
-                  className={`shrink-0 text-slate-500 ${hide}`}
+                  className={`shrink-0 text-sidebar-dim ${hide}`}
                 />
               </button>
 
@@ -330,7 +331,7 @@ export default function AppSidebar({
                   />
                 );
               })}
-              <div className="my-3 border-t border-slate-800" />
+              <div className="my-3 border-t border-sidebar-line" />
               <NavItem
                 href="/projects"
                 label="All projects"
@@ -354,7 +355,7 @@ export default function AppSidebar({
                 <>
                   <SectionLabel collapsed={collapsed}>Your projects</SectionLabel>
                   {collapsed && (
-                    <div className="my-2 hidden border-t border-slate-800 md:block" />
+                    <div className="my-2 hidden border-t border-sidebar-line md:block" />
                   )}
                   {activeProjects.slice(0, MAX_QUICK_PROJECTS).map((p) => (
                     <NavItem
@@ -374,13 +375,14 @@ export default function AppSidebar({
         </nav>
 
         {/* Footer: collapse toggle and account */}
-        <div className="shrink-0 space-y-1 border-t border-slate-800 p-3">
+        <div className="shrink-0 space-y-1 border-t border-sidebar-line p-3">
+          <ThemeToggle collapsed={collapsed} />
           <button
             type="button"
             onClick={toggleCollapsed}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : undefined}
-            className={`hidden w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-800/60 hover:text-white md:flex ${
+            className={`hidden w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-dim transition-colors hover:bg-sidebar-hover/60 hover:text-white md:flex ${
               collapsed ? "md:justify-center md:px-0" : ""
             }`}
           >
@@ -397,7 +399,7 @@ export default function AppSidebar({
               onClick={() => setMenu(menu === "account" ? null : "account")}
               aria-expanded={menu === "account"}
               title={collapsed ? profile.display_name : undefined}
-              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-slate-800 ${
+              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-sidebar-hover ${
                 collapsed ? "md:justify-center md:px-0" : ""
               }`}
             >
@@ -408,13 +410,13 @@ export default function AppSidebar({
                 <span className="block truncate text-sm font-medium text-white">
                   {profile.display_name}
                 </span>
-                <span className="block text-xs capitalize text-slate-500">
+                <span className="block text-xs capitalize text-sidebar-dim">
                   {profile.role}
                 </span>
               </span>
               <ChevronsUpDownIcon
                 size={16}
-                className={`shrink-0 text-slate-500 ${hide}`}
+                className={`shrink-0 text-sidebar-dim ${hide}`}
               />
             </button>
 

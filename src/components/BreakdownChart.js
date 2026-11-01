@@ -26,10 +26,24 @@ function CountTick({ x, y, payload, itemsById, countLabel }) {
 
   return (
     <g transform={`translate(${x},${y})`}>
-      <text x={-8} y={-2} textAnchor="end" fontSize={12} fill="#334155">
+      <text
+        x={-8}
+        y={-2}
+        textAnchor="end"
+        fontSize={12}
+        fill="#334155"
+        className="chart-tick-main"
+      >
         {truncate(item.name)}
       </text>
-      <text x={-8} y={12} textAnchor="end" fontSize={11} fill="#94a3b8">
+      <text
+        x={-8}
+        y={12}
+        textAnchor="end"
+        fontSize={11}
+        fill="#94a3b8"
+        className="chart-tick-sub"
+      >
         {item.total} {unit}
       </text>
     </g>
@@ -86,7 +100,13 @@ export default function BreakdownChart({
           />
           <Bar dataKey="displayPassRate" name="Pass Rate" radius={[0, 4, 4, 0]}>
             {chartData.map((item) => (
-              <Cell key={item.id} fill={getPassRateColor(item.passRate)} />
+              <Cell
+                key={item.id}
+                fill={getPassRateColor(item.passRate)}
+                className={
+                  item.passRate === null ? "chart-empty-bar" : undefined
+                }
+              />
             ))}
           </Bar>
         </BarChart>

@@ -155,3 +155,23 @@ export const CheckSquareIcon = (p) => (
     <path d="m8 12.5 3 3 5-6" />
   </Svg>
 );
+
+export const MoonIcon = (p) => (
+  <Svg {...p}>
+    <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z" />
+  </Svg>
+);
+
+export const SunIcon = (p) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2.5v2" />
+    <path d="M12 19.5v2" />
+    <path d="m4.9 4.9 1.4 1.4" />
+    <path d="m17.7 17.7 1.4 1.4" />
+    <path d="M2.5 12h2" />
+    <path d="M19.5 12h2" />
+    <path d="m4.9 19.1 1.4-1.4" />
+    <path d="m17.7 6.3 1.4-1.4" />
+  </Svg>
+);

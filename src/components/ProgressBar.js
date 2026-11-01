@@ -14,6 +14,7 @@ export default function ProgressBar({ counts, total }) {
       {segments.map((s) => (
         <div
           key={s.key}
+          data-segment={s.key}
           style={{
             width: `${(s.count / total) * 100}%`,
             backgroundColor: s.color,

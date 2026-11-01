@@ -61,10 +61,26 @@ export default async function ProjectOverview({ params }) {
   ]);
 
   const stats = [
-    { label: "Active Test Cases", value: testCaseCount || 0 },
-    { label: "Active Suites", value: suiteCount || 0 },
-    { label: "Active Modules", value: moduleCount || 0 },
-    { label: "Runs In Progress", value: inProgressCount || 0 },
+    {
+      label: "Active Test Cases",
+      value: testCaseCount || 0,
+      href: `${base}/test-cases`,
+    },
+    {
+      label: "Active Suites",
+      value: suiteCount || 0,
+      href: `${base}/suites`,
+    },
+    {
+      label: "Active Modules",
+      value: moduleCount || 0,
+      href: `${base}/modules`,
+    },
+    {
+      label: "Runs In Progress",
+      value: inProgressCount || 0,
+      href: `${base}/runs?status=in_progress`,
+    },
   ];
 
   return (
@@ -84,7 +100,12 @@ export default async function ProjectOverview({ params }) {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
         {stats.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} value={stat.value} />
+          <StatCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            href={stat.href}
+          />
         ))}
       </div>
 
