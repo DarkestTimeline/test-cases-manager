@@ -215,11 +215,13 @@ export default async function ReportsData({
           label="Runs In Progress"
           value={inProgressCount || 0}
           sublabel="right now"
+          href={`/projects/${projectCode}/runs?status=in_progress`}
         />
         <StatCard
           label="Never Run"
           value={neverRunTestCases.length}
           sublabel={`of ${activeTestCaseCount || 0} active test cases`}
+          href="#coverage-gaps"
         />
         <StatCard
           label="Last Activity"
@@ -304,7 +306,7 @@ export default async function ReportsData({
         )}
       </div>
 
-      <div className="mt-10">
+      <div id="coverage-gaps" className="mt-10 scroll-mt-8">
         <h2 className="mb-2">Coverage Gaps</h2>
         <p className="text-sm text-slate-500 mb-4">
           Active test cases with no recorded result in any run, most urgent
