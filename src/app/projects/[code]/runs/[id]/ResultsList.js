@@ -55,7 +55,7 @@ function ModuleSection({ title, results, runId, isLocked }) {
         </div>
       </button>
       {isExpanded && (
-        <ul className="space-y-4">
+        <ul className="space-y-3">
           {results.map((result) => (
             <ResultItem
               key={result.id}
@@ -189,7 +189,7 @@ function ResultItem({ result, runId, isLocked }) {
         </Badge>
       </div>
 
-      <div className="mt-3 text-sm text-slate-600 space-y-2">
+      <div className="mt-3 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
         <p>
           <span className="font-medium text-slate-800">Steps: </span>
           {result.steps_to_reproduce}

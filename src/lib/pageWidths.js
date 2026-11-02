@@ -1,4 +1,5 @@
 export const PAGE = {
+  full: "p-8 w-full max-w-7xl mx-auto",
   wide: "p-8 w-full max-w-5xl mx-auto",
   reports: "p-8 w-full max-w-4xl mx-auto",
   medium: "p-8 w-full max-w-3xl mx-auto",

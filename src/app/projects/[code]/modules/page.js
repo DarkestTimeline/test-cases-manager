@@ -70,7 +70,6 @@ export default async function ModulesList({ params, searchParams }) {
               page: 1,
             })}
             variant="secondary"
-            size="sm"
           >
             {showingArchived ? "View Active" : "View Archived"}
           </Button>

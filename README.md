@@ -30,17 +30,17 @@ Built as a self-directed learning project to get hands-on with full-stack develo
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend framework | [Next.js](https://nextjs.org/) (App Router) |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
-| Database & Auth | [Supabase](https://supabase.com/) (Postgres, Auth, Row Level Security) |
-| Auth integration | `@supabase/ssr` |
-| Drag & drop | [`@dnd-kit`](https://dndkit.com/) |
-| CSV import/export | [PapaParse](https://www.papaparse.com/) |
-| Charts & reporting | [Recharts](https://recharts.org/) |
-| Hosting / CI-CD | [Vercel](https://vercel.com/) |
-| Scheduled jobs | Vercel Cron |
+| Layer              | Technology                                                             |
+| ------------------ | ---------------------------------------------------------------------- |
+| Frontend framework | [Next.js](https://nextjs.org/) (App Router)                            |
+| Styling            | [Tailwind CSS v4](https://tailwindcss.com/)                            |
+| Database & Auth    | [Supabase](https://supabase.com/) (Postgres, Auth, Row Level Security) |
+| Auth integration   | `@supabase/ssr`                                                        |
+| Drag & drop        | [`@dnd-kit`](https://dndkit.com/)                                      |
+| CSV import/export  | [PapaParse](https://www.papaparse.com/)                                |
+| Charts & reporting | [Recharts](https://recharts.org/)                                      |
+| Hosting / CI-CD    | [Vercel](https://vercel.com/)                                          |
+| Scheduled jobs     | Vercel Cron                                                            |
 
 No ORM is used — the app talks to Postgres directly through the Supabase JS client, with authorization enforced at the database layer via Row Level Security (RLS) rather than solely in application code.
 
@@ -58,17 +58,17 @@ No ORM is used — the app talks to Postgres directly through the Supabase JS cl
 
 ## Database Schema
 
-| Table | Purpose |
-|---|---|
-| `profiles` | User profile data (display name, role), auto-created via a trigger on new auth signups |
-| `projects` | Top-level entity with a unique, immutable code (e.g. `DEMO`) used to prefix case IDs; supports archive |
-| `modules` | Groupings of test cases within a project |
-| `test_cases` | Individual manual test cases, numbered per project (e.g. `DEMO-12`), with a priority field, supports archive |
-| `module_cases` | Join table linking test cases to modules, preserves ordering |
-| `suites` | Collections of test cases assembled for execution, belonging to a project, supports archive |
-| `suite_cases` | Join table linking test cases to suites, preserves ordering |
-| `test_runs` | A single execution instance of a suite; captures who ran it and when |
-| `run_results` | Snapshot of each test case's state, position, code, and tester identity at run-start; holds the Pass/Fail/Blocked/Skipped/Pending outcome per case |
+| Table          | Purpose                                                                                                                                            |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profiles`     | User profile data (display name, role), auto-created via a trigger on new auth signups                                                             |
+| `projects`     | Top-level entity with a unique, immutable code (e.g. `DEMO`) used to prefix case IDs; supports archive                                             |
+| `modules`      | Groupings of test cases within a project                                                                                                           |
+| `test_cases`   | Individual manual test cases, numbered per project (e.g. `DEMO-12`), with a priority field, supports archive                                       |
+| `module_cases` | Join table linking test cases to modules, preserves ordering                                                                                       |
+| `suites`       | Collections of test cases assembled for execution, belonging to a project, supports archive                                                        |
+| `suite_cases`  | Join table linking test cases to suites, preserves ordering                                                                                        |
+| `test_runs`    | A single execution instance of a suite; captures who ran it and when                                                                               |
+| `run_results`  | Snapshot of each test case's state, position, code, and tester identity at run-start; holds the Pass/Fail/Blocked/Skipped/Pending outcome per case |
 
 **Status fields are stored as plain text**, not Postgres enums, so new statuses (e.g. adding a `Cancelled` run status) can be introduced without a schema migration.
 
@@ -131,6 +131,7 @@ No ORM is used — the app talks to Postgres directly through the Supabase JS cl
 ```
 
 Notes on route structure:
+
 - All project work happens under `projects/[code]/`, where `[code]` is the project's immutable code (e.g. `DEMO`). `projects/` and `projects/new` handle the Projects landing page and project creation.
 - `test-cases/[id]/edit` is a dedicated edit route, while `modules/[id]` and `suites/[id]` handle editing inline rather than through a separate route.
 - Each route folder follows standard App Router conventions (`page.js`, and `route.js` for the `api/keep-alive` endpoint).
@@ -182,16 +183,16 @@ node seed.mjs
   - `test_cases` has no `test_case_code` column; that field only exists on `run_results`, where it's captured as part of the run-start snapshot.
 - The current script was written before the Projects layer. Updating it to seed multiple projects is the next step; until then, its demo data belongs to a single project (`Demo Storefront`, code `DEMO`).
 
-*(Adjust the `node seed.mjs` path above if the script lives in a subfolder, e.g. `scripts/seed.mjs`, in your repo.)*
+_(Adjust the `node seed.mjs` path above if the script lives in a subfolder, e.g. `scripts/seed.mjs`, in your repo.)_
 
 ## Environment Variables
 
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key (used client-side, protected by RLS) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key, server-side only — used by the keep-alive cron route |
-| `CRON_SECRET` | Shared secret checked against the header on incoming cron requests |
+| Variable                        | Description                                                            |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL                                              |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key (used client-side, protected by RLS)          |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Service role key, server-side only — used by the keep-alive cron route |
+| `CRON_SECRET`                   | Shared secret checked against the header on incoming cron requests     |
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client — it bypasses RLS.
 

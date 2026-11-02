@@ -108,14 +108,11 @@ export default async function ProjectsPage({ searchParams }) {
           <Button
             href={showingArchived ? "/projects" : "/projects?archived=true"}
             variant="secondary"
-            size="sm"
           >
             {showingArchived ? "View Active" : "View Archived"}
           </Button>
           {isAdmin && !showingArchived && (
-            <Button href="/projects/new" size="sm">
-              + New Project
-            </Button>
+            <Button href="/projects/new">+ New Project</Button>
           )}
         </div>
       </div>
