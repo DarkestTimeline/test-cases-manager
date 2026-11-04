@@ -1,3 +1,4 @@
+import AuthShell from "@/components/AuthShell";
 import LoginForm from "./LoginForm";
 
 const URL_ERRORS = {
@@ -10,5 +11,9 @@ export default async function LoginPage({ searchParams }) {
   const initialError =
     typeof error === "string" ? (URL_ERRORS[error] ?? null) : null;
 
-  return <LoginForm initialError={initialError} />;
+  return (
+    <AuthShell>
+      <LoginForm initialError={initialError} />
+    </AuthShell>
+  );
 }

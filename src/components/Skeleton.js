@@ -1,4 +1,5 @@
 import Card from "./Card";
+import AuthShell from "./AuthShell";
 import { PAGE } from "@/lib/pageWidths";
 
 const RADIUS = { default: "rounded", lg: "rounded-lg", full: "rounded-full" };
@@ -131,35 +132,31 @@ export function DetailPageSkeleton({ linkedRows = 3, pickerGroups = 3 }) {
 
 export function AuthCardSkeleton({ fields = 2, showDemo = false }) {
   return (
-    <main
-      aria-busy="true"
-      className="min-h-screen flex items-center justify-center bg-slate-50 p-8 motion-safe:animate-pulse"
-    >
-      <span className="sr-only">Loading…</span>
-      <div className="w-full max-w-sm bg-white border rounded-lg p-8 shadow-sm">
-        <Bone className="h-8 w-48 mx-auto mb-1" />
-        <Bone className="h-5 w-40 mx-auto mb-6" />
+    <AuthShell>
+      <div aria-busy="true" className="motion-safe:animate-pulse">
+        <span className="sr-only">Loading…</span>
+        <Bone className="mb-6 h-6 w-28" />
         <div className="space-y-4">
           {Array.from({ length: fields }).map((_, i) => (
             <div key={i}>
-              <Bone className="h-5 w-16 mb-1" />
+              <Bone className="mb-1 h-5 w-16" />
               <Bone className="h-10 w-full" />
             </div>
           ))}
-          <Bone className="h-9 w-full" />
+          <Bone className="h-11 w-full" />
         </div>
         {showDemo && (
           <>
-            <div className="flex items-center gap-2 my-4">
+            <div className="my-6 flex items-center gap-3">
               <div className="flex-1 border-t" />
               <Bone className="h-4 w-4" />
               <div className="flex-1 border-t" />
             </div>
-            <Bone className="h-9 w-full" />
+            <Bone className="h-11 w-full" />
           </>
         )}
-        <Bone className="h-5 w-48 mx-auto mt-4" />
+        <Bone className="mx-auto mt-6 h-5 w-48" />
       </div>
-    </main>
+    </AuthShell>
   );
 }

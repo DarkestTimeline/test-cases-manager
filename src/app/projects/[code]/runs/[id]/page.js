@@ -152,7 +152,7 @@ export default async function RunDetail({ params }) {
     <main className={PAGE.full}>
       <BackLink
         href={`/projects/${project.code}/runs`}
-        label="Runs Dashboard"
+        label="Runs"
       />
 
       <div className="mt-4 grid gap-8 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start">

@@ -9,6 +9,7 @@ import { formatId } from "@/lib/displayId";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import { parseIdParam, parseDateParam } from "@/lib/params";
 import Button from "@/components/Button";
+import AutoSubmitForm from "@/components/AutoSubmitForm";
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
 import CollapsibleFilters from "@/components/CollapsibleFilters";
@@ -147,11 +148,15 @@ export default async function RunsDashboard({ params, searchParams }) {
   const hasActiveFilters = Boolean(status) || advancedFilterCount > 0;
 
   const filterForm = (
-    <form method="GET" action={`${base}/runs`} className="space-y-5">
+    <AutoSubmitForm action={`${base}/runs`} className="space-y-5">
       {status && <input type="hidden" name="status" value={status} />}
       <FilterGroup label="Time range">
         <div className="flex flex-col gap-2">
-          <DateRangeFields startDate={startDate} endDate={endDate} />
+          <DateRangeFields
+            startDate={startDate}
+            endDate={endDate}
+            stacked
+          />
         </div>
       </FilterGroup>
 
@@ -207,17 +212,12 @@ export default async function RunsDashboard({ params, searchParams }) {
         </div>
       </FilterGroup>
 
-      <div className="flex gap-2">
-        <Button type="submit" className="flex-1">
-          Apply
+      {hasActiveFilters && (
+        <Button href={`${base}/runs`} variant="ghost">
+          Reset all
         </Button>
-        {hasActiveFilters && (
-          <Button href={`${base}/runs`} variant="ghost">
-            Reset all
-          </Button>
-        )}
-      </div>
-    </form>
+      )}
+    </AutoSubmitForm>
   );
 
   const shownFrom = runs.length > 0 ? from + 1 : 0;
@@ -226,7 +226,7 @@ export default async function RunsDashboard({ params, searchParams }) {
   return (
     <main className={PAGE.full}>
       <div className="mb-6">
-        <h1>Runs Dashboard</h1>
+        <h1>Runs</h1>
         <p className="mt-1 text-sm text-slate-500">
           {count || 0} {count === 1 ? "run" : "runs"}
           {hasActiveFilters ? " match the current filters" : " in this project"}

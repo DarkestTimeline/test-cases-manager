@@ -3,6 +3,7 @@ import Link from "next/link";
 import { formatId } from "@/lib/displayId";
 import { archiveTestCase, restoreTestCase } from "./actions";
 import Button from "@/components/Button";
+import AutoSubmitForm from "@/components/AutoSubmitForm";
 import Badge from "@/components/Badge";
 import CollapsibleFilters from "@/components/CollapsibleFilters";
 import { PRIORITY_STYLES } from "@/lib/badgeStyles";
@@ -114,81 +115,66 @@ export default async function TestCasesList({ params, searchParams }) {
         </div>
       </div>
 
-      <form
-        method="GET"
-        action={`${base}/test-cases`}
-        className="flex gap-2 mb-2"
-      >
+      <AutoSubmitForm action={`${base}/test-cases`} className="mb-2">
         {showingArchived && (
           <input type="hidden" name="archived" value="true" />
         )}
-        {priority && <input type="hidden" name="priority" value={priority} />}
-        {moduleId && <input type="hidden" name="moduleId" value={moduleId} />}
-        <input
-          type="text"
-          name="search"
-          defaultValue={search || ""}
-          placeholder="Search title, steps, expected result or code..."
-          className="border rounded p-2 text-sm flex-1 max-w-xs"
-        />
-        <Button type="submit">Search</Button>
-        {search && (
-          <Button
-            href={buildHref({ search: null, page: 1 })}
-            variant="ghost"
-            className="self-center"
-          >
-            Clear search
-          </Button>
-        )}
-      </form>
-
-      <CollapsibleFilters activeCount={advancedFilterCount}>
-        <form
-          method="GET"
-          action={`${base}/test-cases`}
-          className="flex flex-col sm:flex-row gap-2 sm:items-center"
-        >
-          {showingArchived && (
-            <input type="hidden" name="archived" value="true" />
-          )}
-          {search && <input type="hidden" name="search" value={search} />}
-          <select
-            name="priority"
-            defaultValue={priority || ""}
-            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Any Priority</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-          <select
-            name="moduleId"
-            defaultValue={moduleId || ""}
-            className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Any Module</option>
-            {modules.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-          <Button type="submit" className="w-full sm:w-auto">
-            Filter
-          </Button>
-          {advancedFilterCount > 0 && (
+        <div className="flex gap-2 mb-2">
+          <input
+            type="text"
+            name="search"
+            defaultValue={search || ""}
+            placeholder="Search title, steps, expected result or code..."
+            className="border rounded p-2 text-sm flex-1 max-w-xs"
+          />
+          <Button type="submit">Search</Button>
+          {search && (
             <Button
-              href={buildHref({ priority: null, moduleId: null, page: 1 })}
+              href={buildHref({ search: null, page: 1 })}
               variant="ghost"
+              className="self-center"
             >
-              Clear
+              Clear search
             </Button>
           )}
-        </form>
-      </CollapsibleFilters>
+        </div>
+
+        <CollapsibleFilters activeCount={advancedFilterCount}>
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <select
+              name="priority"
+              defaultValue={priority || ""}
+              className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Any Priority</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+            <select
+              name="moduleId"
+              defaultValue={moduleId || ""}
+              className="border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Any Module</option>
+              {modules.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            {advancedFilterCount > 0 && (
+              <Button
+                href={buildHref({ priority: null, moduleId: null, page: 1 })}
+                variant="ghost"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        </CollapsibleFilters>
+      </AutoSubmitForm>
 
       {testCases.length === 0 ? (
         <p className="text-slate-500">

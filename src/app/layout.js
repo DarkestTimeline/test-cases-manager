@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
 import AppSidebar from "@/components/AppSidebar";
-import ThemeToggle from "@/components/ThemeToggle";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
@@ -67,17 +66,7 @@ export default async function RootLayout({ children }) {
             {children}
           </AppSidebar>
         ) : (
-          <>
-            <header className="bg-white px-6 py-3 shadow-sm">
-              <div className="max-w-6xl mx-auto flex items-center justify-between">
-                <span className="font-bold text-primary text-lg">
-                  QA Test Manager
-                </span>
-                <ThemeToggle variant="icon" />
-              </div>
-            </header>
-            {children}
-          </>
+          children
         )}
       </body>
     </html>

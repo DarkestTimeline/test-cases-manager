@@ -21,7 +21,7 @@ export default function CollapsibleFilters({ children, activeCount }) {
           </Badge>
         )}
       </button>
-      {isOpen && <div>{children}</div>}
+      <div className={isOpen ? undefined : "hidden"}>{children}</div>
     </div>
   );
 }
