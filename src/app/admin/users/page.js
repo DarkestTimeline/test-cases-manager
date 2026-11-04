@@ -1,3 +1,4 @@
+import LocalTime from "@/components/LocalTime";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { toggleUserRole, toggleUserActive } from "../actions";
@@ -5,6 +6,8 @@ import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import { PAGE } from '@/lib/pageWidths'
+
+export const metadata = { title: "Manage users" };
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -39,7 +42,8 @@ export default async function AdminUsersPage() {
               <p className="font-medium">{profile.display_name}</p>
               <p className="text-sm text-slate-500">{profile.email}</p>
               <p className="text-xs text-slate-400">
-                Member since {new Date(profile.created_at).toLocaleDateString()}
+                Member since{" "}
+                <LocalTime value={profile.created_at} format="date" />
               </p>
               <div className="flex gap-2 mt-1">
                 <Badge className="bg-primary-light text-primary">

@@ -20,6 +20,8 @@ const SECTION_LABEL =
 const SELECT_CLASS =
   "border rounded p-2 text-sm h-9 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-primary";
 
+export const metadata = { title: "Reports" };
+
 export default async function ReportsPage({ params: routeParams, searchParams }) {
   const { code } = await routeParams;
   const project = await getProject(code);

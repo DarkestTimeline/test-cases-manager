@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 const THEME_SCRIPT = `(function(){try{var m=document.cookie.match(/(?:^|; )theme=(light|dark)/);var t=m?m[1]:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");if(t==="dark")document.documentElement.classList.add("dark");}catch(e){}})();`;
 
 export const metadata = {
-  title: "QA Test Manager",
+  title: { default: "QA Test Manager", template: "%s · QA Test Manager" },
   description: "Manual QA test case management",
 };
 

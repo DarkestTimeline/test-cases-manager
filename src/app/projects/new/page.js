@@ -6,6 +6,8 @@ import ProjectForm from "@/components/ProjectForm";
 import BackLink from "@/components/BackLink";
 import { PAGE } from "@/lib/pageWidths";
 
+export const metadata = { title: "New project" };
+
 export default async function NewProject() {
   const supabase = await createClient();
   if ((await getCurrentRole(supabase)) !== "admin") redirect("/projects");

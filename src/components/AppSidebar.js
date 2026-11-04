@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import StartRunButton from "./StartRunButton";
 import ThemeToggle from "./ThemeToggle";
 import { logout } from "@/app/login/actions";
-import { projectTileColor } from "@/lib/projectColor";
+import { projectTileColor, projectInitials } from "@/lib/projectColor";
 import {
   ProjectsIcon,
   OverviewIcon,
@@ -38,12 +38,15 @@ const PROJECT_ITEMS = [
 
 const MAX_QUICK_PROJECTS = 8;
 
-function ProjectTile({ code, className = "" }) {
+function ProjectTile({ code, name, className = "" }) {
+  const initials = projectInitials(name, code);
   return (
     <span
-      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[11px] font-bold ${projectTileColor(code)} ${className}`}
+      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-bold ${
+        initials.length > 2 ? "text-[9px]" : "text-[11px]"
+      } ${projectTileColor(code)} ${className}`}
     >
-      {code.slice(0, 2)}
+      {initials}
     </span>
   );
 }
@@ -239,7 +242,7 @@ export default function AppSidebar({
                   collapsed ? "md:justify-center md:px-0" : ""
                 }`}
               >
-                <ProjectTile code={current.code} />
+                <ProjectTile code={current.code} name={current.name} />
                 <span className={`min-w-0 flex-1 ${hide}`}>
                   <span className="block truncate text-sm font-semibold text-white">
                     {current.name}
@@ -275,7 +278,7 @@ export default function AppSidebar({
                         p.code === current.code ? "font-semibold" : ""
                       }`}
                     >
-                      <ProjectTile code={p.code} />
+                      <ProjectTile code={p.code} name={p.name} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">{p.name}</span>
                         <span className="block truncate font-mono text-xs text-slate-400">
@@ -365,7 +368,7 @@ export default function AppSidebar({
                       active={false}
                       collapsed={collapsed}
                       onNavigate={closeAll}
-                      icon={<ProjectTile code={p.code} />}
+                      icon={<ProjectTile code={p.code} name={p.name} />}
                     />
                   ))}
                 </>

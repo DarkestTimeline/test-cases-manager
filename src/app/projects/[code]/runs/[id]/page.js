@@ -12,6 +12,7 @@ import ConfirmButton from "@/components/ConfirmButton";
 import BackLink from "@/components/BackLink";
 import ProgressBar from "@/components/ProgressBar";
 import Card from "@/components/Card";
+import LocalTime from "@/components/LocalTime";
 import { PAGE } from "@/lib/pageWidths";
 
 const STATUS_ROWS = [
@@ -215,12 +216,12 @@ export default async function RunDetail({ params }) {
               )}
               <MetaRow
                 label="Started"
-                value={new Date(run.started_at).toLocaleString()}
+                value={<LocalTime value={run.started_at} />}
               />
               {run.completed_at && (
                 <MetaRow
                   label="Completed"
-                  value={new Date(run.completed_at).toLocaleString()}
+                  value={<LocalTime value={run.completed_at} />}
                 />
               )}
             </dl>

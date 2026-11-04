@@ -11,9 +11,11 @@ import { formatStatusLabel } from "@/lib/formatLabel";
 import { buildSearchFilter } from "@/lib/searchFilter";
 import { PAGE } from '@/lib/pageWidths'
 import { getProject, getActiveProjects } from "@/lib/project";
-import CloneToProjectButton from "@/components/CloneToProjectButton";
+import RowMenu from "@/components/RowMenu";
 
 const PAGE_SIZE = 10;
+
+export const metadata = { title: "Test Cases" };
 
 export default async function TestCasesList({ params, searchParams }) {
   const { code } = await params;
@@ -34,6 +36,7 @@ export default async function TestCasesList({ params, searchParams }) {
     .select("*", { count: "exact" })
     .eq("project_id", project.id)
     .order("created_at", { ascending: false })
+    .order("seq_number", { ascending: false })
     .range(from, to);
 
   query = showingArchived
@@ -208,24 +211,16 @@ export default async function TestCasesList({ params, searchParams }) {
                     {tc.expected_result}
                   </p>
                 </Link>
-                <div className="flex gap-2 items-center">
-                  <CloneToProjectButton
+                <div className="flex shrink-0 items-start gap-2">
+                  <RowMenu
                     kind="test_case"
                     id={tc.id}
                     projects={otherProjects}
+                    archived={showingArchived}
+                    archiveAction={archiveTestCase}
+                    restoreAction={restoreTestCase}
+                    idField="testCaseId"
                   />
-                  <form
-                    action={showingArchived ? restoreTestCase : archiveTestCase}
-                  >
-                    <input type="hidden" name="testCaseId" value={tc.id} />
-                    <Button
-                      type="submit"
-                      variant={showingArchived ? "success" : "secondary"}
-                      size="sm"
-                    >
-                      {showingArchived ? "Restore" : "Archive"}
-                    </Button>
-                  </form>
                 </div>
               </li>
             ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Button from "./Button";
 import Modal from "./Modal";
@@ -53,23 +53,14 @@ function describe(kind, preview, targetCode) {
   return lines.filter(Boolean);
 }
 
-export default function CloneToProjectButton({
-  kind,
-  id,
-  projects,
-  label = "Clone to project…",
-  variant = "secondary",
-  size = "sm",
-}) {
+// The dialog itself. Mount it to open it; it calls onClose to be unmounted.
+export function CloneToProjectDialog({ kind, id, projects, onClose }) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
   const [target, setTarget] = useState(projects[0]?.code ?? "");
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
   const [isPending, startTransition] = useTransition();
   const requestRef = useRef(0);
-
-  if (projects.length === 0) return null;
 
   async function loadPreview(code) {
     const ticket = ++requestRef.current;
@@ -81,15 +72,13 @@ export default function CloneToProjectButton({
     else setPreview(result.preview);
   }
 
-  function open() {
-    setIsOpen(true);
-    loadPreview(target);
-  }
-
-  function close() {
-    requestRef.current++;
-    setIsOpen(false);
-  }
+  useEffect(() => {
+    loadPreview(projects[0]?.code ?? "");
+    return () => {
+      requestRef.current++;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleTargetChange(event) {
     setTarget(event.target.value);
@@ -109,69 +98,95 @@ export default function CloneToProjectButton({
   }
 
   return (
+    <Modal label="Clone to project" onClose={onClose}>
+      <h2 className="mb-4">Clone to project</h2>
+
+      <Field label="Target project">
+        <select
+          value={target}
+          onChange={handleTargetChange}
+          disabled={isPending}
+          className="w-full border rounded p-2"
+        >
+          {projects.map((project) => (
+            <option key={project.code} value={project.code}>
+              {project.code} — {project.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <div
+        className="mt-4 min-h-20 space-y-1 text-sm text-slate-700"
+        aria-live="polite"
+      >
+        {!preview && !error && (
+          <p className="text-slate-400">Checking what will be copied…</p>
+        )}
+        {preview &&
+          describe(kind, preview, target).map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+      </div>
+
+      {error && (
+        <p role="alert" className="mt-3 text-sm text-danger">
+          {error}
+        </p>
+      )}
+
+      <div className="mt-5 flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          size="md"
+          onClick={onClose}
+          disabled={isPending}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          size="md"
+          onClick={handleClone}
+          disabled={!preview || isPending}
+        >
+          {isPending ? "Cloning…" : "Clone"}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+export default function CloneToProjectButton({
+  kind,
+  id,
+  projects,
+  label = "Clone to project…",
+  variant = "secondary",
+  size = "sm",
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (projects.length === 0) return null;
+
+  return (
     <>
-      <Button type="button" variant={variant} size={size} onClick={open}>
+      <Button
+        type="button"
+        variant={variant}
+        size={size}
+        onClick={() => setIsOpen(true)}
+      >
         {label}
       </Button>
-
       {isOpen && (
-        <Modal label="Clone to project" onClose={close}>
-          <h2 className="mb-4">Clone to project</h2>
-
-          <Field label="Target project">
-            <select
-              value={target}
-              onChange={handleTargetChange}
-              disabled={isPending}
-              className="w-full border rounded p-2"
-            >
-              {projects.map((project) => (
-                <option key={project.code} value={project.code}>
-                  {project.code} — {project.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <div
-            className="mt-4 min-h-20 space-y-1 text-sm text-slate-700"
-            aria-live="polite"
-          >
-            {!preview && !error && (
-              <p className="text-slate-400">Checking what will be copied…</p>
-            )}
-            {preview &&
-              describe(kind, preview, target).map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-          </div>
-
-          {error && (
-            <p role="alert" className="mt-3 text-sm text-danger">
-              {error}
-            </p>
-          )}
-
-          <div className="mt-5 flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              onClick={close}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              size="md"
-              onClick={handleClone}
-              disabled={!preview || isPending}
-            >
-              {isPending ? "Cloning…" : "Clone"}
-            </Button>
-          </div>
-        </Modal>
+        <CloneToProjectDialog
+          kind={kind}
+          id={id}
+          projects={projects}
+          onClose={() => setIsOpen(false)}
+        />
       )}
     </>
   );

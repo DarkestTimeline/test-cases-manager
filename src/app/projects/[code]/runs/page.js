@@ -9,6 +9,7 @@ import { formatId } from "@/lib/displayId";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import { parseIdParam, parseDateParam } from "@/lib/params";
 import Button from "@/components/Button";
+import LocalTime from "@/components/LocalTime";
 import AutoSubmitForm from "@/components/AutoSubmitForm";
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
@@ -23,6 +24,8 @@ import { getProject } from "@/lib/project";
 const PAGE_SIZE = 10;
 const FIELD_CLASS =
   "border rounded p-2 text-sm h-9 w-full focus:outline-none focus:ring-2 focus:ring-primary";
+
+export const metadata = { title: "Runs" };
 
 export default async function RunsDashboard({ params, searchParams }) {
   const { code } = await params;
@@ -318,14 +321,15 @@ export default async function RunsDashboard({ params, searchParams }) {
                               </p>
                               <p className="text-xs text-slate-400">
                                 Started:{" "}
-                                {new Date(run.started_at).toLocaleDateString()}
+                                <LocalTime value={run.started_at} format="date" />
                                 {run.completed_at && (
                                   <>
                                     {" "}
                                     · Completed:{" "}
-                                    {new Date(
-                                      run.completed_at,
-                                    ).toLocaleDateString()}
+                                    <LocalTime
+                                      value={run.completed_at}
+                                      format="date"
+                                    />
                                   </>
                                 )}
                               </p>

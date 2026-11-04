@@ -6,6 +6,8 @@ const URL_ERRORS = {
   demo: "Demo account is not set up correctly.",
 };
 
+export const metadata = { title: "Sign in" };
+
 export default async function LoginPage({ searchParams }) {
   const { error } = await searchParams;
   const initialError =

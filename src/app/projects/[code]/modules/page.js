@@ -7,9 +7,11 @@ import Card from "@/components/Card";
 import { buildSearchFilter } from "@/lib/searchFilter";
 import { PAGE } from '@/lib/pageWidths'
 import { getProject, getActiveProjects } from "@/lib/project";
-import CloneToProjectButton from "@/components/CloneToProjectButton";
+import RowMenu from "@/components/RowMenu";
 
 const PAGE_SIZE = 10;
+
+export const metadata = { title: "Modules" };
 
 export default async function ModulesList({ params, searchParams }) {
   const { code } = await params;
@@ -27,9 +29,10 @@ export default async function ModulesList({ params, searchParams }) {
 
   let query = supabase
     .from("modules")
-    .select("*", { count: "exact" })
+    .select("*, module_cases(count)", { count: "exact" })
     .eq("project_id", project.id)
     .order("created_at", { ascending: false })
+    .order("seq_number", { ascending: false })
     .range(from, to);
 
   query = showingArchived
@@ -128,23 +131,21 @@ export default async function ModulesList({ params, searchParams }) {
                   <p className="text-sm text-slate-600 mt-1">
                     {mod.description}
                   </p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {mod.module_cases?.[0]?.count ?? 0} test case
+                    {(mod.module_cases?.[0]?.count ?? 0) === 1 ? "" : "s"}
+                  </p>
                 </Link>
-                <div className="flex gap-2 items-start">
-                  <CloneToProjectButton
+                <div className="flex shrink-0 items-start gap-2">
+                  <RowMenu
                     kind="module"
                     id={mod.id}
                     projects={otherProjects}
+                    archived={showingArchived}
+                    archiveAction={archiveModule}
+                    restoreAction={restoreModule}
+                    idField="moduleId"
                   />
-                  <form action={showingArchived ? restoreModule : archiveModule}>
-                    <input type="hidden" name="moduleId" value={mod.id} />
-                    <Button
-                      type="submit"
-                      variant={showingArchived ? "success" : "secondary"}
-                      size="sm"
-                    >
-                      {showingArchived ? "Restore" : "Archive"}
-                    </Button>
-                  </form>
                 </div>
               </Card>
             ))}

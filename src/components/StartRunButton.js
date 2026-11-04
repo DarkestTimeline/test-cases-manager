@@ -10,7 +10,12 @@ import { PlayIcon } from "./icons";
 
 // Sidebar action. Suites are loaded when the dialog opens, so the list is
 // always current and the sidebar needs no data from the page.
-export default function StartRunButton({ projectCode, collapsed = false }) {
+export default function StartRunButton({
+  projectCode,
+  collapsed = false,
+  suiteId,
+  variant = "sidebar",
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [suites, setSuites] = useState(null); // null while loading
   const [loadError, setLoadError] = useState(null);
@@ -30,17 +35,28 @@ export default function StartRunButton({ projectCode, collapsed = false }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={open}
-        title={collapsed ? "Start run" : undefined}
-        className={`flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover ${
-          collapsed ? "md:px-0" : ""
-        }`}
-      >
-        <PlayIcon size={14} />
-        <span className={collapsed ? "md:hidden" : ""}>Start run</span>
-      </button>
+      {variant === "inline" ? (
+        <button
+          type="button"
+          onClick={open}
+          className="inline-flex items-center gap-1.5 rounded bg-primary px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-primary-hover"
+        >
+          <PlayIcon size={12} />
+          Run
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={open}
+          title={collapsed ? "Start run" : undefined}
+          className={`flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover ${
+            collapsed ? "md:px-0" : ""
+          }`}
+        >
+          <PlayIcon size={14} />
+          <span className={collapsed ? "md:hidden" : ""}>Start run</span>
+        </button>
+      )}
 
       {isOpen && (
         <Modal label="Start a run" onClose={close}>
@@ -62,6 +78,7 @@ export default function StartRunButton({ projectCode, collapsed = false }) {
                 <select
                   name="suiteId"
                   required
+                  defaultValue={suiteId}
                   className="w-full border rounded p-2"
                 >
                   {suites.map((suite) => (

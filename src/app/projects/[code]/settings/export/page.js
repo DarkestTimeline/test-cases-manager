@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getProject } from "@/lib/project";
 import ExportTestCases from "./ExportTestCases";
 
+export const metadata = { title: "Export" };
+
 export default async function ExportPage({ params }) {
   const { code } = await params;
   const project = await getProject(code);

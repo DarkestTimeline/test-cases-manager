@@ -1,9 +1,12 @@
+import LocalTime from "@/components/LocalTime";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForms from "./ProfileForms";
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
 import { formatStatusLabel } from "@/lib/formatLabel";
 import { PAGE } from '@/lib/pageWidths'
+
+export const metadata = { title: "Profile" };
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -46,7 +49,7 @@ export default async function ProfilePage() {
             <div className="flex justify-between">
               <dt className="text-slate-500">Member Since</dt>
               <dd className="text-slate-700">
-                {new Date(profile.created_at).toLocaleDateString()}
+                <LocalTime value={profile.created_at} format="date" />
               </dd>
             </div>
             <div className="flex justify-between">

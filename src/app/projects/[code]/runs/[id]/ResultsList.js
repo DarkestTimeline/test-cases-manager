@@ -200,74 +200,85 @@ function ResultItem({ result, runId, isLocked }) {
         </p>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button
-          onClick={() => handleStatusClick("pass")}
-          disabled={isLocked}
-          variant="success"
-          size="sm"
-          className={
-            status === "pass" ? "ring-2 ring-offset-1 ring-success" : ""
-          }
-        >
-          Pass
-        </Button>
-        <Button
-          onClick={() => handleStatusClick("fail")}
-          disabled={isLocked}
-          variant="danger"
-          size="sm"
-          className={
-            status === "fail" ? "ring-2 ring-offset-1 ring-danger" : ""
-          }
-        >
-          Fail
-        </Button>
-        <Button
-          onClick={() => handleStatusClick("blocked")}
-          disabled={isLocked}
-          variant="warning"
-          size="sm"
-          className={
-            status === "blocked" ? "ring-2 ring-offset-1 ring-warning" : ""
-          }
-        >
-          Blocked
-        </Button>
-        <Button
-          onClick={() => handleStatusClick("skipped")}
-          disabled={isLocked}
-          variant="skip"
-          size="sm"
-          className={
-            status === "skipped" ? "ring-2 ring-offset-1 ring-skip" : ""
-          }
-        >
-          Skipped
-        </Button>
-      </div>
-
-      {(status === "fail" || status === "blocked" || status === "skipped") && (
-        <div className="mt-3">
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            onBlur={handleSaveNotes}
-            placeholder="Add a note..."
-            rows={2}
-            disabled={isLocked}
-            className="w-full border rounded p-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
-          />
+      {!isLocked && (
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button
-            onClick={handleSaveNotes}
+            onClick={() => handleStatusClick("pass")}
             disabled={isLocked}
-            variant="primary"
-            size="md"
-            className="mt-1"
+            variant="success"
+            size="sm"
+            className={
+              status === "pass" ? "ring-2 ring-offset-1 ring-success" : ""
+            }
           >
-            Save Note
+            Pass
+          </Button>
+          <Button
+            onClick={() => handleStatusClick("fail")}
+            disabled={isLocked}
+            variant="danger"
+            size="sm"
+            className={
+              status === "fail" ? "ring-2 ring-offset-1 ring-danger" : ""
+            }
+          >
+            Fail
+          </Button>
+          <Button
+            onClick={() => handleStatusClick("blocked")}
+            disabled={isLocked}
+            variant="warning"
+            size="sm"
+            className={
+              status === "blocked" ? "ring-2 ring-offset-1 ring-warning" : ""
+            }
+          >
+            Blocked
+          </Button>
+          <Button
+            onClick={() => handleStatusClick("skipped")}
+            disabled={isLocked}
+            variant="skip"
+            size="sm"
+            className={
+              status === "skipped" ? "ring-2 ring-offset-1 ring-skip" : ""
+            }
+          >
+            Skipped
           </Button>
         </div>
+      )}
+
+      {isLocked ? (
+        notes && (
+          <p className="mt-3 rounded bg-slate-50 p-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-800">Note: </span>
+            {notes}
+          </p>
+        )
+      ) : (
+        (status === "fail" || status === "blocked" || status === "skipped") && (
+          <div className="mt-3">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              onBlur={handleSaveNotes}
+              placeholder="Add a note..."
+              rows={2}
+              disabled={isLocked}
+              className="w-full border rounded p-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+            />
+            <Button
+              onClick={handleSaveNotes}
+              disabled={isLocked}
+              variant="primary"
+              size="md"
+              className="mt-1"
+            >
+              Save Note
+            </Button>
+          </div>
+        )
       )}
     </li>
   );

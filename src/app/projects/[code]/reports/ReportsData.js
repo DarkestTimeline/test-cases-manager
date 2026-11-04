@@ -1,3 +1,4 @@
+import LocalTime from "@/components/LocalTime";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ReportsCharts from "./ReportsCharts";
@@ -226,12 +227,11 @@ export default async function ReportsData({
         <StatCard
           label="Last Activity"
           value={
-            lastActivity
-              ? lastActivity.toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })
-              : "—"
+            lastActivity ? (
+              <LocalTime value={lastActivity.toISOString()} format="monthday" />
+            ) : (
+              "—"
+            )
           }
           sublabel={lastActivity ? describeAge(lastActivity) : "no runs yet"}
         />

@@ -7,9 +7,14 @@ import Card from "@/components/Card";
 import { buildSearchFilter } from "@/lib/searchFilter";
 import { PAGE } from '@/lib/pageWidths'
 import { getProject, getActiveProjects } from "@/lib/project";
-import CloneToProjectButton from "@/components/CloneToProjectButton";
+import RowMenu from "@/components/RowMenu";
+import StartRunButton from "@/components/StartRunButton";
+import LocalTime from "@/components/LocalTime";
+import { lastRunInfo } from "@/lib/lastRun";
 
 const PAGE_SIZE = 10;
+
+export const metadata = { title: "Suites" };
 
 export default async function SuitesList({ params, searchParams }) {
   const { code } = await params;
@@ -27,9 +32,12 @@ export default async function SuitesList({ params, searchParams }) {
   const supabase = await createClient();
   let query = supabase
     .from("suites")
-    .select("*", { count: "exact" })
+    .select("*, suite_cases(count), test_runs(started_at, status, outcome)", { count: "exact" })
     .eq("project_id", project.id)
+    .order("started_at", { referencedTable: "test_runs", ascending: false })
+    .limit(1, { referencedTable: "test_runs" })
     .order("created_at", { ascending: false })
+    .order("seq_number", { ascending: false })
     .range(from, to);
 
   query = showingArchived
@@ -128,23 +136,47 @@ export default async function SuitesList({ params, searchParams }) {
                   <p className="text-sm text-slate-600 mt-1">
                     {suite.description}
                   </p>
+                  <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <span>
+                      {suite.suite_cases?.[0]?.count ?? 0} test case
+                      {(suite.suite_cases?.[0]?.count ?? 0) === 1 ? "" : "s"}
+                    </span>
+                    {(() => {
+                      const last = lastRunInfo(suite.test_runs?.[0]);
+                      return (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span
+                            className={`h-2 w-2 shrink-0 rounded-full ${last.dot}`}
+                          />
+                          {last.text}
+                          {last.at && (
+                            <>
+                              {" "}
+                              <LocalTime value={last.at} format="date" />
+                            </>
+                          )}
+                        </span>
+                      );
+                    })()}
+                  </p>
                 </Link>
-                <div className="flex gap-2 items-start">
-                  <CloneToProjectButton
+                <div className="flex shrink-0 items-start gap-2">
+                  {!showingArchived && !project.archived_at && (
+                    <StartRunButton
+                      projectCode={project.code}
+                      suiteId={suite.id}
+                      variant="inline"
+                    />
+                  )}
+                  <RowMenu
                     kind="suite"
                     id={suite.id}
                     projects={otherProjects}
+                    archived={showingArchived}
+                    archiveAction={archiveSuite}
+                    restoreAction={restoreSuite}
+                    idField="suiteId"
                   />
-                  <form action={showingArchived ? restoreSuite : archiveSuite}>
-                    <input type="hidden" name="suiteId" value={suite.id} />
-                    <Button
-                      type="submit"
-                      variant={showingArchived ? "success" : "secondary"}
-                      size="sm"
-                    >
-                      {showingArchived ? "Restore" : "Archive"}
-                    </Button>
-                  </form>
                 </div>
               </Card>
             ))}

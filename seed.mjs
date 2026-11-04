@@ -275,6 +275,14 @@ const DEMO_SUITES = [
   { name: 'Admin Panel Full Pass', description: 'Full coverage of admin-only functionality', modules: ['Admin Dashboard'] },
 ];
 
+// Each completed run gets a "quality" profile, so most runs are healthy and
+// a few are rough, instead of nearly every run failing on one stray case.
+const RUN_PROFILES = [
+  [[['pass', 96], ['fail', 1], ['blocked', 1], ['skipped', 2]], 70], // healthy
+  [[['pass', 82], ['fail', 8], ['blocked', 6], ['skipped', 4]], 22], // mixed
+  [[['pass', 60], ['fail', 25], ['blocked', 10], ['skipped', 5]], 8], // rough
+];
+
 const PRIORITY_WEIGHTS = [['medium', 40], ['high', 30], ['low', 20], ['critical', 10]];
 const FALLBACK_TESTER_NAMES = ['Alex Rivera', 'Jordan Lee', 'Sam Patel', 'Casey Morgan'];
 
@@ -517,6 +525,7 @@ async function seedRunsAndResults(project, def, suites, suiteCaseMap, profiles) 
   insertedRuns.forEach((run, idx) => {
     const cases = runMeta[idx].cases;
     let anyFail = false;
+    const completedWeights = weightedPick(RUN_PROFILES);
 
     cases.forEach((tc, position) => {
       let status;
@@ -526,7 +535,7 @@ async function seedRunsAndResults(project, def, suites, suiteCaseMap, profiles) 
         status = weightedPick([['pending', 50], ['pass', 30], ['fail', 20]]);
       } else {
         // completed
-        status = weightedPick([['pass', 70], ['fail', 15], ['blocked', 10], ['skipped', 5]]);
+        status = weightedPick(completedWeights);
       }
       if (status === 'fail' || status === 'blocked') anyFail = true;
 

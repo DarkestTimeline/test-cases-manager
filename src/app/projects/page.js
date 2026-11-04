@@ -2,43 +2,23 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import Button from "@/components/Button";
 import { getCurrentRole } from "@/lib/currentRole";
-import { projectTileColor } from "@/lib/projectColor";
+import { projectTileColor, projectInitials } from "@/lib/projectColor";
+import LocalTime from "@/components/LocalTime";
+import { lastRunInfo } from "@/lib/lastRun";
 import {
   TestCasesIcon,
   ModulesIcon,
   SuitesIcon,
-  PlusIcon,
   ProjectsIcon,
 } from "@/components/icons";
 import { archiveProject, restoreProject } from "./actions";
+
+export const metadata = { title: "Projects" };
 
 export const dynamic = "force-dynamic";
 
 function countOf(embedded) {
   return embedded?.[0]?.count ?? 0;
-}
-
-function formatDate(value) {
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function lastRunInfo(run) {
-  if (!run) return { label: "No runs yet", dot: "bg-slate-300" };
-  const when = formatDate(run.started_at);
-  if (run.status === "in_progress") {
-    return { label: `Run in progress · started ${when}`, dot: "bg-blue-500" };
-  }
-  if (run.outcome === "pass") {
-    return { label: `Last run passed · ${when}`, dot: "bg-emerald-500" };
-  }
-  if (run.outcome === "fail") {
-    return { label: `Last run failed · ${when}`, dot: "bg-red-500" };
-  }
-  return { label: `Last run ${when}`, dot: "bg-slate-400" };
 }
 
 function Stat({ icon, count, label }) {
@@ -141,14 +121,18 @@ export default async function ProjectsPage({ searchParams }) {
               >
                 <div className="mb-4 flex items-start gap-3">
                   <span
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${projectTileColor(project.code)}`}
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg font-bold ${
+                      projectInitials(project.name, project.code).length > 2
+                        ? "text-xs"
+                        : "text-sm"
+                    } ${projectTileColor(project.code)}`}
                   >
-                    {project.code.slice(0, 2)}
+                    {projectInitials(project.name, project.code)}
                   </span>
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/projects/${project.code}`}
-                      className="block truncate font-semibold text-slate-900 after:absolute after:inset-0 after:content-['']"
+                      className="line-clamp-2 break-words font-semibold text-slate-900 after:absolute after:inset-0 after:content-['']"
                     >
                       {project.name}
                     </Link>
@@ -157,7 +141,7 @@ export default async function ProjectsPage({ searchParams }) {
                     </span>
                   </div>
                   {isAdmin && (
-                    <div className="relative z-10 flex gap-1 sm:opacity-0 sm:transition-opacity sm:focus-within:opacity-100 sm:group-hover:opacity-100">
+                    <div className="absolute right-3 top-3 z-10 flex gap-1 rounded-md bg-white p-1 shadow-sm ring-1 ring-slate-200 sm:opacity-0 sm:transition-opacity sm:focus-within:opacity-100 sm:group-hover:opacity-100">
                       <Button
                         href={`/projects/${project.code}/edit`}
                         variant="secondary"
@@ -213,24 +197,18 @@ export default async function ProjectsPage({ searchParams }) {
                     <span
                       className={`h-2 w-2 shrink-0 rounded-full ${lastRun.dot}`}
                     />
-                    {lastRun.label}
+                    {lastRun.text}
+                    {lastRun.at && (
+                      <>
+                        {" "}
+                        <LocalTime value={lastRun.at} format="date" />
+                      </>
+                    )}
                   </p>
                 </div>
               </li>
             );
           })}
-
-          {isAdmin && !showingArchived && (
-            <li>
-              <Link
-                href="/projects/new"
-                className="flex h-full min-h-48 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-5 text-slate-400 transition hover:border-primary hover:text-primary"
-              >
-                <PlusIcon size={24} />
-                <span className="text-sm font-medium">New project</span>
-              </Link>
-            </li>
-          )}
         </ul>
       )}
     </main>
