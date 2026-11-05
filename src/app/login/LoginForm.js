@@ -17,7 +17,7 @@ export default function LoginForm({ initialError }) {
 
   return (
     <>
-      <h1 className="mb-6 text-lg">Sign in</h1>
+      <h1 className="mb-6 text-lg short:mb-4">Sign in</h1>
 
       {state.error && (
         <p
@@ -28,7 +28,7 @@ export default function LoginForm({ initialError }) {
         </p>
       )}
 
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} className="space-y-4 short:space-y-3">
         <Field label="Email">
           <input
             key={`email-${state.error}`}
@@ -56,14 +56,14 @@ export default function LoginForm({ initialError }) {
         <Button
           type="submit"
           size="lg"
-          className="w-full"
+          className="w-full short:py-2"
           disabled={isPending}
         >
           {isPending ? "Signing In..." : "Sign In"}
         </Button>
       </form>
 
-      <div className="my-6 flex items-center gap-3">
+      <div className="my-6 flex items-center gap-3 short:my-4">
         <div className="flex-1 border-t" />
         <span className="text-xs text-slate-400">or</span>
         <div className="flex-1 border-t" />
@@ -74,7 +74,7 @@ export default function LoginForm({ initialError }) {
           type="submit"
           variant="secondary"
           size="lg"
-          className="w-full"
+          className="w-full short:py-2"
         >
           Try the Demo
         </Button>
@@ -83,7 +83,7 @@ export default function LoginForm({ initialError }) {
         </p>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-slate-500 short:mt-4">
         Need an account?{" "}
         <Link href="/signup" className="text-primary hover:underline">
           Sign up

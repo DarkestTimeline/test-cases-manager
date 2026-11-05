@@ -16,7 +16,7 @@ export default function SignupForm() {
   return (
     <>
       <h1 className="mb-1 text-lg">Create an account</h1>
-      <p className="mb-6 text-sm text-slate-500">
+      <p className="mb-6 text-sm text-slate-500 short:mb-3">
         You&apos;ll need an invite code to sign up.
       </p>
 
@@ -29,7 +29,7 @@ export default function SignupForm() {
         </p>
       )}
 
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} className="space-y-4 short:space-y-3">
         <RequiredNote allRequired />
         <Field label="Your Name">
           <input
@@ -77,14 +77,14 @@ export default function SignupForm() {
         <Button
           type="submit"
           size="lg"
-          className="w-full"
+          className="w-full short:py-2"
           disabled={isPending}
         >
           {isPending ? "Creating Account..." : "Create Account"}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-slate-500 short:mt-4">
         Already have an account?{" "}
         <Link href="/login" className="text-primary hover:underline">
           Sign in

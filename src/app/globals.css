@@ -59,6 +59,9 @@
    --------------------------------------------------------------------- */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Short windows (small laptops, phones): tighten vertical spacing. */
+@custom-variant short (@media (max-height: 760px));
+
 .dark {
   color-scheme: dark;
 
