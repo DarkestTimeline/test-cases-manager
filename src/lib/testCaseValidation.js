@@ -12,8 +12,6 @@ function clean(value) {
 export function validateRow(row) {
   const errors = [];
   if (!clean(row?.title)) errors.push("Missing title");
-  if (!clean(row?.steps_to_reproduce)) errors.push("Missing steps");
-  if (!clean(row?.expected_result)) errors.push("Missing expected result");
   return errors;
 }
 
@@ -38,10 +36,6 @@ export function readTestCaseForm(formData) {
 export function validateTestCase(values) {
   const errors = {};
   if (!values.title) errors.title = "Title is required.";
-  if (!values.steps_to_reproduce)
-    errors.steps_to_reproduce = "Steps to reproduce are required.";
-  if (!values.expected_result)
-    errors.expected_result = "Expected result is required.";
   if (!PRIORITIES.includes(values.priority))
     errors.priority = "Choose a valid priority.";
   return errors;

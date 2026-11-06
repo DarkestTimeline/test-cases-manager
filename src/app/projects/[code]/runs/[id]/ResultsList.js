@@ -189,16 +189,26 @@ function ResultItem({ result, runId, isLocked }) {
         </Badge>
       </div>
 
-      <div className="mt-3 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
-        <p>
-          <span className="font-medium text-slate-800">Steps: </span>
-          {result.steps_to_reproduce}
+      {result.steps_to_reproduce || result.expected_result ? (
+        <div className="mt-3 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+          {result.steps_to_reproduce && (
+            <p>
+              <span className="font-medium text-slate-800">Steps: </span>
+              {result.steps_to_reproduce}
+            </p>
+          )}
+          {result.expected_result && (
+            <p>
+              <span className="font-medium text-slate-800">Expected: </span>
+              {result.expected_result}
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm text-slate-400">
+          No steps or expected result recorded.
         </p>
-        <p>
-          <span className="font-medium text-slate-800">Expected: </span>
-          {result.expected_result}
-        </p>
-      </div>
+      )}
 
       {!isLocked && (
         <div className="mt-3 flex flex-wrap gap-2">

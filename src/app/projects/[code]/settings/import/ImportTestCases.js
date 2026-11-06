@@ -8,14 +8,16 @@ import { downloadFile } from "@/lib/downloadFile";
 import { importTestCases } from "@/app/projects/[code]/test-cases/actions";
 import { validateRow, MAX_IMPORT_ROWS } from "@/lib/testCaseValidation";
 
-const REQUIRED_COLUMNS = [
+const REQUIRED_COLUMNS = ["title"];
+const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
+const TEMPLATE_COLUMNS = [
   "title",
   "preconditions",
   "steps_to_reproduce",
   "expected_result",
+  "priority",
+  "modules",
 ];
-const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
-const TEMPLATE_COLUMNS = [...REQUIRED_COLUMNS, "priority", "modules"];
 
 export default function ImportTestCases({
   projectCode,
@@ -125,13 +127,15 @@ export default function ImportTestCases({
     <div>
       <h2 className="mb-4">Import Test Cases</h2>
       <p className="text-slate-600 mb-2">
-        Upload a CSV with columns:{" "}
-        <code className="bg-slate-100 px-1 rounded">title</code>,{" "}
+        Upload a CSV with a{" "}
+        <code className="bg-slate-100 px-1 rounded">title</code> column (the
+        only required one). Optional columns:{" "}
         <code className="bg-slate-100 px-1 rounded">preconditions</code>,{" "}
         <code className="bg-slate-100 px-1 rounded">steps_to_reproduce</code>,{" "}
-        <code className="bg-slate-100 px-1 rounded">expected_result</code>. An
-        optional <code className="bg-slate-100 px-1 rounded">modules</code>{" "}
-        column can list one or more existing module names, comma-separated.
+        <code className="bg-slate-100 px-1 rounded">expected_result</code>,{" "}
+        <code className="bg-slate-100 px-1 rounded">priority</code> and{" "}
+        <code className="bg-slate-100 px-1 rounded">modules</code>, which can
+        list one or more existing module names, comma-separated.
       </p>
 
       <div className="mb-4">

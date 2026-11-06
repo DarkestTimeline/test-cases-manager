@@ -365,8 +365,8 @@ export async function importTestCases(rows, projectCode) {
       project_id: project.id,
       title: String(row.title).trim(),
       preconditions: String(row.preconditions ?? "").trim() || null,
-      steps_to_reproduce: String(row.steps_to_reproduce).trim(),
-      expected_result: String(row.expected_result).trim(),
+      steps_to_reproduce: String(row.steps_to_reproduce ?? "").trim(),
+      expected_result: String(row.expected_result ?? "").trim(),
       priority: PRIORITIES.includes(priority) ? priority : DEFAULT_PRIORITY,
     };
   });

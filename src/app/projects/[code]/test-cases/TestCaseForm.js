@@ -54,24 +54,18 @@ export default function TestCaseForm({
           className={inputClass("preconditions")}
         />
       </Field>
-      <Field
-        label="Steps to Reproduce"
-        required
-        error={errors.steps_to_reproduce}
-      >
+      <Field label="Steps to Reproduce" error={errors.steps_to_reproduce}>
         <textarea
           name="steps_to_reproduce"
           defaultValue={values.steps_to_reproduce}
-          required
           rows={4}
           className={inputClass("steps_to_reproduce")}
         />
       </Field>
-      <Field label="Expected Result" required error={errors.expected_result}>
+      <Field label="Expected Result" error={errors.expected_result}>
         <textarea
           name="expected_result"
           defaultValue={values.expected_result}
-          required
           rows={2}
           className={inputClass("expected_result")}
         />

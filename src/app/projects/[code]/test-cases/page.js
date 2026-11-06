@@ -207,9 +207,11 @@ export default async function TestCasesList({ params, searchParams }) {
                   <Badge className={`${PRIORITY_STYLES[tc.priority]} ml-2`}>
                     {formatStatusLabel(tc.priority)}
                   </Badge>
-                  <p className="text-sm text-slate-600 mt-1">
-                    {tc.expected_result}
-                  </p>
+                  {tc.expected_result && (
+                    <p className="text-sm text-slate-600 mt-1">
+                      {tc.expected_result}
+                    </p>
+                  )}
                 </Link>
                 <div className="flex shrink-0 items-start gap-2">
                   <RowMenu
