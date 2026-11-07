@@ -1,0 +1,65 @@
+
+/* ---------------------------------------------------------------------
+   Rich text (RichTextEditor + RichTextView)
+   --------------------------------------------------------------------- */
+@layer components {
+  .rich-text-field {
+    @apply bg-white;
+  }
+
+  .rich-text {
+    overflow-wrap: anywhere;
+  }
+  .rich-text > * + * {
+    margin-top: 0.4rem;
+  }
+  .rich-text ul,
+  .rich-text ol {
+    padding-left: 1.25rem;
+  }
+  .rich-text ul {
+    list-style: disc;
+  }
+  .rich-text ol {
+    list-style: decimal;
+  }
+  .rich-text li > * + * {
+    margin-top: 0.2rem;
+  }
+  .rich-text strong {
+    font-weight: 600;
+  }
+  .rich-text a {
+    @apply text-primary underline;
+  }
+  .rich-text code {
+    @apply rounded border bg-slate-100 px-1 text-slate-800;
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.85em;
+  }
+  .rich-text pre {
+    @apply overflow-x-auto rounded border bg-slate-100 px-3 py-2;
+  }
+  .rich-text pre code {
+    @apply border-0 bg-transparent p-0;
+    font-size: 0.85em;
+  }
+
+  /* Tiptap / ProseMirror */
+  .ProseMirror {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .rich-text p.is-editor-empty:first-child::before {
+    @apply text-slate-400;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+}
+
+.dark .rich-text-field {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
