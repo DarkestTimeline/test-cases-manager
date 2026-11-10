@@ -8,6 +8,8 @@ import { parseIdParam } from "@/lib/params";
 import { DEFAULT_PRIORITY } from "@/lib/testCaseValidation";
 import { getProject, getActiveProjects } from "@/lib/project";
 import CloneToProjectButton from "@/components/CloneToProjectButton";
+import { blockIdsIn, cleanSteps } from "@/lib/steps";
+import { loadBlocksForForm } from "@/lib/stepBlocks";
 
 const NOTICES = {
   "modules-failed":
@@ -48,8 +50,12 @@ export default async function EditTestCase({ params, searchParams }) {
       ? NOTICES[notice]
       : null;
 
+  const steps = cleanSteps(testCase.steps);
+  // Every active block (for the picker) plus any archived block this case uses.
+  const blocks = await loadBlocksForForm(supabase, project.id, blockIdsIn(steps));
+
   return (
-    <main className={PAGE.standard}>
+    <main className={PAGE.wide}>
       <BackLink
         href={`/projects/${project.code}/test-cases`}
         label="Test Cases"
@@ -75,11 +81,11 @@ export default async function EditTestCase({ params, searchParams }) {
         projectCode={project.code}
         testCaseId={testCase.id}
         modules={modules || []}
+        blocks={blocks}
         initialValues={{
           title: testCase.title ?? "",
           preconditions: testCase.preconditions ?? "",
-          steps_to_reproduce: testCase.steps_to_reproduce ?? "",
-          expected_result: testCase.expected_result ?? "",
+          steps,
           priority: testCase.priority ?? DEFAULT_PRIORITY,
           moduleIds: (links || []).map((l) => l.module_id),
         }}

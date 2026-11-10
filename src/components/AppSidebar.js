@@ -11,6 +11,7 @@ import {
   ProjectsIcon,
   OverviewIcon,
   TestCasesIcon,
+  StepBlocksIcon,
   ModulesIcon,
   SuitesIcon,
   RunsIcon,
@@ -29,6 +30,7 @@ import {
 const PROJECT_ITEMS = [
   { slug: "", label: "Overview", Icon: OverviewIcon },
   { slug: "test-cases", label: "Test Cases", Icon: TestCasesIcon },
+  { slug: "step-blocks", label: "Step Blocks", Icon: StepBlocksIcon },
   { slug: "modules", label: "Modules", Icon: ModulesIcon },
   { slug: "suites", label: "Suites", Icon: SuitesIcon },
   { slug: "runs", label: "Runs", Icon: RunsIcon },

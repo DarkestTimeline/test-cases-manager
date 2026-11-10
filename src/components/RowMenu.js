@@ -69,14 +69,15 @@ export default function RowMenu({
               Clone to project…
             </button>
           )}
-          <form action={archived ? restoreAction : archiveAction}>
+          {/* The menu closes on submit, not on click: closing on click removes
+              this form from the page before the browser can submit it, and
+              nothing is sent. */}
+          <form
+            action={archived ? restoreAction : archiveAction}
+            onSubmit={() => setIsOpen(false)}
+          >
             <input type="hidden" name={idField} value={id} />
-            <button
-              type="submit"
-              role="menuitem"
-              className={ITEM}
-              onClick={() => setIsOpen(false)}
-            >
+            <button type="submit" role="menuitem" className={ITEM}>
               {archived ? "Restore" : "Archive"}
             </button>
           </form>

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formatId } from "@/lib/displayId";
 import { findProjectByCode } from "@/lib/projectAction";
+import { blockIdsIn, cleanSteps, expandSteps, normalizeSteps } from "@/lib/steps";
+import { fetchBlocksById } from "@/lib/stepBlocks";
 
 const LIST_PATH = "/projects/[code]/runs";
 const RUN_PATH = "/projects/[code]/runs/[id]";
@@ -74,12 +76,25 @@ export async function startRun(formData) {
 
   if (linkedError) throw new Error(linkedError.message);
 
+  // Step Block references are expanded into plain steps right now, so the run
+  // keeps the steps as they are at this moment, whatever happens to the blocks
+  // (or the test cases) later.
+  const caseSteps = linkedCases.map((lc) =>
+    normalizeSteps(cleanSteps(lc.test_cases.steps)),
+  );
+  const blockIds = [...new Set(caseSteps.flatMap((steps) => blockIdsIn(steps)))];
+  const { byId: blocksById, error: blocksError } = await fetchBlocksById(
+    supabase,
+    suite.project_id,
+    blockIds,
+  );
+  if (blocksError) throw new Error(blocksError.message);
+
   const resultsToInsert = linkedCases.map((lc, index) => ({
     test_run_id: run.id,
     test_case_id: lc.test_cases.id,
     title: lc.test_cases.title,
-    steps_to_reproduce: lc.test_cases.steps_to_reproduce,
-    expected_result: lc.test_cases.expected_result,
+    steps: expandSteps(caseSteps[index], blocksById, { withMeta: true }),
     test_case_code: formatId(suite.projects.code, lc.test_cases.seq_number),
     position: index,
   }));

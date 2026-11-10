@@ -5,6 +5,7 @@ import { updateResult } from "../actions";
 import { STATUS_STYLES, RUN_STATUS_STYLES } from "@/lib/badgeStyles";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
+import StepsView from "@/components/StepsView";
 import { formatStatusLabel } from "@/lib/formatLabel";
 
 function summarize(results) {
@@ -189,7 +190,12 @@ function ResultItem({ result, runId, isLocked }) {
         </Badge>
       </div>
 
-      {result.steps_to_reproduce || result.expected_result ? (
+      {Array.isArray(result.steps) && result.steps.length > 0 ? (
+        <div className="mt-3">
+          <StepsView steps={result.steps} />
+        </div>
+      ) : result.steps_to_reproduce || result.expected_result ? (
+        // Results from runs started before steps were structured.
         <div className="mt-3 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
           {result.steps_to_reproduce && (
             <p>
@@ -206,7 +212,7 @@ function ResultItem({ result, runId, isLocked }) {
         </div>
       ) : (
         <p className="mt-3 text-sm text-slate-400">
-          No steps or expected result recorded.
+          No steps recorded.
         </p>
       )}
 

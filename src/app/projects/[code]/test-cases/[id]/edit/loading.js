@@ -4,7 +4,8 @@ export default function Loading() {
   return (
     <FormPageSkeleton
       showModules
-      fieldHeights={["h-10", "h-14", "h-24", "h-14", "h-10"]}
+      width="wide"
+      fieldHeights={["h-10", "h-14", "h-48", "h-10"]}
     />
   );
 }

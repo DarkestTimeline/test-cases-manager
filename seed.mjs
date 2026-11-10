@@ -31,6 +31,7 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import readline from 'node:readline/promises';
+import { randomUUID } from 'node:crypto';
 
 dotenv.config({ path: '.env.local' });
 
@@ -69,6 +70,58 @@ function daysAgo(n) {
 // Same format the app shows: project code + number padded to two digits.
 const caseCode = (projectCode, seqNumber) =>
   `${projectCode}-${String(seqNumber).padStart(2, '0')}`;
+
+// Rich text is stored as Tiptap / ProseMirror JSON (see src/lib/richText.js).
+const richText = (text) => ({
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+});
+
+// A test case's steps: [{ id, action, data, expected }]. The templates below
+// give one action and one expected result, so each seeded case has one step.
+const seedSteps = (action, expected) => [
+  { id: randomUUID(), action: richText(action), data: null, expected: richText(expected) },
+];
+
+// Rich text with formatting. A part is a plain string, { code: 'text' } for
+// inline code, or { bold: 'text' }.
+const part = (p) =>
+  typeof p === 'string'
+    ? { type: 'text', text: p }
+    : { type: 'text', text: p.code ?? p.bold, marks: [{ type: p.code != null ? 'code' : 'bold' }] };
+const para = (...parts) => ({ type: 'paragraph', content: parts.map(part) });
+const bullets = (...items) => ({
+  type: 'bulletList',
+  content: items.map((parts) => ({ type: 'listItem', content: [para(...parts)] })),
+});
+const doc = (...blocks) => ({ type: 'doc', content: blocks });
+
+// Plain text of a doc, for the steps_text search column.
+const docText = (node) =>
+  node.text ?? (node.content ?? []).map(docText).join(node.type === 'doc' ? '\n' : '');
+
+// Step Blocks: reusable sets of steps. Every project gets the same two.
+const STEP_BLOCK_TEMPLATES = [
+  {
+    title: 'Sign in as a standard user',
+    steps: [
+      { action: doc(para('Open the sign-in page')), data: doc(para({ code: '/login' })), expected: doc(para('The sign-in form is shown')) },
+      {
+        action: doc(para('Enter the standard test account credentials')),
+        data: doc(bullets(['Email: ', { code: 'tester@example.com' }], ['Password: from the team password vault'])),
+        expected: doc(para('Both fields accept the input')),
+      },
+      { action: doc(para('Click ', { bold: 'Sign in' })), data: null, expected: doc(para('The account page opens and the user\'s name is shown in the header')) },
+    ],
+  },
+  {
+    title: 'Reset the test data',
+    steps: [
+      { action: doc(para('Run ', { code: 'npm run db:reset' }, ' from the project root')), data: null, expected: doc(para('The command finishes without errors')) },
+      { action: doc(para('Confirm the sample data is loaded')), data: doc(bullets(['12 sample orders'], ['3 test customers'])), expected: doc(para('The orders page lists all 12 sample orders')) },
+    ],
+  },
+];
 
 // ---------- content ----------
 
@@ -355,6 +408,7 @@ async function wipeAll() {
     'suites',
     'test_cases',
     'modules',
+    'step_blocks',
     'projects',
   ];
   for (const table of tablesInOrder) {
@@ -392,16 +446,20 @@ async function seedModules(project, def) {
   return data;
 }
 
-async function seedTestCases(project, def) {
+async function seedTestCases(project, def, blocks) {
   const rows = [];
+  const signIn = blocks.find((block) => block.title === 'Sign in as a standard user');
   for (const mod of def.modules) {
     for (const [title, preconditions, step, expected] of def.templates[mod.name]) {
+      // Every third case begins by using the shared sign-in block.
+      const usesBlock = signIn && rows.length % 3 === 0;
       rows.push({
         project_id: project.id,
         title,
         preconditions,
-        steps_to_reproduce: `1. ${step}`,
-        expected_result: expected,
+        steps: usesBlock ? [blockRef(signIn), ...seedSteps(step, expected)] : seedSteps(step, expected),
+        // what the list search looks at (the block's title and text count too)
+        steps_text: usesBlock ? `${signIn.title}\n${signIn.steps_text}\n${step}\n${expected}` : `${step}\n${expected}`,
         priority: weightedPick(PRIORITY_WEIGHTS),
         archived_at: null,
         _module_name: mod.name, // local only, stripped before insert
@@ -484,7 +542,7 @@ async function seedSuiteCases(project, def, suites, testCases) {
   return suiteCaseMap;
 }
 
-async function seedRunsAndResults(project, def, suites, suiteCaseMap, profiles) {
+async function seedRunsAndResults(project, def, suites, suiteCaseMap, profiles, blocksById) {
   const runRows = [];
   const runMeta = []; // parallel array: { cases }
 
@@ -543,8 +601,7 @@ async function seedRunsAndResults(project, def, suites, suiteCaseMap, profiles) 
         test_run_id: run.id,
         test_case_id: tc.id,
         title: tc.title,
-        steps_to_reproduce: tc.steps_to_reproduce,
-        expected_result: tc.expected_result,
+        steps: expandForRun(tc.steps, blocksById), // snapshot of the case's steps when the run started
         status,
         notes: status === 'fail' ? 'Reproduced consistently — see linked issue.' : null,
         test_case_code: tc._test_case_code,
@@ -570,22 +627,55 @@ async function seedRunsAndResults(project, def, suites, suiteCaseMap, profiles) 
   console.log(`Updated outcome on ${runOutcomeUpdates.length} runs`);
 }
 
+async function seedStepBlocks(project) {
+  const rows = STEP_BLOCK_TEMPLATES.map((template) => {
+    const steps = template.steps.map((step) => ({ id: randomUUID(), ...step }));
+    const text = steps
+      .flatMap((step) => [step.action, step.data, step.expected])
+      .filter(Boolean)
+      .map(docText)
+      .join('\n');
+    return { project_id: project.id, title: template.title, steps, steps_text: text };
+  });
+  const { data, error } = await supabase.from('step_blocks').insert(rows).select();
+  if (error) throw new Error(`step_blocks insert failed (${project.code}): ${error.message}`);
+  console.log(`Created ${rows.length} step blocks`);
+  return data;
+}
+
+// A test case holds a reference to a block: { id, type: 'block', block_id }.
+const blockRef = (block) => ({ id: randomUUID(), type: 'block', block_id: block.id });
+
+// What a run stores: references replaced by the block's own steps, each marked
+// with the block it came from (the app does the same when a run starts).
+function expandForRun(steps, blocksById) {
+  return steps.flatMap((step) => {
+    if (step.type !== 'block') return [step];
+    const block = blocksById[step.block_id];
+    if (!block) return [];
+    const from_block = { id: block.id, seq_number: block.seq_number, title: block.title };
+    return block.steps.map((inner) => ({ ...inner, id: randomUUID(), from_block }));
+  });
+}
+
 async function seedProject(def, profiles) {
   console.log(`\n=== ${def.code} — ${def.name}${def.archived ? ' (archived)' : ''} ===`);
   const project = await insertProject(def);
   const modules = await seedModules(project, def);
-  const testCases = await seedTestCases(project, def);
+  const blocks = await seedStepBlocks(project);
+  const blocksById = Object.fromEntries(blocks.map((block) => [block.id, block]));
+  const testCases = await seedTestCases(project, def, blocks);
   await seedModuleCases(project, modules, testCases);
   const suites = await seedSuites(project, def);
   const suiteCaseMap = await seedSuiteCases(project, def, suites, testCases);
-  await seedRunsAndResults(project, def, suites, suiteCaseMap, profiles);
+  await seedRunsAndResults(project, def, suites, suiteCaseMap, profiles, blocksById);
 }
 
 // ---------- safety check ----------
 
 async function confirmDestructive() {
   console.log('\nThis will permanently WIPE and reseed the following tables:');
-  console.log('  run_results, test_runs, suite_cases, module_cases, suites, test_cases, modules, projects');
+  console.log('  run_results, test_runs, suite_cases, module_cases, suites, test_cases, modules, step_blocks, projects');
   console.log('\nEvery project is deleted first, including any you created in the app.');
   console.log(`It then creates: ${PROJECT_DEFS.map((d) => d.code).join(', ')}`);
   console.log(`\nTarget Supabase project: ${SUPABASE_URL}`);
