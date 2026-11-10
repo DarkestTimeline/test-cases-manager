@@ -17,11 +17,23 @@ import {
   validateRow,
   validateTestCase,
 } from "@/lib/testCaseValidation";
+import {
+  blockIdsIn,
+  cleanSteps,
+  csvRowToSteps,
+  expandSteps,
+  normalizeSteps,
+  stepsToReadableText,
+  stepsToText,
+} from "@/lib/steps";
+import { fetchBlocksById, resolveBlocks } from "@/lib/stepBlocks";
 
 const LIST_PATH = "/projects/[code]/test-cases";
 const EXPORT_PAGE_SIZE = 1000;
 const EXPORT_MAX_PAGES = 200;
 const FIX_FIELDS_MESSAGE = "Fix the highlighted fields and try again.";
+const BLOCK_GONE_MESSAGE =
+  "A step block used in this test case no longer exists. Remove it and try again.";
 
 function formFailure(prevState, values, { error, fieldErrors = {} }) {
   return { error, fieldErrors, values, attempt: (prevState?.attempt ?? 0) + 1 };
@@ -72,14 +84,27 @@ export async function createTestCase(prevState, formData) {
     });
   }
 
+  const steps = normalizeSteps(values.steps);
+  const blocks = await resolveBlocks(supabase, project.id, steps);
+  if (blocks.error || blocks.missingIds.length > 0) {
+    return formFailure(prevState, values, {
+      error: FIX_FIELDS_MESSAGE,
+      fieldErrors: {
+        steps: blocks.error
+          ? `Could not check the step blocks: ${blocks.error.message}`
+          : BLOCK_GONE_MESSAGE,
+      },
+    });
+  }
+
   const { data: testCase, error } = await supabase
     .from("test_cases")
     .insert({
       project_id: project.id,
       title: values.title,
       preconditions: values.preconditions || null,
-      steps_to_reproduce: values.steps_to_reproduce,
-      expected_result: values.expected_result,
+      steps,
+      steps_text: stepsToText(steps, blocks.blocksById),
       priority: values.priority,
     })
     .select("id")
@@ -136,13 +161,26 @@ export async function updateTestCase(prevState, formData) {
     });
   }
 
+  const steps = normalizeSteps(values.steps);
+  const blocks = await resolveBlocks(supabase, project.id, steps);
+  if (blocks.error || blocks.missingIds.length > 0) {
+    return formFailure(prevState, values, {
+      error: FIX_FIELDS_MESSAGE,
+      fieldErrors: {
+        steps: blocks.error
+          ? `Could not check the step blocks: ${blocks.error.message}`
+          : BLOCK_GONE_MESSAGE,
+      },
+    });
+  }
+
   const { data: updated, error } = await supabase
     .from("test_cases")
     .update({
       title: values.title,
       preconditions: values.preconditions || null,
-      steps_to_reproduce: values.steps_to_reproduce,
-      expected_result: values.expected_result,
+      steps,
+      steps_text: stepsToText(steps, blocks.blocksById),
       priority: values.priority,
     })
     .eq("id", testCaseId)
@@ -254,8 +292,8 @@ export async function cloneTestCase(formData) {
       project_id: source.project_id,
       title: `${source.title} (Copy)`,
       preconditions: source.preconditions,
-      steps_to_reproduce: source.steps_to_reproduce,
-      expected_result: source.expected_result,
+      steps: source.steps ?? [],
+      steps_text: source.steps_text ?? "",
       priority: source.priority,
     })
     .select("id")
@@ -361,12 +399,13 @@ export async function importTestCases(rows, projectCode) {
     const priority = String(row.priority ?? "")
       .trim()
       .toLowerCase();
+    const steps = csvRowToSteps(row);
     return {
       project_id: project.id,
       title: String(row.title).trim(),
       preconditions: String(row.preconditions ?? "").trim() || null,
-      steps_to_reproduce: String(row.steps_to_reproduce ?? "").trim(),
-      expected_result: String(row.expected_result ?? "").trim(),
+      steps,
+      steps_text: stepsToText(steps),
       priority: PRIORITIES.includes(priority) ? priority : DEFAULT_PRIORITY,
     };
   });
@@ -471,14 +510,33 @@ export async function exportTestCases(scope, projectCode) {
     };
   }
 
+  // Step Block references are written out as plain steps, so the file stands
+  // on its own and can be imported into any project.
+  const blockIds = [
+    ...new Set(rows.flatMap((tc) => blockIdsIn(cleanSteps(tc.steps)))),
+  ];
+  const { byId: blocksById, error: blocksError } = await fetchBlocksById(
+    supabase,
+    project.id,
+    blockIds,
+  );
+  if (blocksError) return { error: blocksError.message };
+
   return {
-    rows: rows.map((tc) => ({
-      title: tc.title,
-      preconditions: tc.preconditions,
-      steps_to_reproduce: tc.steps_to_reproduce,
-      expected_result: tc.expected_result,
-      priority: tc.priority,
-      modules: (tc.module_names || []).join(", "),
-    })),
+    rows: rows.map((tc) => {
+      const steps = expandSteps(
+        normalizeSteps(cleanSteps(tc.steps)),
+        blocksById,
+      );
+      return {
+        title: tc.title,
+        preconditions: tc.preconditions,
+        // Readable plain text, plus the full-fidelity version for re-importing.
+        steps: stepsToReadableText(steps),
+        steps_json: steps.length > 0 ? JSON.stringify(steps) : "",
+        priority: tc.priority,
+        modules: (tc.module_names || []).join(", "),
+      };
+    }),
   };
 }

@@ -1,4 +1,5 @@
 import { parseIdParam } from "./params";
+import { readStepsField, validateSteps } from "./steps";
 
 export const PRIORITIES = ["low", "medium", "high", "critical"];
 export const DEFAULT_PRIORITY = "medium";
@@ -22,11 +23,13 @@ export function readTestCaseForm(formData) {
     .map((id) => parseIdParam(clean(id)))
     .filter(Boolean);
 
+  const { steps, error: stepsError } = readStepsField(formData, "steps");
+
   return {
     title: clean(formData.get("title")),
     preconditions: clean(formData.get("preconditions")),
-    steps_to_reproduce: clean(formData.get("steps_to_reproduce")),
-    expected_result: clean(formData.get("expected_result")),
+    steps,
+    stepsError,
     priority: clean(formData.get("priority")).toLowerCase(),
     moduleIds: [...new Set(moduleIds)],
   };
@@ -38,5 +41,16 @@ export function validateTestCase(values) {
   if (!values.title) errors.title = "Title is required.";
   if (!PRIORITIES.includes(values.priority))
     errors.priority = "Choose a valid priority.";
+
+  if (values.stepsError) {
+    errors.steps = values.stepsError;
+  } else {
+    // { rowIndex: message }, shown under the matching step row.
+    const stepRows = validateSteps(values.steps);
+    if (Object.keys(stepRows).length > 0) {
+      errors.steps = "Fix the highlighted steps.";
+      errors.stepRows = stepRows;
+    }
+  }
   return errors;
 }

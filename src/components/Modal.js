@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const SIZES = { sm: "max-w-sm", md: "max-w-md" };
+const SIZES = { sm: "max-w-sm", md: "max-w-md", lg: "max-w-2xl" };
 
 export default function Modal({ onClose, label, size = "md", children }) {
   const dialogRef = useRef(null);

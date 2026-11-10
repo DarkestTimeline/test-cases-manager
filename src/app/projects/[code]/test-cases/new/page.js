@@ -4,6 +4,7 @@ import TestCaseForm from "../TestCaseForm";
 import { PAGE } from "@/lib/pageWidths";
 import { DEFAULT_PRIORITY } from "@/lib/testCaseValidation";
 import { getProject } from "@/lib/project";
+import { loadBlocksForForm } from "@/lib/stepBlocks";
 
 export default async function NewTestCase({ params }) {
   const { code } = await params;
@@ -15,19 +16,20 @@ export default async function NewTestCase({ params }) {
     .eq("project_id", project.id)
     .is("archived_at", null)
     .order("name");
+  const blocks = await loadBlocksForForm(supabase, project.id);
 
   return (
-    <main className={PAGE.standard}>
+    <main className={PAGE.wide}>
       <h1 className="mb-6">New Test Case</h1>
       <TestCaseForm
         action={createTestCase}
         projectCode={project.code}
         modules={modules || []}
+        blocks={blocks}
         initialValues={{
           title: "",
           preconditions: "",
-          steps_to_reproduce: "",
-          expected_result: "",
+          steps: [],
           priority: DEFAULT_PRIORITY,
           moduleIds: [],
         }}

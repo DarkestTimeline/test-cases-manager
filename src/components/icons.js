@@ -44,6 +44,16 @@ export const TestCasesIcon = (p) => (
   </Svg>
 );
 
+export const StepBlocksIcon = (p) => (
+  <Svg {...p}>
+    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+    <path d="M14 17.5h7" />
+    <path d="M17.5 14v7" />
+  </Svg>
+);
+
 export const ModulesIcon = (p) => (
   <Svg {...p}>
     <path d="m12 3 9 5-9 5-9-5 9-5Z" />

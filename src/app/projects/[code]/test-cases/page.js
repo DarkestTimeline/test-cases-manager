@@ -12,6 +12,7 @@ import { buildSearchFilter } from "@/lib/searchFilter";
 import { PAGE } from '@/lib/pageWidths'
 import { getProject, getActiveProjects } from "@/lib/project";
 import RowMenu from "@/components/RowMenu";
+import { describeSteps } from "@/lib/steps";
 
 const PAGE_SIZE = 10;
 
@@ -47,7 +48,7 @@ export default async function TestCasesList({ params, searchParams }) {
     query = query.or(
       buildSearchFilter(search, {
         prefix: project.code,
-        columns: ["title", "steps_to_reproduce", "expected_result"],
+        columns: ["title", "steps_text"],
       }),
     );
   }
@@ -127,7 +128,7 @@ export default async function TestCasesList({ params, searchParams }) {
             type="text"
             name="search"
             defaultValue={search || ""}
-            placeholder="Search title, steps, expected result or code..."
+            placeholder="Search title, steps or code..."
             className="border rounded p-2 text-sm flex-1 max-w-xs"
           />
           <Button type="submit">Search</Button>
@@ -207,9 +208,9 @@ export default async function TestCasesList({ params, searchParams }) {
                   <Badge className={`${PRIORITY_STYLES[tc.priority]} ml-2`}>
                     {formatStatusLabel(tc.priority)}
                   </Badge>
-                  {tc.expected_result && (
-                    <p className="text-sm text-slate-600 mt-1">
-                      {tc.expected_result}
+                  {describeSteps(tc.steps) && (
+                    <p className="text-sm text-slate-500 mt-1">
+                      {describeSteps(tc.steps)}
                     </p>
                   )}
                 </Link>

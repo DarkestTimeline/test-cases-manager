@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Papa from "papaparse";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import { downloadFile } from "@/lib/downloadFile";
 import { importTestCases } from "@/app/projects/[code]/test-cases/actions";
 import { validateRow, MAX_IMPORT_ROWS } from "@/lib/testCaseValidation";
+import { csvRowToSteps } from "@/lib/steps";
+import { richTextToPlainText } from "@/lib/richText";
 
 const REQUIRED_COLUMNS = ["title"];
 const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
 const TEMPLATE_COLUMNS = [
   "title",
   "preconditions",
-  "steps_to_reproduce",
-  "expected_result",
+  "steps",
   "priority",
   "modules",
 ];
@@ -102,6 +103,7 @@ export default function ImportTestCases({
     }
   }
 
+  const rowSteps = useMemo(() => rows.map((row) => csvRowToSteps(row)), [rows]);
   const rowErrors = rows.map((row) => validateRow(row));
   const errorCount = rowErrors.filter((errs) => errs.length > 0).length;
   const hasErrors = errorCount > 0;
@@ -131,11 +133,22 @@ export default function ImportTestCases({
         <code className="bg-slate-100 px-1 rounded">title</code> column (the
         only required one). Optional columns:{" "}
         <code className="bg-slate-100 px-1 rounded">preconditions</code>,{" "}
-        <code className="bg-slate-100 px-1 rounded">steps_to_reproduce</code>,{" "}
-        <code className="bg-slate-100 px-1 rounded">expected_result</code>,{" "}
+        <code className="bg-slate-100 px-1 rounded">steps</code> (one step per
+        line),{" "}
         <code className="bg-slate-100 px-1 rounded">priority</code> and{" "}
         <code className="bg-slate-100 px-1 rounded">modules</code>, which can
         list one or more existing module names, comma-separated.
+      </p>
+      <p className="text-slate-600 mb-2 text-sm">
+        A file exported from this app also has a{" "}
+        <code className="bg-slate-100 px-1 rounded">steps_json</code> column,
+        which keeps every step&apos;s data, expected result and formatting.
+        Older files with{" "}
+        <code className="bg-slate-100 px-1 rounded">steps_to_reproduce</code>{" "}
+        and{" "}
+        <code className="bg-slate-100 px-1 rounded">expected_result</code>{" "}
+        columns still import: each line becomes a step, and the expected result
+        goes on the last one.
       </p>
 
       <div className="mb-4">
@@ -210,7 +223,6 @@ export default function ImportTestCases({
                   <th className="text-left p-2">Title</th>
                   <th className="text-left p-2">Preconditions</th>
                   <th className="text-left p-2">Steps</th>
-                  <th className="text-left p-2">Expected Result</th>
                   <th className="text-left p-2">Priority</th>
                   <th className="text-left p-2">Modules</th>
                 </tr>
@@ -250,12 +262,21 @@ export default function ImportTestCases({
                       )}
                     </td>
                     <td className="p-2 align-top">
-                      {row.steps_to_reproduce || (
-                        <span className="text-slate-400 italic">—</span>
-                      )}
-                    </td>
-                    <td className="p-2 align-top">
-                      {row.expected_result || (
+                      {rowSteps[i].length > 0 ? (
+                        <ol className="list-decimal space-y-0.5 pl-4">
+                          {rowSteps[i].map((step) => (
+                            <li key={step.id}>
+                              {richTextToPlainText(step.action)}
+                              {step.expected && (
+                                <span className="text-slate-500">
+                                  {" "}
+                                  → {richTextToPlainText(step.expected)}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
                         <span className="text-slate-400 italic">—</span>
                       )}
                     </td>

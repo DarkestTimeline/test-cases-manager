@@ -59,9 +59,10 @@ export function FormPageSkeleton({
   fieldHeights = [],
   showBackLink = true,
   showModules = false,
+  width = "standard",
 }) {
   return (
-    <SkeletonPage width="standard">
+    <SkeletonPage width={width}>
       {showBackLink && <Bone className="h-4 w-28 mb-4" />}
       <Bone className="h-8 w-56 mb-6" />
       <div className="space-y-4">
