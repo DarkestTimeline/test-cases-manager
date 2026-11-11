@@ -6,6 +6,9 @@ import { STATUS_STYLES, RUN_STATUS_STYLES } from "@/lib/badgeStyles";
 import Button from "@/components/Button";
 import Badge from "@/components/Badge";
 import StepsView from "@/components/StepsView";
+import RichTextEditor from "@/components/RichTextEditor";
+import RichTextView from "@/components/RichTextView";
+import { isRichTextEmpty } from "@/lib/richText";
 import { formatStatusLabel } from "@/lib/formatLabel";
 
 function summarize(results) {
@@ -158,7 +161,9 @@ function ResultItem({ result, runId, isLocked }) {
 
     function handleKeyDown(e) {
       const tag = e.target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      // Typing in a field (the rich text note editor is contenteditable) must
+      // not count as a Pass / Fail shortcut.
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable) return;
 
       const newStatus = SHORTCUT_MAP[e.key.toLowerCase()];
       if (newStatus) {
@@ -193,22 +198,6 @@ function ResultItem({ result, runId, isLocked }) {
       {Array.isArray(result.steps) && result.steps.length > 0 ? (
         <div className="mt-3">
           <StepsView steps={result.steps} />
-        </div>
-      ) : result.steps_to_reproduce || result.expected_result ? (
-        // Results from runs started before steps were structured.
-        <div className="mt-3 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
-          {result.steps_to_reproduce && (
-            <p>
-              <span className="font-medium text-slate-800">Steps: </span>
-              {result.steps_to_reproduce}
-            </p>
-          )}
-          {result.expected_result && (
-            <p>
-              <span className="font-medium text-slate-800">Expected: </span>
-              {result.expected_result}
-            </p>
-          )}
         </div>
       ) : (
         <p className="mt-3 text-sm text-slate-400">
@@ -266,24 +255,30 @@ function ResultItem({ result, runId, isLocked }) {
       )}
 
       {isLocked ? (
-        notes && (
-          <p className="mt-3 rounded bg-slate-50 p-2 text-sm text-slate-600">
-            <span className="font-medium text-slate-800">Note: </span>
-            {notes}
-          </p>
+        !isRichTextEmpty(notes) && (
+          <div className="mt-3 rounded bg-slate-50 p-2 text-sm text-slate-600">
+            <p className="font-medium text-slate-800">Note</p>
+            <RichTextView value={notes} />
+          </div>
         )
       ) : (
         (status === "fail" || status === "blocked" || status === "skipped") && (
           <div className="mt-3">
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              onBlur={handleSaveNotes}
-              placeholder="Add a note..."
-              rows={2}
-              disabled={isLocked}
-              className="w-full border rounded p-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
-            />
+            {/* Saves when focus leaves the note (not when it only moves to
+                the formatting toolbar inside it). */}
+            <div
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget)) handleSaveNotes();
+              }}
+            >
+              <RichTextEditor
+                ariaLabel="Note"
+                placeholder="Add a note..."
+                rows={2}
+                defaultValue={notes}
+                onChange={(doc) => setNotes(doc ? JSON.stringify(doc) : "")}
+              />
+            </div>
             <Button
               onClick={handleSaveNotes}
               disabled={isLocked}

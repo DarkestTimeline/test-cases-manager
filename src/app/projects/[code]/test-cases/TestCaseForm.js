@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Field, { RequiredNote } from "@/components/Field";
 import FormSubmitButton from "@/components/FormSubmitButton";
+import RichTextEditor from "@/components/RichTextEditor";
 import StepsEditor from "@/components/StepsEditor";
 import { PRIORITIES } from "@/lib/testCaseValidation";
 import { formatStatusLabel } from "@/lib/formatLabel";
@@ -49,14 +50,19 @@ export default function TestCaseForm({
             className={inputClass("title")}
           />
         </Field>
-        <Field label="Preconditions">
-          <textarea
+        {/* Not a <Field>: a <label> around the editor would steal clicks. */}
+        <section aria-labelledby="preconditions-heading">
+          <h2 id="preconditions-heading" className="mb-1 text-sm font-medium">
+            Preconditions
+          </h2>
+          <RichTextEditor
             name="preconditions"
             defaultValue={values.preconditions}
+            ariaLabel="Preconditions"
+            placeholder="What must be true before this test starts?"
             rows={2}
-            className={inputClass("preconditions")}
           />
-        </Field>
+        </section>
       </div>
 
       {/* Not a <Field>: a <label> around many inputs would steal clicks. */}

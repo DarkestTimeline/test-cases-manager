@@ -7,6 +7,7 @@ import { formatId } from "@/lib/displayId";
 import { findProjectByCode } from "@/lib/projectAction";
 import { blockIdsIn, cleanSteps, expandSteps, normalizeSteps } from "@/lib/steps";
 import { fetchBlocksById } from "@/lib/stepBlocks";
+import { cleanStoredRichText } from "@/lib/richText";
 
 const LIST_PATH = "/projects/[code]/runs";
 const RUN_PATH = "/projects/[code]/runs/[id]";
@@ -179,7 +180,8 @@ export async function updateResult({ resultId, status, notes, runId }) {
 
   const { error } = await supabase
     .from("run_results")
-    .update({ status, notes })
+    // Notes are rich text: stored as clean JSON, or plain text for older notes.
+    .update({ status, notes: cleanStoredRichText(notes) })
     .eq("id", resultId);
   if (error) throw new Error(error.message);
 

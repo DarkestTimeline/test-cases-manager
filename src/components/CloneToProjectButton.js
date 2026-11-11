@@ -21,6 +21,13 @@ function moduleDetail(modules, reused, targetCode) {
 }
 
 function describe(kind, preview, targetCode) {
+  if (kind === "step_block") {
+    return [
+      `Copies this step block with its ${plural(preview.steps, "step")}.`,
+      "The copy is independent: later changes to the original do not change it, and test cases that use the original keep using it.",
+    ];
+  }
+
   const { cases, modules, modules_reused: reused } = preview;
   const lines = [];
 

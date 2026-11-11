@@ -231,6 +231,21 @@ export function isRichTextEmpty(value) {
   return richTextToPlainText(value) === "";
 }
 
+// For rich text kept in an ordinary text column (preconditions, run notes).
+// Returns the string to store: a rich text doc becomes clean JSON ("" when it has
+// no text); anything else is older plain text and is kept as plain text. Readers
+// use parseRichText(), which understands both.
+export function cleanStoredRichText(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("{")) {
+    const doc = sanitizeRichText(trimmed);
+    if (doc) return isRichTextEmpty(doc) ? "" : JSON.stringify(doc);
+  }
+  return trimmed.slice(0, MAX_RICH_TEXT_LENGTH);
+}
+
 // What goes in the hidden form field: clean JSON, or "" when there is no text.
 export function serializeRichText(value) {
   const doc = sanitizeRichText(value);

@@ -1,5 +1,6 @@
 import { parseIdParam } from "./params";
 import { readStepsField, validateSteps } from "./steps";
+import { cleanStoredRichText } from "./richText";
 
 export const PRIORITIES = ["low", "medium", "high", "critical"];
 export const DEFAULT_PRIORITY = "medium";
@@ -27,7 +28,8 @@ export function readTestCaseForm(formData) {
 
   return {
     title: clean(formData.get("title")),
-    preconditions: clean(formData.get("preconditions")),
+    // Rich text, stored as JSON in the text column (older plain text still reads fine).
+    preconditions: cleanStoredRichText(formData.get("preconditions")),
     steps,
     stepsError,
     priority: clean(formData.get("priority")).toLowerCase(),

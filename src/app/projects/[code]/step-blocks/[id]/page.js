@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getProject } from "@/lib/project";
+import { getProject, getActiveProjects } from "@/lib/project";
+import CloneToProjectButton from "@/components/CloneToProjectButton";
 import { parseIdParam } from "@/lib/params";
 import { formatId } from "@/lib/displayId";
 import { cleanSteps } from "@/lib/steps";
@@ -18,6 +19,9 @@ export default async function EditStepBlock({ params }) {
   const project = await getProject(code);
   const id = parseIdParam(rawId);
   if (!id) notFound();
+  const otherProjects = (await getActiveProjects()).filter(
+    (p) => p.code !== project.code,
+  );
   const supabase = await createClient();
 
   const { data: block } = await supabase
@@ -61,7 +65,14 @@ export default async function EditStepBlock({ params }) {
           </span>
         )}
       </div>
-      <h1 className="mb-6">Edit Step Block</h1>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h1>Edit Step Block</h1>
+        <CloneToProjectButton
+          kind="step_block"
+          id={block.id}
+          projects={otherProjects}
+        />
+      </div>
       {block.archived_at && (
         <p className="mb-4 text-sm text-slate-600">
           This step block is archived. Restore it from the list to use it.

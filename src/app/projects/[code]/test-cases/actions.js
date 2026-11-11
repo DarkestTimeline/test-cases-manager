@@ -27,6 +27,7 @@ import {
   stepsToText,
 } from "@/lib/steps";
 import { fetchBlocksById, resolveBlocks } from "@/lib/stepBlocks";
+import { richTextToPlainText } from "@/lib/richText";
 
 const LIST_PATH = "/projects/[code]/test-cases";
 const EXPORT_PAGE_SIZE = 1000;
@@ -530,7 +531,8 @@ export async function exportTestCases(scope, projectCode) {
       );
       return {
         title: tc.title,
-        preconditions: tc.preconditions,
+        // Rich text is written out as plain text in the CSV.
+        preconditions: richTextToPlainText(tc.preconditions),
         // Readable plain text, plus the full-fidelity version for re-importing.
         steps: stepsToReadableText(steps),
         steps_json: steps.length > 0 ? JSON.stringify(steps) : "",

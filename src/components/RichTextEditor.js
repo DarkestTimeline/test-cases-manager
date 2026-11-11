@@ -17,6 +17,7 @@ import { parseRichText, serializeRichText } from "@/lib/richText";
 //   onChange      optional, called with the doc (or null when empty)
 //   placeholder   hint text shown while empty
 //   compact       single-row look for table cells; toolbar floats on focus
+//   rows          height of the empty box when not compact: 1, 2 or 4 (default)
 //   invalid       red border, for validation errors
 //   disabled      read-only
 //   ariaLabel     accessible name when there is no visible <label>
@@ -40,6 +41,8 @@ const BASE_EXTENSION = StarterKit.configure({
     HTMLAttributes: { rel: "noopener noreferrer nofollow", target: "_blank" },
   },
 });
+
+const MIN_HEIGHT = { 1: "min-h-9", 2: "min-h-16", 4: "min-h-24" };
 
 function Svg({ children }) {
   return (
@@ -180,6 +183,7 @@ export default function RichTextEditor({
   onChange,
   placeholder = "",
   compact = false,
+  rows = 4,
   invalid = false,
   disabled = false,
   ariaLabel,
@@ -201,7 +205,7 @@ export default function RichTextEditor({
       attributes: {
         class: compact
           ? "rich-text min-h-9 px-2 py-1.5 text-sm focus:outline-none"
-          : "rich-text min-h-24 px-2 py-2 text-sm focus:outline-none",
+          : `rich-text ${MIN_HEIGHT[rows] ?? MIN_HEIGHT[4]} px-2 py-2 text-sm focus:outline-none`,
         role: "textbox",
         "aria-multiline": "true",
         ...(ariaLabel ? { "aria-label": ariaLabel } : {}),

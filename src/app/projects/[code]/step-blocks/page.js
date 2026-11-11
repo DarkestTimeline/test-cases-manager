@@ -6,7 +6,7 @@ import Button from "@/components/Button";
 import Card from "@/components/Card";
 import { buildSearchFilter } from "@/lib/searchFilter";
 import { PAGE } from "@/lib/pageWidths";
-import { getProject } from "@/lib/project";
+import { getProject, getActiveProjects } from "@/lib/project";
 import RowMenu from "@/components/RowMenu";
 import { normalizeSteps, cleanSteps } from "@/lib/steps";
 import { richTextToPlainText } from "@/lib/richText";
@@ -19,6 +19,9 @@ export default async function StepBlocksList({ params, searchParams }) {
   const { code } = await params;
   const project = await getProject(code);
   const base = `/projects/${project.code}`;
+  const otherProjects = (await getActiveProjects()).filter(
+    (p) => p.code !== project.code,
+  );
   const supabase = await createClient();
   const { archived, search, page } = await searchParams;
   const showingArchived = archived === "true";
@@ -158,7 +161,7 @@ export default async function StepBlocksList({ params, searchParams }) {
                     <RowMenu
                       kind="step_block"
                       id={block.id}
-                      projects={[]}
+                      projects={otherProjects}
                       archived={showingArchived}
                       archiveAction={archiveStepBlock}
                       restoreAction={restoreStepBlock}
